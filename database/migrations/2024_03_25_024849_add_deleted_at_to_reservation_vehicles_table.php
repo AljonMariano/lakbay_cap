@@ -6,23 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::table('reservation_vehicles', function (Blueprint $table) {
-            $table->softDeletes();
+        Schema::table('vehicles', function (Blueprint $table) {
+            $table->integer('vh_capacity')->nullable()->change();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('reservation_vehicles', function (Blueprint $table) {
             $table->dropsoftDeletes();
         });
+
+        Schema::dropIfExists('vehicles');
     }
 };

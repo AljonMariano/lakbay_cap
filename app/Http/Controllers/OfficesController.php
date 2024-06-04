@@ -96,6 +96,7 @@ class OfficesController extends Controller
     }
     public function update(Request $request)
     { 
+       // dd($request);
         $acr = $request->off_acr;
         $name = $request->off_name;
         $head = $request->off_head;

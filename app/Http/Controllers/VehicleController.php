@@ -22,7 +22,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
-class VehiclesController extends Controller
+class VehicleController extends Controller
 {
     public function show(Request $request){
         if ($request->ajax()) {
