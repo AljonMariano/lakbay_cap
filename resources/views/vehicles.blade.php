@@ -57,6 +57,7 @@
                                             <select class="form-select" name="vh_fuel_type" id="vh_fuel_type">
                                                 <option value="Diesel">Diesel</option>
                                                 <option value="Gasoline">Gasoline</option>
+                                                <option value="Electric">Electric</option>
                                             </select>
                                             <span id="vh_fuel_type_error"></span>
                                         </div>
@@ -80,6 +81,7 @@
                                             <select name="vh_status" id="vh_status_modal">
                                                 <option value="Available">Available</option>
                                                 <option value="Not Available">Not Available</option>
+                                                <option value="For Maintenance">For Maintenance</option>
                                             </select>
                                             <span id="vh_status_error"></span>
                                         </div>
@@ -112,6 +114,7 @@
                         <td>Fuel Type</td>
                         <td>Condition</td>
                         <td>Status</td>
+                        <td>Capacity</td>
                         <td>Actions</td>
                     </tr>
                 </thead>
@@ -129,15 +132,15 @@
                     </div>
                     <div class="modal-body">
                         <div class="form-group">
-                            <label>Plate Number : </label>
+                            <label>Plate Number:</label>
                             <input type="text" class="form-control rounded-1" name="vh_plate_modal" id="vh_plate_modal" value="">
                         </div>
                         <div class="form-group">
-                            <label>Type : </label>
+                            <label>Type:</label>
                             <input type="text" class="form-control rounded-1" name="vh_type_modal" id="vh_type_modal" value="">
                         </div>
                         <div class="form-group">
-                            <label>Brand</label>
+                            <label>Brand:</label>
                             <input type="text" class="form-control rounded-1" name="vh_brand_modal" id="vh_brand_modal" value="">
                         </div>
                         <div class="form-group">
@@ -145,14 +148,14 @@
                             <input type="text" class="form-control rounded-1" name="vh_year_modal" id="vh_year_modal" value="">
                         </div>
                         <div class="form-group">
-                            <label for="voucher_edit" class="form-label mb-0">Voucher</label>
+                            <label>Voucher:</label>
                             <select class="form-select" name="vh_fuel_modal" id="vh_fuel_modal">
                                 <option value="Diesel">Diesel</option>
                                 <option value="Gasoline">Gasoline</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Condition : </label>
+                            <label>Condition:</label>
                             <select class="form-select" name="vh_condition_modal" id="vh_condition_modal">
                                 <option value="Very Good">Very Good</option>
                                 <option value="Good">Good</option>
@@ -161,23 +164,26 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="vh_status">Status</label>
+                            <label>Capacity:</label>
+                            <input type="number" class="form-control rounded-1" name="vh_capacity_modal" id="vh_capacity_modal" value="">
+                        </div>
+                        <div class="form-group">
+                            <label>Status:</label>
                             <select name="vh_status_modal" id="vh_status_modal">
                                 <option value="Available">Available</option>
                                 <option value="Not Available">Not Available</option>
                             </select>
                         </div>
-                        <input type="hidden" name="action" id="action" value="Update" />
-                        <input type="hidden" name="hidden_id" id="hidden_id" />
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <input type="submit" name="action_button" id="action_button" value="Update" class="btn btn-info" />
+                        <input type="submit" name="action_button" id="action_button" value="Add" class="btn btn-info" />
                     </div>
                 </form>
             </div>
         </div>
     </div>
+    
     <!-------------DELETE MODAL --------------->
     <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -198,6 +204,10 @@
             </div>
         </div>
     </div>
+
+
+
+ <!------------------------------------------------------SCRIPT ----------------------------------------------------->
     <script type="text/javascript">
         $(document).ready(function() {
             $("#insertModal").modal("hide");
@@ -205,82 +215,53 @@
                 $("#insertModal").modal("show");
             });
             var table = $('.vehicle-table').DataTable({
-                lengthMenu: [
-                    [10, 25, 50, -1]
-                    , [10, 25, 50, "All"]
-                ]
-                , search: {
-                    return: true
-                }
-                , processing: true
-                , serverSide: true
-                , dom: 'Blfrtip'
-                , buttons: [{
-                        text: 'Word'
-                        , action: function(e, dt, node, config) {
-                            var searchValue = $('.dataTables_filter input').val();
-                            window.location.href = '/vehicle-word?search=' + searchValue;
-                        }
-                    }
-                    , {
-                        text: 'Excel'
-                        , action: function(e, dt, node, config) {
-                            var searchValue = $('.dataTables_filter input').val();
-                            window.location.href = '/vehicle-excel?search=' + searchValue;
-                        }
-                    }
-                    , {
-                        text: 'PDF'
-                        , action: function(e, dt, node, config) {
-                            var searchValue = $('.dataTables_filter input').val();
-                            window.location.href = '/vehicle-pdf?search=' + searchValue;
-                        }
-                    }
-                ]
-                , ajax: "{{ route('vehicles.index') }}",
-
-
-
-                columns: [{
-                        data: 'vehicle_id'
-                        , name: 'vehicle_id'
-                    }
-                    , {
-                        data: 'vh_plate'
-                        , name: 'vh_plate'
-                    }
-                    , {
-                        data: 'vh_type'
-                        , name: 'vh_type'
-                    }
-                    , {
-                        data: 'vh_brand'
-                        , name: 'vh_brand'
-                    }
-                    , {
-                        data: 'vh_year'
-                        , name: 'vh_year'
-                    }
-                    , {
-                        data: 'vh_fuel_type'
-                        , name: 'vh_fuel_type'
-                    }
-                    , {
-                        data: 'vh_condition'
-                        , name: 'vh_condition'
-                    }
-                    , {
-                        data: 'vh_status'
-                        , name: 'vh_status'
-                    }
-                    , {
-                        data: 'action'
-                        , name: 'action'
-                        , orderable: false
-                        , searchable: false
-                    }
-                , ]
-            });
+    lengthMenu: [
+        [10, 25, 50, -1], [10, 25, 50, "All"]
+    ],
+    search: {
+        return: true
+    },
+    processing: true,
+    serverSide: true,
+    dom: 'Blfrtip',
+    buttons: [{
+        text: 'Word',
+        action: function(e, dt, node, config) {
+            var searchValue = $('.dataTables_filter input').val();
+            window.location.href = '/vehicle-word?search=' + searchValue;
+        }
+    }, {
+        text: 'Excel',
+        action: function(e, dt, node, config) {
+            var searchValue = $('.dataTables_filter input').val();
+            window.location.href = '/vehicle-excel?search=' + searchValue;
+        }
+    }, {
+        text: 'PDF',
+        action: function(e, dt, node, config) {
+            var searchValue = $('.dataTables_filter input').val();
+            window.location.href = '/vehicle-pdf?search=' + searchValue;
+        }
+    }],
+    ajax: "{{ route('vehicles.index') }}",
+    columns: [
+        { data: 'vehicle_id', name: 'vehicle_id' },
+        { data: 'vh_plate', name: 'vh_plate' },
+        { data: 'vh_type', name: 'vh_type' },
+        { data: 'vh_brand', name: 'vh_brand' },
+        { data: 'vh_year', name: 'vh_year' },
+        { data: 'vh_fuel_type', name: 'vh_fuel_type' },
+        { data: 'vh_condition', name: 'vh_condition' },
+        { data: 'vh_status', name: 'vh_status' },
+        { data: 'vh_capacity', name: 'vh_capacity' },
+        {
+            data: 'action',
+            name: 'action',
+            orderable: false,
+            searchable: false
+        }
+    ]
+});
 
 
 
@@ -344,77 +325,89 @@
             // STORE---------------------------//
             // EDIT---------------------------//
             $(document).on('click', '.edit', function(event) {
-                event.preventDefault();
-                var vehicle_id = $(this).attr('id');
-                //  alert(vehicle_id);
-                $('#form_result').html('');
-                $.ajax({
-                    url: "/edit-vehicle/" + vehicle_id + "/"
-                    , headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                    , dataType: "json"
-                    , success: function(data) {
-                        $('#vh_plate_modal').val(data.result.vh_plate);
-                        $('#vh_type_modal').val(data.result.vh_type);
-                        $('#vh_brand_modal').val(data.result.vh_brand);
-                        $('#vh_year_modal').val(data.result.vh_year);
-                        $('#vh_fuel_type_modal').val(data.result.vh_fuel_type);
-                        $('#vh_condition_modal').val(data.result.vh_condition);
-                        $('#vh_status_modal').val(data.result.vh_status);
-                        $('#hidden_id').val(vehicle_id);
-                        $('.modal-title').text('Edit Record');
-                        $('#action_button').val('Update');
-                        $('#action').val('Edit');
-                        $('#vehicle_modal').modal('show');
+    event.preventDefault();
+    var vehicle_id = $(this).attr('id');
+    $('#form_result').html('');
+    
+    // Perform AJAX request to fetch vehicle data
+    $.ajax({
+        url: "/edit-vehicle/" + vehicle_id + "/",
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        dataType: "json",
+        success: function(data) {
+            // Populate modal fields with fetched data
+            $('#vh_plate_modal').val(data.result.vh_plate);
+            $('#vh_type_modal').val(data.result.vh_type);
+            $('#vh_brand_modal').val(data.result.vh_brand);
+            $('#vh_year_modal').val(data.result.vh_year);
+            $('#vh_fuel_modal').val(data.result.vh_fuel_type);
+            $('#vh_condition_modal').val(data.result.vh_condition);
+            $('#vh_status_modal').val(data.result.vh_status);
+            $('#vh_capacity_modal').val(data.result.vh_capacity);
+            $('#hidden_id').val(vehicle_id);
+            
+            // Change modal title and submit button text
+            $('.modal-title').text('Edit Vehicle');
+            $('#action_button').val('Update');
+            
+            // Show the modal
+            $('#vehicle_modal').modal('show');
+        },
+        error: function(data) {
+            var errors = data.responseJSON;
+            console.log(errors);
+        }
+    });
+});
 
-                    }
-                    , error: function(data) {
-                        var errors = data.responseJSON;
-                        console.log(errors);
-                    }
-                })
-            });
             // EDIT---------------------------//
             //UPDATE------------------------------------------//
             $('#vehicle_modal').on('submit', function(event) {
-                event.preventDefault();
-                var action_url = "{{ url('/update-vehicle')}}";
+    event.preventDefault();
+    var action_url = "{{ route('update-vehicle') }}";
 
-                $.ajax({
-                    type: 'post'
-                    , headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                    , url: action_url
-                    , data: $(this).serialize()
-                    , dataType: 'json'
-                    , success: function(data) {
-                        console.log('success: ' + data);
-                        var html = '';
-                        if (data.errors) {
-                            html = '<div class="alert alert-danger">';
-                            for (var count = 0; count < data.errors.length; count++) {
-                                html += '<p>' + data.errors[count] + '</p>';
-                            }
-                            html += '</div>';
-                        }
-                        if (data.success) {
-                            html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-                            $('#vehicle-table').DataTable().ajax.reload();
-                            $('#vehicle_modal').modal('hide');
-                            $('#vehicle_modal')[0].reset();
+    var formData = $(this).serializeArray();
 
+    var vh_capacity = $('#vh_capacity_modal').val();
+    formData.push({
+        name: 'vh_capacity',
+        value: vh_capacity
+    });
 
-                        }
-                        $('#form_result').html(html);
-                    }
-                    , error: function(data) {
-                        var errors = data.responseJSON;
-                        console.log(errors);
-                    }
-                });
-            });
+    $.ajax({
+        type: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: action_url,
+        data: formData,
+        dataType: 'json',
+        success: function(data) {
+            console.log('success: ' + data);
+            var html = '';
+            if (data.errors) {
+                html = '<div class="alert alert-danger">';
+                for (var count = 0; count < data.errors.length; count++) {
+                    html += '<p>' + data.errors[count] + '</p>';
+                }
+                html += '</div>';
+            }
+            if (data.success) {
+                html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
+                $('#vehicle-table').DataTable().ajax.reload();
+                $('#vehicle_modal').modal('hide');
+                $('#vehicle_modal')[0].reset();
+            }
+            $('#form_result').html(html);
+        },
+        error: function(data) {
+            var errors = data.responseJSON;
+            console.log(errors);
+        }
+    });
+});
             //UPDATE------------------------------------------//
             // DELETE---------------------------//
             var vehicle_id;

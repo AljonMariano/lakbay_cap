@@ -65,15 +65,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/offices-pdf', [OfficesController::class, 'offices_pdf']);
 
     // Vehicles Section
-
     Route::get('/vehicles', [VehicleController::class, 'show'])->name('vehicles.index');
-
-
-
-    Route::get('/vehicles/{id}', [VehicleController::class, 'show'])->name('vehicles.show'); // Add this line
+    Route::get('/vehicles/{id}', [VehicleController::class, 'show'])->name('vehicles.show'); 
     Route::post('/insert-vehicle', [VehicleController::class, 'store'])->name('vehicles.store');
     Route::get('/edit-vehicle/{id}', [VehicleController::class, 'edit'])->name('vehicles.edit');
-    Route::post('/update-vehicle', [VehicleController::class, 'update'])->name('vehicles.update');
+    Route::post('/update-vehicle', [VehicleController::class, 'update'])->name('update-vehicle');
     Route::delete('/delete-vehicle/{id}', [VehicleController::class, 'delete'])->name('vehicles.destroy');
     Route::get('/vehicle-word', [VehicleController::class, 'vehicles_word']);
     Route::get('/vehicle-excel', [VehicleController::class, 'vehicles_excel']);
