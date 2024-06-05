@@ -15,6 +15,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\VehicleController;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -69,7 +70,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/insert-vehicle', [VehicleController::class, 'store'])->name('vehicles.store');
     Route::get('/edit-vehicle/{id}', [VehicleController::class, 'edit'])->name('vehicles.edit');
     Route::post('/update-vehicle', [VehicleController::class, 'update'])->name('update-vehicle');
-    Route::delete('/delete-vehicle/{id}', [VehicleController::class, 'delete'])->name('vehicles.destroy');
+    Route::get('/delete-vehicle/{vehicle_id}', [VehicleController::class, 'delete']);
     Route::get('/vehicle-word', [VehicleController::class, 'vehicles_word']);
     Route::get('/vehicle-excel', [VehicleController::class, 'vehicles_excel']);
     Route::get('/vehicle-pdf', [VehicleController::class, 'vehicles_pdf']);

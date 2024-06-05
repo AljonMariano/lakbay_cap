@@ -121,7 +121,7 @@
             </table>
         </div>
     </div>
-    <!-------------EDIT MODAL --------------->
+    <!-- EDIT MODAL -->
     <div class="modal fade" tabindex="-1" id="vehicle_modal" aria-labelledby="ModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -152,6 +152,8 @@
                             <select class="form-select" name="vh_fuel_type_modal" id="vh_fuel_type_modal">
                                 <option value="Diesel">Diesel</option>
                                 <option value="Gasoline">Gasoline</option>
+                                <option value="Electric">Electric</option>
+
                             </select>
                         </div>
                         <div class="form-group">
@@ -169,26 +171,33 @@
                         </div>
                         <div class="form-group">
                             <label>Status:</label>
-                            <select name="vh_status_modal" id="vh_status_modal">
+                            <select class="form-select" name="vh_status_modal" id="vh_status_modal">
                                 <option value="Available">Available</option>
                                 <option value="Not Available">Not Available</option>
+                                <option value="For Maintenancee">For Maintenance </option>
+
+
                             </select>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <input type="submit" name="action_button" id="action_button" value="Add" class="btn btn-info" />
+                        <input type="hidden" name="hidden_id" id="hidden_id" />
+                        <input type="submit" name="action_button" id="action_button" value="Update" class="btn btn-info" />
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    
+
+
+
     <!-------------DELETE MODAL --------------->
+    <!-- DELETE MODAL -->
     <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form method="post" id="events_form" class="form-horizontal">
+                <form method="post" id="sample_form" class="form-horizontal">
                     <div class="modal-header">
                         <h5 class="modal-title" id="ModalLabel">Confirmation</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -205,75 +214,95 @@
         </div>
     </div>
 
-
-
- <!------------------------------------------------------SCRIPT ----------------------------------------------------->
+    <!------------------------------------------------------SCRIPT ----------------------------------------------------->
     <script type="text/javascript">
         $(document).ready(function() {
-            $("#insertModal").modal("hide");
-            $("#insertBtn").click(function() {
-                $("#insertModal").modal("show");
-            });
             var table = $('.vehicle-table').DataTable({
-    lengthMenu: [
-        [10, 25, 50, -1], [10, 25, 50, "All"]
-    ],
-    search: {
-        return: true
-    },
-    processing: true,
-    serverSide: true,
-    dom: 'Blfrtip',
-    buttons: [{
-        text: 'Word',
-        action: function(e, dt, node, config) {
-            var searchValue = $('.dataTables_filter input').val();
-            window.location.href = '/vehicle-word?search=' + searchValue;
-        }
-    }, {
-        text: 'Excel',
-        action: function(e, dt, node, config) {
-            var searchValue = $('.dataTables_filter input').val();
-            window.location.href = '/vehicle-excel?search=' + searchValue;
-        }
-    }, {
-        text: 'PDF',
-        action: function(e, dt, node, config) {
-            var searchValue = $('.dataTables_filter input').val();
-            window.location.href = '/vehicle-pdf?search=' + searchValue;
-        }
-    }],
-    ajax: "{{ route('vehicles.index') }}",
-    columns: [
-        { data: 'vehicle_id', name: 'vehicle_id' },
-        { data: 'vh_plate', name: 'vh_plate' },
-        { data: 'vh_type', name: 'vh_type' },
-        { data: 'vh_brand', name: 'vh_brand' },
-        { data: 'vh_year', name: 'vh_year' },
-        { data: 'vh_fuel_type', name: 'vh_fuel_type' },
-        { data: 'vh_condition', name: 'vh_condition' },
-        { data: 'vh_status', name: 'vh_status' },
-        { data: 'vh_capacity', name: 'vh_capacity' },
-        {
-            data: 'action',
-            name: 'action',
-            orderable: false,
-            searchable: false
-        }
-    ]
-});
+                lengthMenu: [
+                    [10, 25, 50, -1]
+                    , [10, 25, 50, "All"]
+                ]
+                , search: {
+                    return: true
+                }
+                , processing: true
+                , serverSide: true
+                , dom: 'Blfrtip'
+                , buttons: [{
+                        text: 'Word'
+                        , action: function(e, dt, node, config) {
+                            var searchValue = $('.dataTables_filter input').val();
+                            window.location.href = '/vehicle-word?search=' + searchValue;
+                        }
+                    }
+                    , {
+                        text: 'Excel'
+                        , action: function(e, dt, node, config) {
+                            var searchValue = $('.dataTables_filter input').val();
+                            window.location.href = '/vehicle-excel?search=' + searchValue;
+                        }
+                    }
+                    , {
+                        text: 'PDF'
+                        , action: function(e, dt, node, config) {
+                            var searchValue = $('.dataTables_filter input').val();
+                            window.location.href = '/vehicle-pdf?search=' + searchValue;
+                        }
+                    }
+                ]
+                , ajax: "{{ route('vehicles.index') }}"
+                , columns: [{
+                        data: 'vehicle_id'
+                        , name: 'vehicle_id'
+                    }
+                    , {
+                        data: 'vh_plate'
+                        , name: 'vh_plate'
+                    }
+                    , {
+                        data: 'vh_type'
+                        , name: 'vh_type'
+                    }
+                    , {
+                        data: 'vh_brand'
+                        , name: 'vh_brand'
+                    }
+                    , {
+                        data: 'vh_year'
+                        , name: 'vh_year'
+                    }
+                    , {
+                        data: 'vh_fuel_type'
+                        , name: 'vh_fuel_type'
+                    }
+                    , {
+                        data: 'vh_condition'
+                        , name: 'vh_condition'
+                    }
+                    , {
+                        data: 'vh_status'
+                        , name: 'vh_status'
+                    }
+                    , {
+                        data: 'vh_capacity'
+                        , name: 'vh_capacity'
+                    }
+                    , {
+                        data: 'action'
+                        , name: 'action'
+                        , orderable: false
+                        , searchable: false
+                    }
+                ]
+            });
 
 
 
-
-
-            // STORE---------------------------//
+            // Handle form submission for adding vehicle
             $('#vehicles-form').on('submit', function(event) {
                 event.preventDefault();
                 var action_url = "{{ url('/insert-vehicle') }}";
                 var formData = $(this).serializeArray();
-
-                // Add vh_capacity field to the form data
                 var vh_capacity = $('#vh_capacity').val();
                 formData.push({
                     name: 'vh_capacity'
@@ -289,7 +318,6 @@
                     , data: formData
                     , dataType: 'json'
                     , success: function(data) {
-                        console.log('success: ' + data);
                         var html = '';
                         if (data.errors) {
                             html = '<div class="alert alert-danger">';
@@ -315,131 +343,102 @@
             });
 
 
-
-
-
-
-
-
-
-            // STORE---------------------------//
-            // EDIT---------------------------//
+            // Handle edit vehicle button click
             $(document).on('click', '.edit', function(event) {
-    event.preventDefault();
-    var vehicle_id = $(this).attr('id');
-    $('#form_result').html('');
-    
-    // Perform AJAX request to fetch vehicle data
-    $.ajax({
-        url: "/edit-vehicle/" + vehicle_id + "/",
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        dataType: "json",
-        success: function(data) {
-            // Populate modal fields with fetched data
-            $('#vh_plate_modal').val(data.result.vh_plate);
-            $('#vh_type_modal').val(data.result.vh_type);
-            $('#vh_brand_modal').val(data.result.vh_brand);
-            $('#vh_year_modal').val(data.result.vh_year);
-            $('#vh_fuel_type_modal').val(data.result.vh_fuel_type_modal);
+                event.preventDefault();
+                var vehicle_id = $(this).attr('id');
+                $('#form_result').html('');
+
+                // Fetch vehicle data
+                $.ajax({
+                    url: "/edit-vehicle/" + vehicle_id
+                    , headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                    , dataType: "json"
+                    , success: function(data) {
+                        $('#vh_plate_modal').val(data.result.vh_plate);
+                        $('#vh_type_modal').val(data.result.vh_type);
+                        $('#vh_brand_modal').val(data.result.vh_brand);
+                        $('#vh_year_modal').val(data.result.vh_year);
+                        $('#vh_fuel_type_modal').val(data.result.vh_fuel_type);
+                        $('#vh_condition_modal').val(data.result.vh_condition);
+                        $('#vh_status_modal').val(data.result.vh_status);
+                        $('#vh_capacity_modal').val(data.result.vh_capacity);
+                        $('#hidden_id').val(vehicle_id);
+                        $('.modal-title').text('Edit Vehicle');
+                        $('#action_button').val('Update');
+                        $('#vehicle_modal').modal('show');
+                    }
+                    , error: function(data) {
+                        var errors = data.responseJSON;
+                        console.log(errors);
+                    }
+                });
+            });
 
 
+            // Handle update vehicle form submission
+            $('#vehicle_edit').on('submit', function(event) {
+                event.preventDefault();
+                var action_url = "{{ route('update-vehicle') }}";
+                var formData = $(this).serializeArray();
+                $.ajax({
+                    type: 'POST'
+                    , headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                    , url: action_url
+                    , data: formData
+                    , dataType: 'json'
+                    , success: function(data) {
+                        var html = '';
+                        if (data.errors) {
+                            html = '<div class="alert alert-danger">';
+                            for (var count = 0; count < data.errors.length; count++) {
+                                html += '<p>' + data.errors[count] + '</p>';
+                            }
+                            html += '</div>';
+                        }
+                        if (data.success) {
+                            html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
+                            $('#vehicle-table').DataTable().ajax.reload();
+                            $('#vehicle_modal').modal('hide');
+                            $('#vehicle_edit')[0].reset();
+                        }
+                        $('#form_result').html(html);
+                    }
+                    , error: function(data) {
+                        var errors = data.responseJSON;
+                        console.log(errors);
+                    }
+                });
+            });
 
-            $('#vh_condition_modal').val(data.result.vh_condition);
-            $('#vh_status_modal').val(data.result.vh_status);
-            $('#vh_capacity_modal').val(data.result.vh_capacity);
-            $('#hidden_id').val(vehicle_id);
-            
-            // Change modal title and submit button text
-            $('.modal-title').text('Edit Vehicle');
-            $('#action_button').val('Update');
-            
-            // Show the modal
-            $('#vehicle_modal').modal('show');
-        },
-        error: function(data) {
-            var errors = data.responseJSON;
-            console.log(errors);
-        }
-    });
-});
 
-            // EDIT---------------------------//
-            //UPDATE------------------------------------------//
-            $('#vehicle_modal').on('submit', function(event) {
-    event.preventDefault();
-    var action_url = "{{ route('update-vehicle') }}";
-
-    var formData = $('#vehicle_edit').serializeArray();
-    
-
-    var vh_capacity = $('#vh_capacity_modal').val();
-    //formData.push({
-      //  name: 'vh_capacity',
-       //         value: vh_capacity
-//    });
-
-    $.ajax({
-        type: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: action_url,
-        data: formData,
-        dataType: 'json',
-        success: function(data) {
-            console.log('success: ' + data);
-            var html = '';
-            if (data.errors) {
-                html = '<div class="alert alert-danger">';
-                for (var count = 0; count < data.errors.length; count++) {
-                    html += '<p>' + data.errors[count] + '</p>';
-                }
-                html += '</div>';
-            }
-            if (data.success) {
-                html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-                $('#vehicle-table').DataTable().ajax.reload();
-                $('#vehicle_modal').modal('hide');
-                $('#vehicle_modal')[0].reset();
-            }
-            $('#form_result').html(html);
-        },
-        error: function(data) {
-            var errors = data.responseJSON;
-            console.log(errors);
-        }
-    });
-});
-            //UPDATE------------------------------------------//
-            // DELETE---------------------------//
             var vehicle_id;
             $(document).on('click', '.delete', function() {
                 vehicle_id = $(this).attr('id');
+
                 $('#confirmModal').modal('show');
             });
 
             $('#ok_button').click(function() {
                 $.ajax({
                     url: "/delete-vehicle/" + vehicle_id
+
                     , success: function(data) {
                         setTimeout(function() {
                             $('#confirmModal').modal('hide');
                             $('#vehicle-table').DataTable().ajax.reload();
                         });
-                        if (data.success) {
-                            html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-                            $('#vehicle-table').DataTable().ajax.reload();
-                            $('#vehicle_modal').modal('hide');
-                            $('#vehicle_modal')[0].reset();
-                        }
-
                     }
-
                 })
             });
-            //DELETE---------------------------//
+
+
+
+
             document.addEventListener("DOMContentLoaded", function() {
                 var btn = document.getElementById("insertBtn");
                 btn.addEventListener("click", function() {
