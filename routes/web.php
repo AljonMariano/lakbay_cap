@@ -56,7 +56,6 @@ Route::middleware(['auth'])->group(function () {
     // Offices Section
     Route::get('/offices', [OfficesController::class, 'show'])->name('offices.show');
     Route::post('/insert-office', [OfficesController::class, 'store'])->name('offices.store');
-
     Route::get('/delete-office/{off_id}', [OfficesController::class, 'delete']);
     Route::get('/edit-office/{off_id}', [OfficesController::class, 'edit']);
     Route::post('/update-office', [OfficesController::class, 'update']);

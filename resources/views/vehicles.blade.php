@@ -148,8 +148,8 @@
                             <input type="text" class="form-control rounded-1" name="vh_year_modal" id="vh_year_modal" value="">
                         </div>
                         <div class="form-group">
-                            <label>Voucher:</label>
-                            <select class="form-select" name="vh_fuel_modal" id="vh_fuel_modal">
+                            <label>Fuel Type</label>
+                            <select class="form-select" name="vh_fuel_type_modal" id="vh_fuel_type_modal">
                                 <option value="Diesel">Diesel</option>
                                 <option value="Gasoline">Gasoline</option>
                             </select>
@@ -342,7 +342,10 @@
             $('#vh_type_modal').val(data.result.vh_type);
             $('#vh_brand_modal').val(data.result.vh_brand);
             $('#vh_year_modal').val(data.result.vh_year);
-            $('#vh_fuel_modal').val(data.result.vh_fuel_type);
+            $('#vh_fuel_type_modal').val(data.result.vh_fuel_type_modal);
+
+
+
             $('#vh_condition_modal').val(data.result.vh_condition);
             $('#vh_status_modal').val(data.result.vh_status);
             $('#vh_capacity_modal').val(data.result.vh_capacity);
@@ -368,13 +371,14 @@
     event.preventDefault();
     var action_url = "{{ route('update-vehicle') }}";
 
-    var formData = $(this).serializeArray();
+    var formData = $('#vehicle_edit').serializeArray();
+    
 
     var vh_capacity = $('#vh_capacity_modal').val();
-    formData.push({
-        name: 'vh_capacity',
-        value: vh_capacity
-    });
+    //formData.push({
+      //  name: 'vh_capacity',
+       //         value: vh_capacity
+//    });
 
     $.ajax({
         type: 'POST',
