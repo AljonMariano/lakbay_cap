@@ -17,7 +17,9 @@
 
 {{-- <link  href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet"> --}}
 <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
-  @include('includes.header');
+
+  @include('includes.header')
+  
     <div class="row">
         <div class="col">
             <h4 class="text-uppercase">Requestors</h4>
@@ -87,6 +89,9 @@
         <h4 class="modal-title" id="RequestorModal"></h4>
       </div>
       <div class="modal-body">
+
+
+
         {{-- Editable Form --}}
         <form action="javascript:void(0)" id="requestorForm" name="requestorForm" class="form-horizontal" method="POST" enctype="multipart/form-data">
           <input type="hidden" name="id" id="id">
@@ -102,7 +107,7 @@
             <select class="form-select" name="rq_office" id="rq_office">
                 <option value=""disabled selected>Select Office</option>
                 @foreach ($offices as $office)
-                <option value="{{$office->off_id}}">{{ $office->off_acr }}  ({{$office->off_name}})</option>
+                <option value="{{$office->off_name}}">{{ $office->off_acr }} ({{$office->off_name}})</option>
                 @endforeach
             </select>
           </div>       
@@ -119,6 +124,8 @@
   </div>
 </div>
 <!-- end bootstrap model -->
+
+
 
 <script type="text/javascript">          
      $(document).ready( function () {
@@ -196,7 +203,8 @@
               $('#RequestorModal').html("Edit Requestor");
               $('#requestor-modal').modal('show');
               $('#rq_full_name').val(res.rq_full_name);
-              $('#rq_office').val(res.rq_office);           
+              $('#rq_office').val(res.rq_office);          
+              $('#id').val(id);     
             }
         });
       } 

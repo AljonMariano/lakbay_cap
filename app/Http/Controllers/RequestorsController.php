@@ -59,7 +59,7 @@ class RequestorsController extends Controller
      */
     public function store(Request $request)
     {
-        $requestor_id = $request->requestor_id;
+        $requestor_id = $request->id;
         $requestor  = Requestors::updateOrCreate(
             [
                 'requestor_id' => $requestor_id

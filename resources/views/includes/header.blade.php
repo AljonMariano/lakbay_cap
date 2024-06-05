@@ -161,5 +161,5 @@
                 </nav>
             </div>
         </header>
-        <?php endif; ?>
+        <?php endif ?>
         <main class="container mt-4">
