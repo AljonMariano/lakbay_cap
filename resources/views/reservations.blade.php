@@ -30,110 +30,86 @@
                                 <div class="card rounded-0">
                                     <div class="card-body">
                                         <input type="hidden" name="reservation_id" value="">
-                                        <div class="row">
-                                            <div class="col">
-                                                <div class="mb-2">
-                                                    <label for="event_id" class="form-label mb-0">Event Name</label>
-                                                    <select class="form-select" name="event_id" id="event_id">
-                                                    
-                                                    </select>
-                                                    <span id="event_id_error"></span>
 
-                                                </div>
-                                            </div>
-                                            <div class="col">
-                                                <div class="mb-2">
-                                                    <label for="driver_id" class="form-label mb-0">Driver</label>
-                                                    <select class="form-select drivers-select" name="driver_id[]" id="driver_id" multiple>
-                                                        
-                                                        @foreach ($drivers as $driver)
-                                                        <option value="{{$driver->driver_id}}">{{ $driver->dr_fname }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    <span id="driver_id_error"></span>
-                                                </div>
-                                            </div>
+                                        <div class="mb-2">
+                                            <label for="event_id" class="form-label mb-0">Event Name</label>
+                                            <select class="form-select" name="event_id" id="event_id"></select>
+                                            <span id="event_id_error"></span>
                                         </div>
-                                        <div class="row">
-                                            <div class="col">
-                                                <div class="mb-2">
-                                                    <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
-                                                    <select class="form-select vehicles-select" name="vehicle_id[]" id="vehicle_id" multiple>
-                                                     
-                                                        @foreach ($vehicles as $vehicle)
-                                                        <option value="{{ $vehicle->vehicle_id }}">{{ $vehicle->vh_brand }}-{{ $vehicle->vh_plate }}-{{$vehicle->vh_capacity}}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    <span id="vehicle_id_error"></span>
-                                                </div>
-                                            </div>
+
+                                        <div class="mb-2">
+                                            <label for="driver_id" class="form-label mb-0">Driver</label>
+                                            <select class="form-select " name="driver_id[]" id="driver_id">
+                                                @foreach ($drivers as $driver)
+                                                <option value="{{$driver->driver_id}}">{{ $driver->dr_fname }}</option>
+                                                @endforeach
+                                            </select>
+                                            <span id="driver_id_error"></span>
                                         </div>
-                                        <div class="row">
-                                            <div class="col">
-                                                <div class="mb-2">
-                                                    <label for="requestor_id" class="form-label mb-0">Requestor</label>
-                                                    <select class="form-select" name="requestor_id" id="requestor_id">
-                                                        <option value="" disabled selected>Select Requestor</option>
-                                                        @foreach ($requestors as $requestor)
-                                                        <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    <span id="requestor_id_error"></span>
-                                                </div>
-                                            </div>
+
+                                        <div class="mb-2">
+                                            <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
+                                            <select class="form-select " name="vehicle_id[]" id="vehicle_id">
+                                                @foreach ($vehicles as $vehicle)
+                                                <option value="{{ $vehicle->vehicle_id }}">{{ $vehicle->vh_brand }}-{{ $vehicle->vh_plate }}-{{$vehicle->vh_capacity}}</option>
+                                                @endforeach
+                                            </select>
+                                            <span id="vehicle_id_error"></span>
                                         </div>
-                                        <div class="row">
-                                            <div class="col-4">
-                                                <div class="mb-2">
-                                                    <label for="rs_voucher" class="form-label mb-0">Voucher</label>
-                                                    <input type="text" class="form-control rounded-1" name="rs_voucher" placeholder="Enter Voucher code" id="rs_voucher" value="">
-                                                    <span id="rs_voucher_error"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-4">
-                                                <div class="mb-2">
-                                                    <label for="rs_passengers" class="form-label mb-0">Passengers</label>
-                                                    <input type="text" class="form-control rounded-1" name="rs_passengers" placeholder="Enter Number of Passengers" id="rs_passengers" value="">
-                                                    <span id="rs_passengers_error"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-4">
-                                                <div class="mb-2">
-                                                    <label for="rs_travel_type" class="form-label mb-0">Travel Type</label>
-                                                    <select class="form-select" name="rs_travel_type" id="rs_travel_type">
-                                                        <option value="" disabled selected>Select Travel Type</option>
-                                                        <option value="Outside Province Transport">Outside Province Transport</option>
-                                                        <option value="Daily Transport">Daily Transport</option>
-                                                    </select>
-                                                    <span id="rs_travel_type_error"></span>
-                                                </div>
-                                            </div>
+
+                                        <div class="mb-2">
+                                            <label for="requestor_id" class="form-label mb-0">Requestor</label>
+                                            <select class="form-select" name="requestor_id" id="requestor_id">
+                                                <option value="" disabled selected>Select Requestor</option>
+                                                @foreach ($requestors as $requestor)
+                                                <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <span id="requestor_id_error"></span>
                                         </div>
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <div class="mb-2">
-                                                    <label for="rs_approval_status" class="form-label mb-0">Approval Status</label>
-                                                    <select class="form-select" name="rs_approval_status" id="rs_approval_status">
-                                                        <option value="" disabled selected>Select Approval Status</option>
-                                                        <option value="Approved">Approved</option>
-                                                        <option value="Rejected">Rejected</option>
-                                                        <option value="Pending">Pending</option>
-                                                    </select>
-                                                    <span id="rs_approval_status_error"></span>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="mb-2">
-                                                    <label for="rs_status" class="form-label mb-0">Reservation Status</label>
-                                                    <select class="form-select" name="rs_status" id="rs_status">
-                                                        <option value="" disabled selected>Select Status</option>
-                                                        <option value="On-going">On-going</option>
-                                                        <option value="Queued">Queued</option>
-                                                        <option value="Done">Done</option>
-                                                    </select>
-                                                    <span id="rs_status_error"></span>
-                                                </div>
-                                            </div>
+
+                                        <div class="mb-2">
+                                            <label for="rs_voucher" class="form-label mb-0">Voucher</label>
+                                            <input type="text" class="form-control rounded-1" name="rs_voucher" placeholder="Enter Voucher code" id="rs_voucher" value="">
+                                            <span id="rs_voucher_error"></span>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="rs_passengers" class="form-label mb-0">Passengers</label>
+                                            <input type="text" class="form-control rounded-1" name="rs_passengers" placeholder="Enter Number of Passengers" id="rs_passengers" value="">
+                                            <span id="rs_passengers_error"></span>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="rs_travel_type" class="form-label mb-0">Travel Type</label>
+                                            <select class="form-select" name="rs_travel_type" id="rs_travel_type">
+                                                <option value="" disabled selected>Select Travel Type</option>
+                                                <option value="Outside Province Transport">Outside Province Transport</option>
+                                                <option value="Daily Transport">Daily Transport</option>
+                                            </select>
+                                            <span id="rs_travel_type_error"></span>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="rs_approval_status" class="form-label mb-0">Approval Status</label>
+                                            <select class="form-select" name="rs_approval_status" id="rs_approval_status">
+                                                <option value="" disabled selected>Select Approval Status</option>
+                                                <option value="Approved">Approved</option>
+                                                <option value="Rejected">Rejected</option>
+                                                <option value="Pending">Pending</option>
+                                            </select>
+                                            <span id="rs_approval_status_error"></span>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="rs_status" class="form-label mb-0">Reservation Status</label>
+                                            <select class="form-select" name="rs_status" id="rs_status">
+                                                <option value="" disabled selected>Select Status</option>
+                                                <option value="On-going">On-going</option>
+                                                <option value="Queued">Queued</option>
+                                                <option value="Done">Done</option>
+                                            </select>
+                                            <span id="rs_status_error"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -148,6 +124,8 @@
             </div>
         </div>
     </div>
+
+
     <span id="form_result"></span>
     <div class="container">
         <div class="row">
@@ -193,12 +171,12 @@
                         </div>
                         <div class="form-group">
                             <label>Driver : </label>
-                            <select class="form-select drivers-edit" name="driver_edit[]" id="driver_edit" multiple>
+                            <select class="form-select drivers-edit" name="driver_edit[]" id="driver_edit">
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Vehicles : </label>
-                            <select class="form-select vehicles-edit" name="vehicle_edit[]" id="vehicle_edit" multiple>
+                            <select class="form-select vehicles-edit" name="vehicle_edit[]" id="vehicle_edit">
 
                             </select>
                         </div>
@@ -270,11 +248,13 @@
         </div>
     </div>
 </body>
+
+
 <script type="text/javascript">
     $(document).ready(function() {
         $('.vehicles-select').select2({
-            placeholder: 'Select drivers', 
-            allowClear: true 
+            placeholder: 'Select drivers'
+            , allowClear: true
         });
         $('.drivers-select, .events-edit, .drivers-edit, .vehicles-edit').select2();
 
@@ -649,8 +629,6 @@
                         $('#reservations-table').DataTable().ajax.reload();
                         $('#edit_reservation_modal').modal('hide');
                         $('#reservation_edit')[0].reset();
-
-
                     }
                     $('#form_result').html(html);
                 }
@@ -660,6 +638,8 @@
                 }
             });
         });
+
+
         //UPDATE----------------------------------------------//
         //CANCEL----------------------------------------------//
         var reservation_id;
@@ -713,5 +693,6 @@
     });
 
 </script>
+
 @include('includes.footer');
 </html>

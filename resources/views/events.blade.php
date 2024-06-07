@@ -92,6 +92,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="modal fade" id="formModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -376,7 +377,8 @@
                     if (data.success) {
                         html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
                         $('#events-table').DataTable().ajax.reload();
-                        $('#formModal').modal('hide');
+                        $('#insertModal').modal('hide');
+
                         $('#insert_form')[0].reset();
 
                     }

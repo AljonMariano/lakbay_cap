@@ -25,8 +25,6 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-
-
                             <form action="" method="POST" class="" id="drivers-form">
                                 @csrf
                                 <div class="card rounded-0">
@@ -36,10 +34,12 @@
                                             <div class="col">
                                                 <div class="mb-2">
                                                     <label for="dr_emp_id" class="form-label mb-0">Employee ID</label>
-                                                    <input type="number" class="form-control rounded-1" name="dr_emp_id" placeholder="Enter employee ID" value="">
+                                                    <input type="number" class="form-control" name="dr_emp_id" placeholder="Enter employee ID" value="">
                                                     <span id="dr_emp_id_error"></span>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div class="row">
                                             <div class="col">
                                                 <div class="mb-2">
                                                     <label for="dr_fname" class="form-label mb-0">First Name</label>
@@ -54,6 +54,8 @@
                                                     <span id="dr_mname_error"></span>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div class="row">
                                             <div class="col">
                                                 <div class="mb-2">
                                                     <label for="dr_lname" class="form-label mb-0">Last Name</label>
@@ -61,17 +63,20 @@
                                                     <span id="dr_lname_error"></span>
                                                 </div>
                                             </div>
-                                            <div class="form-group">
-                                                <label>Office</label>
-                                                <select name="dr_office" id="dr_office" class="form-select">
-                                                    <option value="" disabled selected>Select Office</option>
-                                                    @foreach ($offices as $office)
-                                                    <option value="{{ $office->off_id }}">{{ $office->off_acr }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <span id="dr_office_error"></span>
+                                            <div class="col">
+                                                <div class="form-group">
+                                                    <label>Office</label>
+                                                    <select name="dr_office" id="dr_office" class="form-select">
+                                                        <option value="" disabled selected>Select Office</option>
+                                                        @foreach ($offices as $office)
+                                                        <option value="{{ $office->off_id }}">{{ $office->off_acr }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <span id="dr_office_error"></span>
+                                                </div>
                                             </div>
-
+                                        </div>
+                                        <div class="row">
                                             <div class="col">
                                                 <div class="mb-2">
                                                     <label for="dr_status">Status</label>
@@ -95,6 +100,8 @@
                                 </div>
                             </form>
                         </div>
+
+
                     </div>
                 </div>
             </div>

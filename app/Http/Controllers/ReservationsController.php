@@ -11,6 +11,7 @@ use App\Models\Events;
 use App\Models\Vehicles;
 use App\Models\Reservations;
 use App\Models\ReservationVehicle;
+use App\Models\Reservation;
 
 use App\Models\Requestors;
 use Yajra\DataTables\DataTables;
@@ -24,6 +25,9 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+
+
+
 
 class ReservationsController extends Controller
 {
@@ -535,4 +539,14 @@ class ReservationsController extends Controller
             ->get();
         return response()->json($driversInsert);
     }
+
+    public function index()
+    {
+        
+        $totalReservationsCount = Reservations::count();        
+        $ongoingTravelCount = Reservations::where('rs_status', 'Ongoing Travel')->count();
+        $queuedForTravelCount = Reservations::where('rs_status', 'Queued for Travel')->count();
+         return view('your_view_name', compact('totalReservationsCount', 'ongoingTravelCount', 'queuedForTravelCount'));
+    }
 }
+

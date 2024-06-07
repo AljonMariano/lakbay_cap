@@ -18,16 +18,24 @@
     </div>
     <div class="row mb-3">
         <div class="col">
-            <a href="#insertModal" role="button" class="btn btn-lg btn-success" id="insertBtn" data-bs-toggle="modal">Register</a>
-            <div id="insertModal" class="modal fade" tabindex="-1">
+            <a href="#insertVehicleModal" role="button" class="btn btn-lg btn-success" id="insertBtn" data-bs-toggle="modal">Register</a>
+
+
+            <div id="insertVehicleModal" class="modal fade" tabindex="-1">
+
+
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Vehicles Form</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="insertVehicleModal" data-bs-dismiss="modal"></button>
+
+
                         </div>
                         <div class="modal-body">
-                            <form action="{{ route('vehicles.store') }}" method="POST" class="vehicles-form" id="vehicles-form" name="vehicles-form">
+                            <form action="{{ route('vehicles.store') }}" method="POST" class="insertVehicleModal" id="vehicles-form" name="vehicles-form">
+
+
                                 @csrf
                                 <div class="card rounded-0">
                                     <div class="card-body">
@@ -332,6 +340,7 @@
                             html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
                             $('#vehicle-table').DataTable().ajax.reload();
                             $('#vehicles-form')[0].reset();
+                            $('#insertVehicleModal').modal('hide'); 
                         }
                         $('#form_result').html(html);
                     }
@@ -341,6 +350,8 @@
                     }
                 });
             });
+
+
 
 
             // Handle edit vehicle button click
@@ -379,41 +390,42 @@
 
 
             // Handle update vehicle form submission
-            $('#vehicle_edit').on('submit', function(event) {
-                event.preventDefault();
-                var action_url = "{{ route('update-vehicle') }}";
-                var formData = $(this).serializeArray();
-                $.ajax({
-                    type: 'POST'
-                    , headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                    , url: action_url
-                    , data: formData
-                    , dataType: 'json'
-                    , success: function(data) {
-                        var html = '';
-                        if (data.errors) {
-                            html = '<div class="alert alert-danger">';
-                            for (var count = 0; count < data.errors.length; count++) {
-                                html += '<p>' + data.errors[count] + '</p>';
-                            }
-                            html += '</div>';
-                        }
-                        if (data.success) {
-                            html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-                            $('#vehicle-table').DataTable().ajax.reload();
-                            $('#vehicle_modal').modal('hide');
-                            $('#vehicle_edit')[0].reset();
-                        }
-                        $('#form_result').html(html);
-                    }
-                    , error: function(data) {
-                        var errors = data.responseJSON;
-                        console.log(errors);
-                    }
-                });
-            });
+           $('#vehicle_edit').on('submit', function(event) {
+    event.preventDefault();
+    var action_url = "{{ route('update-vehicle') }}";
+    var formData = $(this).serializeArray();
+    $.ajax({
+        type: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: action_url,
+        data: formData,
+        dataType: 'json',
+        success: function(data) {
+            var html = '';
+            if (data.errors) {
+                html = '<div class="alert alert-danger">';
+                for (var count = 0; count < data.errors.length; count++) {
+                    html += '<p>' + data.errors[count] + '</p>';
+                }
+                html += '</div>';
+            }
+            if (data.success) {
+                html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
+                $('#vehicle-table').DataTable().ajax.reload();
+                $('#vehicle_modal').modal('hide'); 
+                $('#vehicle_edit')[0].reset();
+            }
+            $('#form_result').html(html);
+        },
+        error: function(data) {
+            var errors = data.responseJSON;
+            console.log(errors);
+        }
+    });
+});
+
 
 
             var vehicle_id;
@@ -442,8 +454,14 @@
             document.addEventListener("DOMContentLoaded", function() {
                 var btn = document.getElementById("insertBtn");
                 btn.addEventListener("click", function() {
-                    var insertModal = new bootstrap.Modal(document.getElementById("insertModal"));
-                    insertModal.show();
+                    var insertVehicleModal = new bootstrap.Modal(document.getElementById("insertVehicleModal"));
+
+
+
+
+                    insertVehicleModal.show();
+
+
                 });
             });
         });
