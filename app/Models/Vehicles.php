@@ -24,6 +24,7 @@ class Vehicles extends Model
         'vh_condition',
         'vh_capacity',
         'vh_status',
+        'vh_confirmation',
     ];
 
     // Define relationships

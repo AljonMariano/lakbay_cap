@@ -35,80 +35,81 @@ class VehicleController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'vh_plate' => 'required',
-            'vh_type' => 'required',
-            'vh_brand' => 'required',
-            'vh_year' => 'required',
-            'vh_fuel_type' => 'required',
-            'vh_condition' => 'required',
-            'vh_status' => 'required',
-            'vh_capacity' => 'required',
-        ], [
-            'required' => 'This field is required',
-        ]);
+{
+    $request->validate([
+        'vh_plate' => 'required',
+        'vh_type' => 'required',
+        'vh_brand' => 'required',
+        'vh_year' => 'required',
+        'vh_fuel_type' => 'required',
+        'vh_condition' => 'required',
+        'vh_status' => 'required',
+        'vh_capacity' => 'required',
+        'vh_confirmation' => 'required',
+    ], [
+        'required' => 'This field is required',
+    ]);
 
-        $vehicle = new Vehicles();
-        $vehicle->fill($request->all());
+    $vehicle = new Vehicles();
+    $vehicle->fill($request->all());
+    $vehicle->save();
+
+    return response()->json(['success' => 'Vehicle successfully registered']);
+}
+
+public function update(Request $request)
+{
+    $request->validate([
+        'vh_plate_modal' => 'required',
+        'vh_type_modal' => 'required',
+        'vh_brand_modal' => 'required',
+        'vh_year_modal' => 'required',
+        'vh_fuel_type_modal' => 'required',
+        'vh_condition_modal' => 'required',
+        'vh_status_modal' => 'required',
+        'vh_confirm_modal' => 'required',
+    ]);
+
+    $id = $request->hidden_id;
+
+    try {
+        $vehicle = Vehicles::findOrFail($id);
+        $vehicle->vh_plate = $request->vh_plate_modal;
+        $vehicle->vh_type = $request->vh_type_modal;
+        $vehicle->vh_brand = $request->vh_brand_modal;
+        $vehicle->vh_year = $request->vh_year_modal;
+        $vehicle->vh_fuel_type = $request->vh_fuel_type_modal;
+        $vehicle->vh_condition = $request->vh_condition_modal;
+        $vehicle->vh_status = $request->vh_status_modal;
+        $vehicle->vh_confirmation = $request->vh_confirm_modal;
+        $vehicle->vh_capacity = $request->vh_capacity_modal;
         $vehicle->save();
 
-        return response()->json(['success' => 'Vehicle successfully registered']);
+        return response()->json(['success' => 'Vehicle successfully updated']);
+    } catch (ModelNotFoundException $e) {
+        return response()->json(['error' => 'Vehicle not found.'], 404);
     }
+}
 
-    public function update(Request $request)
-    {
-        $request->validate([
-            'vh_plate_modal' => 'required',
-            'vh_type_modal' => 'required',
-            'vh_brand_modal' => 'required',
-            'vh_year_modal' => 'required',
-            'vh_fuel_type_modal' => 'required',
-            'vh_condition_modal' => 'required',
-            'vh_status_modal' => 'required',
-        ]);
-
-        $id = $request->hidden_id;
-
+public function edit($vehicle_id)
+{
+    if (request()->ajax()) {
         try {
-            $vehicle = Vehicles::findOrFail($id);
-            $vehicle->vh_plate = $request->vh_plate_modal;
-            $vehicle->vh_type = $request->vh_type_modal;
-            $vehicle->vh_brand = $request->vh_brand_modal;
-            $vehicle->vh_year = $request->vh_year_modal;
-            $vehicle->vh_fuel_type = $request->vh_fuel_type_modal;
-            $vehicle->vh_condition = $request->vh_condition_modal;
-            $vehicle->vh_status = $request->vh_status_modal;
-            $vehicle->vh_capacity = $request->vh_capacity_modal;
-            $vehicle->save();
-
-            return response()->json(['success' => 'Vehicle successfully updated']);
+            $data = Vehicles::findOrFail($vehicle_id);
+            return response()->json(['result' => $data]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Vehicle not found.'], 404);
         }
     }
 
-    public function edit($vehicle_id)
-    {
-        if (request()->ajax()) {
-            try {
-                $data = Vehicles::findOrFail($vehicle_id);
-                return response()->json(['result' => $data]);
-            } catch (ModelNotFoundException $e) {
-                return response()->json(['error' => 'Vehicle not found.'], 404);
-            }
-        }
-
-        try {
-            $vehicle = Vehicles::findOrFail($vehicle_id);
-            return view('edit_vehicle')->with(compact('vehicle'));
-        } catch (ModelNotFoundException $e) {
-            return redirect()->back()->withErrors(['error' => 'Vehicle not found.']);
-        }
+    try {
+        $vehicle = Vehicles::findOrFail($vehicle_id);
+        return view('edit_vehicle')->with(compact('vehicle'));
+    } catch (ModelNotFoundException $e) {
+        return redirect()->back()->withErrors(['error' => 'Vehicle not found.']);
     }
+}
 
-
-    
     public function delete($vehicle_id)
     {
         try {
@@ -120,6 +121,4 @@ class VehicleController extends Controller
             return response()->json(['error' => 'Vehicle not found.'], 404);
         }
     }
-
-
 }
