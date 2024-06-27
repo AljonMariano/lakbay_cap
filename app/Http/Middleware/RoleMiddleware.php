@@ -23,6 +23,6 @@ class RoleMiddleware
             return $next($request);
         }
 
-        return redirect('admin/')->with('error', 'You do not have access to this section');
+        return redirect('/')->with('error', 'You do not have access to this section');
     }
 }
