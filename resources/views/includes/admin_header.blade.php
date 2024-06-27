@@ -117,16 +117,22 @@
         <?php if(empty($_SESSION['loggedIn'])): ?>
         <header class="mb-auto">
             <div>
-  <!-- <h3 class="float-md-start mb-0">LAKBAY</h3> -->
-  <a class="navbar-brand float-md-start mb-0 flex-row d-flex" href="{{ url('/index') }}">
+<!-- <h3 class="float-md-start mb-0">LAKBAY</h3> -->
+<a class="navbar-brand float-md-start mb-0 flex-row d-flex" href="{{ url('/admin/dashboard') }}">
     <img src="images/logo.png" alt="" width="150" height="50" class="d-inline-block align-text-top">
 </a>
 <nav class="nav nav-masthead justify-content-center float-md-end">
-  
-    <a class="nav-link" href="{{ route('register') }}">Register</a>
-    <a class="nav-link" href="{{ route('login') }}"
+    <a class="nav-link" aria-current="page" href="{{ url('/admin/dashboard') }}">Dashboard</a>
+    <a class="nav-link" href="{{ url('/admin/reservations') }}">Reservations</a>
+    <a class="nav-link" href="{{ url('/admin/events') }}">Events</a>
+    <a class="nav-link" href="{{ url('/admin/vehicles') }}">Vehicles</a>
+    <a class="nav-link" href="{{ url('/admin/drivers') }}">Drivers</a>
+    <a class="nav-link" href="{{ url('/admin/offices') }}">Offices</a>
+    <a class="nav-link" href="{{ url('/admin/requestors') }}">Requestors</a>
+    <a class="nav-link" href="{{ route('profile.show') }}">Profile</a>
+    <a class="nav-link" href="{{ route('logout') }}"
        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-        Log in
+        Logout
     </a>
     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
         @csrf

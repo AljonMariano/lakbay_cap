@@ -117,22 +117,28 @@
         <?php if(empty($_SESSION['loggedIn'])): ?>
         <header class="mb-auto">
             <div>
-  <!-- <h3 class="float-md-start mb-0">LAKBAY</h3> -->
-  <a class="navbar-brand float-md-start mb-0 flex-row d-flex" href="{{ url('/index') }}">
-    <img src="images/logo.png" alt="" width="150" height="50" class="d-inline-block align-text-top">
-</a>
-<nav class="nav nav-masthead justify-content-center float-md-end">
-  
-    <a class="nav-link" href="{{ route('register') }}">Register</a>
-    <a class="nav-link" href="{{ route('login') }}"
-       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-        Log in
-    </a>
-    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-        @csrf
-    </form>
-</nav>
-</div>
+        <!-- <h3 class="float-md-start mb-0">LAKBAY</h3> -->
+        <a class="navbar-brand float-md-start mb-0 flex-row d-flex" href="{{ url('/index') }}">
+            <img src="/images/logo.png" alt="" width="150" height="50" class="d-inline-block align-text-top">
+        </a>
+        <nav class="nav nav-masthead justify-content-center float-md-end">
+            <a class="nav-link" aria-current="page" href="{{ url('/user/dashboard') }}">Dashboard</a>
+            <a class="nav-link" href="{{ url('/user/reservations') }}">Reservations</a>
+            <a class="nav-link" href="{{ url('/user/events') }}">Events</a>
+            <a class="nav-link" href="{{ url('/user/vehicles') }}">Vehicles</a>
+            <a class="nav-link" href="{{ url('/user/drivers') }}">Drivers</a>
+            <a class="nav-link" href="{{ url('/user/offices') }}">Offices</a>
+            <a class="nav-link" href="{{ url('/user/requestors') }}">Requestors</a>
+            <a class="nav-link" href="{{ route('profile.show') }}">Profile</a>
+            <a class="nav-link" href="{{ route('logout') }}"
+               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                Logout
+            </a>
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                @csrf
+            </form>
+        </nav>
+    </div>
 </header>
         <?php endif ?>
         <main class="container mt-4">

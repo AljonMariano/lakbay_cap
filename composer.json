@@ -19,6 +19,7 @@
         "livewire/livewire": "^3.0",
         "phpoffice/phpspreadsheet": "^2.0",
         "phpoffice/phpword": "^1.2",
+        "spatie/laravel-permission": "^6.9",
         "yajra/laravel-datatables-buttons": "^10.0",
         "yajra/laravel-datatables-oracle": "^10.11"
     },

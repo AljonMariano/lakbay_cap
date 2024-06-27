@@ -546,7 +546,7 @@ class ReservationsController extends Controller
         $totalReservationsCount = Reservations::count();        
         $ongoingTravelCount = Reservations::where('rs_status', 'Ongoing Travel')->count();
         $queuedForTravelCount = Reservations::where('rs_status', 'Queued for Travel')->count();
-         return view('your_view_name', compact('totalReservationsCount', 'ongoingTravelCount', 'queuedForTravelCount'));
+         return view('admin.reservations', compact('totalReservationsCount', 'ongoingTravelCount', 'queuedForTravelCount'));
     }
 }
 

@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\AdminPageController;
+use App\Http\Controllers\UserPageController;
 
 
 /*
@@ -35,24 +37,50 @@ Route::get('/', [Controller::class, 'redirect']);
 
 
 // AUTH route
-Route::middleware(['auth'])->group(function () {
-    Route::get('/compute', [PageController::class, 'compute'])->name('compute');
-    Route::get('/dashboard', [PageController::class, 'dashboard'])->name('dashboard');
-    Route::get('/drivers_schedule', [PageController::class, 'drivers_schedule'])->name('drivers_schedule');
-    Route::get('/drivers', [PageController::class, 'drivers'])->name('drivers');
-    Route::get('/event_calendar', [PageController::class, 'event_calendar'])->name('event_calendar');
-    Route::get('/events', [PageController::class, 'events'])->name('events');
-    Route::get('/index', [PageController::class, 'index'])->name('index');
-    Route::get('/navigation-menu', [PageController::class, 'navigation_menu'])->name('navigation-menu');
-    Route::get('/offices', [PageController::class, 'offices'])->name('offices');
-    Route::get('/policy', [PageController::class, 'policy'])->name('policy');
-    Route::get('/reservations', [PageController::class, 'reservations'])->name('reservations');
-    Route::get('/statistics', [PageController::class, 'statistics'])->name('statistics');
-    Route::get('/terms', [PageController::class, 'terms'])->name('terms');
-    Route::get('/test_select', [PageController::class, 'test_select'])->name('test_select');
-    Route::get('/test_word', [PageController::class, 'test_word'])->name('test_word');
-    Route::get('/welcome', [PageController::class, 'welcome'])->name('welcome');
-    Route::get('/worker', [PageController::class, 'worker'])->name('worker');
+Route::middleware(['role:admin'])->group(function () {
+    Route::get('/admin/dashboard', [DashboardController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/compute', [AdminPageController::class, 'compute'])->name('admin.compute');    
+    Route::get('/admin/drivers_schedule', [AdminPageController::class, 'drivers_schedule'])->name('admin.drivers_schedule');
+    Route::get('/admin/drivers', [AdminPageController::class, 'drivers'])->name('admin.drivers');
+    Route::get('/admin/event_calendar', [AdminPageController::class, 'event_calendar'])->name('admin.event_calendar');
+    Route::get('/admin/events', [AdminAdminPageController::class, 'events'])->name('admin.events');    
+    Route::get('/admin/navigation-menu', [AdminPageController::class, 'navigation_menu'])->name('admin.navigation-menu');
+    Route::get('/admin/offices', [AdminPageController::class, 'offices'])->name('admin.offices');
+    Route::get('/admin/policy', [AdminPageController::class, 'policy'])->name('admin.policy');
+    Route::get('/admin/reservations', [AdminPageController::class, 'reservations'])->name('admin.reservations');
+    Route::get('/admin/statistics', [AdminPageController::class, 'statistics'])->name('admin.statistics');
+    Route::get('/admin/terms', [AdminPageController::class, 'terms'])->name('admin.terms');
+    Route::get('/admin/test_select', [PageController::class, 'test_select'])->name('admin.test_select');
+    Route::get('/admin/test_word', [AdminPageController::class, 'test_word'])->name('admin.test_word');
+    Route::get('/admin/welcome', [AdminPageController::class, 'welcome'])->name('admin.welcome');
+    Route::get('/admin/worker', [AdminPageController::class, 'worker'])->name('admin.worker');
+
+});
+    Route::middleware(['role:user'])->group(function () {
+        Route::get('/user/dashboard', [DashboardController::class, 'dashboard'])->name('user.dashboard');
+        Route::get('/user/compute', [UserPageController::class, 'compute'])->name('user.compute');        
+        Route::get('/user/drivers_schedule', [UserPageController::class, 'drivers_schedule'])->name('user.drivers_schedule');
+        Route::get('/user/drivers', [UserPageController::class, 'drivers'])->name('user.drivers');
+        Route::get('/user/event_calendar', [UserPageController::class, 'event_calendar'])->name('user.event_calendar');
+        Route::get('/user/events', [UserPageController::class, 'events'])->name('user.events');        
+        Route::get('/user/navigation-menu', [UserPageController::class, 'navigation_menu'])->name('user.navigation-menu');
+        Route::get('/user/offices', [UserPageController::class, 'offices'])->name('user.offices');
+        Route::get('/user/policy', [UserPageController::class, 'policy'])->name('user.policy');
+        Route::get('/user/reservations', [UserPageController::class, 'reservations'])->name('user.reservations');
+        Route::get('/user/statistics', [UserPageController::class, 'statistics'])->name('user.statistics');
+        Route::get('/user/terms', [UserPageController::class, 'terms'])->name('user.terms');
+        Route::get('/user/test_select', [UserPageController::class, 'test_select'])->name('user.test_select');
+        Route::get('/user/test_word', [UserPageController::class, 'test_word'])->name('user.test_word');
+        Route::get('/user/welcome', [UserPageController::class, 'welcome'])->name('user.welcome');
+        Route::get('/user/worker', [UserPageController::class, 'worker'])->name('user.worker');
+
+    });
+
+
+    Route::middleware(['auth'])->group(function () {
+
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
     // Offices Section
     Route::get('/offices', [OfficesController::class, 'show'])->name('offices.show');
@@ -125,10 +153,16 @@ Route::middleware(['auth'])->group(function () {
 
 });
 
-// Logout route
+
+
+
 Route::post('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
     return redirect('/login');
 })->name('logout');
+
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

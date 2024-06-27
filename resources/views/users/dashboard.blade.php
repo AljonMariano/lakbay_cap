@@ -1,7 +1,7 @@
 <?php
     $title_page = 'LAKBAY Reservation System';
 ?>
-@include('includes.header')
+@include('includes.user_header')
     <div class="row mb-4">
         <div class="col">
             <h6 class="text-uppercase">Quick Counts</h6>
