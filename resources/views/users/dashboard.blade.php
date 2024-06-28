@@ -9,7 +9,7 @@
                 <div class="card bg-danger text-white rounded-0" style="max-width: 18rem;">
                     <div class="card-body py-0 my-0 d-flex align-items-center align-items-center">
                         <h1 class="card-title text-start pt-2 mx-4"><?php //echo $all_reservations['count']; ?></h1>
-                        <div class="text-start"></div>
+                        <div class="text-start">Total Reservations</div>
                     </div>
                 </div>
                 <div class="card bg-success text-white" style="max-width: 18rem;">

@@ -47,10 +47,11 @@ Route::middleware(['role:admin'])->group(function () {
     Route::get('/admin/navigation-menu', [AdminPageController::class, 'navigation_menu'])->name('admin.navigation-menu');
     Route::get('/admin/offices', [AdminPageController::class, 'offices'])->name('admin.offices');
     Route::get('/admin/policy', [AdminPageController::class, 'policy'])->name('admin.policy');
+    Route::get('/admin/vehicles', [AdminPageController::class, 'vehicles'])->name('admin.vehicles'); 
     Route::get('/admin/reservations', [AdminPageController::class, 'reservations'])->name('admin.reservations');
     Route::get('/admin/statistics', [AdminPageController::class, 'statistics'])->name('admin.statistics');
     Route::get('/admin/terms', [AdminPageController::class, 'terms'])->name('admin.terms');
-    Route::get('/admin/test_select', [PageController::class, 'test_select'])->name('admin.test_select');
+    Route::get('/admin/test_select', [AdminPageController::class, 'test_select'])->name('admin.test_select');
     Route::get('/admin/test_word', [AdminPageController::class, 'test_word'])->name('admin.test_word');
     Route::get('/admin/welcome', [AdminPageController::class, 'welcome'])->name('admin.welcome');
     Route::get('/admin/worker', [AdminPageController::class, 'worker'])->name('admin.worker');
@@ -62,7 +63,8 @@ Route::middleware(['role:admin'])->group(function () {
         Route::get('/user/drivers_schedule', [UserPageController::class, 'drivers_schedule'])->name('user.drivers_schedule');
         Route::get('/user/drivers', [UserPageController::class, 'drivers'])->name('user.drivers');
         Route::get('/user/event_calendar', [UserPageController::class, 'event_calendar'])->name('user.event_calendar');
-        Route::get('/user/events', [UserPageController::class, 'events'])->name('user.events');        
+        Route::get('/user/events', [UserPageController::class, 'events'])->name('user.events');   
+        Route::get('/user/vehicles', [UserPageController::class, 'vehicles'])->name('user.vehicles');     
         Route::get('/user/navigation-menu', [UserPageController::class, 'navigation_menu'])->name('user.navigation-menu');
         Route::get('/user/offices', [UserPageController::class, 'offices'])->name('user.offices');
         Route::get('/user/policy', [UserPageController::class, 'policy'])->name('user.policy');

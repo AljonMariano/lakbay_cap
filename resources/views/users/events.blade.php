@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Events</title>
     <?php $title_page = 'LAKBAY Reservation System';?>
-    @include('includes.header')
+    @include('includes.user_header')
 
 </head>
 <body>
@@ -175,7 +175,7 @@
                             <td>Time Start</td>
                             <td>Date End</td>
                             <td>Time End</td>
-                            <td>Actions</td>
+                            
                         </tr>
                     </thead>
                     <tbody>
@@ -188,7 +188,7 @@
                             <td></td>
                             <td></td>
                             <td></td>
-                            <td></td>
+                            
 
 
                         </tr>
@@ -299,12 +299,7 @@
                     data: 'ev_time_end'
                     , name: 'ev_time_end'
                 }
-                , {
-                    data: 'action'
-                    , name: 'action'
-                    , orderable: false
-                    , searchable: false
-                }
+                
             ]
         });
 
@@ -397,68 +392,9 @@
                     });
                 }
             });
-        });
-        //ADD----------------------------//
+        });      
 
-        //ADD----------------------------//
-        //EDIT---------------------------//
-        $(document).on('click', '.edit', function(event) {
-            event.preventDefault();
-            var event_id = $(this).attr('id');
-            //  alert(event_id);
-            $('#form_result').html('');
-            $.ajax({
-                url: "/edit-event/" + event_id + "/"
-                , headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-                , dataType: "json"
-                , success: function(data) {
-                    $('#ev_name_modal').val(data.result.ev_name);
-                    $('#ev_venue_modal').val(data.result.ev_venue);
-                    $('#ev_date_start_modal').val(data.result.ev_date_start);
-                    $('#ev_time_start_modal').val(data.result.ev_time_start);
-                    $('#ev_date_end_modal').val(data.result.ev_date_end);
-                    $('#ev_time_end_modal').val(data.result.ev_time_end);
-                    $('#hidden_id').val(event_id);
-                    $('.modal-title').text('Edit Record');
-                    $('#action_button').val('Update');
-                    $('#action').val('Edit');
-                    $('#formModal').modal('show');
-                }
-                , error: function(data) {
-                    var errors = data.responseJSON;
-                    console.log(errors);
-                }
-            })
-        });
-        // EDIT---------------------------//
-        // DELETE---------------------------//
-        var event_id;
-        $(document).on('click', '.delete', function() {
-            event_id = $(this).attr('id');
-            $('#confirmModal').modal('show');
-        });
-
-        $('#ok_button').click(function() {
-            $.ajax({
-                url: "/delete-event/" + event_id
-                , success: function(data) {
-                    setTimeout(function() {
-                        $('#confirmModal').modal('hide');
-                        $('#events-table').DataTable().ajax.reload();
-                    });
-                }
-            })
-        });
-        //DELETE---------------------------//
-        document.addEventListener("DOMContentLoaded", function() {
-            var btn = document.getElementById("insertBtn");
-            btn.addEventListener("click", function() {
-                var insertModal = new bootstrap.Modal(document.getElementById("insertModal"));
-                insertModal.show();
-            });
-        });
+        
     });
 
 </script>

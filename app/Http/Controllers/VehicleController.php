@@ -45,7 +45,7 @@ class VehicleController extends Controller
         'vh_condition' => 'required',
         'vh_status' => 'required',
         'vh_capacity' => 'required',
-        'vh_confirmation' => 'required',
+        'vh_confirmation',
     ], [
         'required' => 'This field is required',
     ]);

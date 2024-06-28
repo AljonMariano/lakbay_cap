@@ -49,7 +49,11 @@ class AdminPageController extends Controller
     }
     public function reservations()
     {
-        return view('admin.reservations');
+        
+        $drivers = Drivers::all();
+
+       
+        return view('admin.reservations', compact('drivers'));
     }
     public function statistics()
     {
