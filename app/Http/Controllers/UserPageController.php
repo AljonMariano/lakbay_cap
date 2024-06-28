@@ -36,7 +36,7 @@ class UserPageController  extends Controller
     }
     public function navigation_menu()
     {
-        return view('ususerser.navigation-menu');
+        return view('users.navigation-menu');
     }
     public function offices()
     {
@@ -81,7 +81,7 @@ class UserPageController  extends Controller
 
     public function requestors()
     {
-        return view('requestor.requestors');
+        return view('users.requestor.requestors');
     }
 
     public function profile()

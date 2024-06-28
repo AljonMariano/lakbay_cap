@@ -55,7 +55,7 @@ Route::middleware(['role:admin'])->group(function () {
     Route::get('/admin/test_word', [AdminPageController::class, 'test_word'])->name('admin.test_word');
     Route::get('/admin/welcome', [AdminPageController::class, 'welcome'])->name('admin.welcome');
     Route::get('/admin/worker', [AdminPageController::class, 'worker'])->name('admin.worker');
-    Route::get('/admin/requestors', [AdminPageController::class, 'requestors'])->name('requestor.requestors');
+    Route::get('/admin/requestor/requestors', [AdminPageController::class, 'requestors'])->name('admin.requestor.requestors');
     Route::get('/admin/navigation-menu', [AdminPageController::class, 'navigation_menu'])->name('admin.navigation-menu');
 
 });
@@ -77,7 +77,7 @@ Route::middleware(['role:admin'])->group(function () {
         Route::get('/user/test_word', [UserPageController::class, 'test_word'])->name('user.test_word');
         Route::get('/user/welcome', [UserPageController::class, 'welcome'])->name('user.welcome');
         Route::get('/user/worker', [UserPageController::class, 'worker'])->name('user.worker');
-        Route::get('/user/requestors', [UserPageController::class, 'requestors'])->name('requestor.requestors');
+        Route::get('/user/requestor/requestors', [UserPageController::class, 'requestors'])->name('user.requestor.requestors');
 
     });
 
@@ -108,11 +108,11 @@ Route::middleware(['role:admin'])->group(function () {
     Route::get('/vehicle-excel', [VehicleController::class, 'vehicles_excel']);
     Route::get('/vehicle-pdf', [VehicleController::class, 'vehicles_pdf']);
 
-    // Requestors
-    Route::get('requestors', [RequestorsController::class, 'index']);
-    Route::post('store-requestor', [RequestorsController::class, 'store']);
-    Route::post('edit-requestor', [RequestorsController::class, 'edit']);
-    Route::post('delete-requestor', [RequestorsController::class, 'destroy']);
+    // // Requestors
+    // Route::get('admin/requestor/requestors', [RequestorsController::class, 'index']);
+    // Route::post('store-requestor', [RequestorsController::class, 'store']);
+    // Route::post('edit-requestor', [RequestorsController::class, 'edit']);
+    // Route::post('delete-requestor', [RequestorsController::class, 'destroy']);
 
     // Driver Section
     Route::post('/insert-driver', [DriversController::class, 'store']);

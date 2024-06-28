@@ -79,4 +79,8 @@ class AdminPageController extends Controller
     {
         return view('admin.worker');
     }
+    public function requestors()
+    {
+        return view('admin.requestor.requestors');
+    }
 }
