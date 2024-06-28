@@ -78,4 +78,15 @@ class UserPageController  extends Controller
     {
         return view('users.worker');
     }
+
+    public function requestors()
+    {
+        return view('requestor.requestors');
+    }
+
+    public function profile()
+    {
+        return view('requestor.requestors');
+    }
+
 }

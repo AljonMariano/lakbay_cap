@@ -8,7 +8,7 @@
     <?php
     $title_page = 'LAKBAY Reservation System';   
 ?>
-    @include('includes.header')
+    @include('includes.admin_header')
 </head>
 <body>
     <div class="row">

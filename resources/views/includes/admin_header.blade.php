@@ -118,8 +118,8 @@
         <header class="mb-auto">
             <div>
 <!-- <h3 class="float-md-start mb-0">LAKBAY</h3> -->
-<a class="navbar-brand float-md-start mb-0 flex-row d-flex" href="{{ url('/admin/dashboard') }}">
-    <img src="images/logo.png" alt="" width="150" height="50" class="d-inline-block align-text-top">
+<a class="navbar-brand float-md-start mb-0 flex-row d-flex" href="{{ url('/index') }}">
+    <img src="/images/logo.png" alt="" width="150" height="50" class="d-inline-block align-text-top">
 </a>
 <nav class="nav nav-masthead justify-content-center float-md-end">
     <a class="nav-link" aria-current="page" href="{{ url('/admin/dashboard') }}">Dashboard</a>

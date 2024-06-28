@@ -43,7 +43,7 @@ Route::middleware(['role:admin'])->group(function () {
     Route::get('/admin/drivers_schedule', [AdminPageController::class, 'drivers_schedule'])->name('admin.drivers_schedule');
     Route::get('/admin/drivers', [AdminPageController::class, 'drivers'])->name('admin.drivers');
     Route::get('/admin/event_calendar', [AdminPageController::class, 'event_calendar'])->name('admin.event_calendar');
-    Route::get('/admin/events', [AdminAdminPageController::class, 'events'])->name('admin.events');    
+    Route::get('/admin/events', [AdminPageController::class, 'events'])->name('admin.events');    
     Route::get('/admin/navigation-menu', [AdminPageController::class, 'navigation_menu'])->name('admin.navigation-menu');
     Route::get('/admin/offices', [AdminPageController::class, 'offices'])->name('admin.offices');
     Route::get('/admin/policy', [AdminPageController::class, 'policy'])->name('admin.policy');
@@ -55,6 +55,8 @@ Route::middleware(['role:admin'])->group(function () {
     Route::get('/admin/test_word', [AdminPageController::class, 'test_word'])->name('admin.test_word');
     Route::get('/admin/welcome', [AdminPageController::class, 'welcome'])->name('admin.welcome');
     Route::get('/admin/worker', [AdminPageController::class, 'worker'])->name('admin.worker');
+    Route::get('/admin/requestors', [AdminPageController::class, 'requestors'])->name('requestor.requestors');
+    Route::get('/admin/navigation-menu', [AdminPageController::class, 'navigation_menu'])->name('admin.navigation-menu');
 
 });
     Route::middleware(['role:user'])->group(function () {
@@ -75,6 +77,7 @@ Route::middleware(['role:admin'])->group(function () {
         Route::get('/user/test_word', [UserPageController::class, 'test_word'])->name('user.test_word');
         Route::get('/user/welcome', [UserPageController::class, 'welcome'])->name('user.welcome');
         Route::get('/user/worker', [UserPageController::class, 'worker'])->name('user.worker');
+        Route::get('/user/requestors', [UserPageController::class, 'requestors'])->name('requestor.requestors');
 
     });
 

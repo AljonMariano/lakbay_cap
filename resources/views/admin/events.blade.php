@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Events</title>
     <?php $title_page = 'LAKBAY Reservation System';?>
-    @include('includes.header')
+    @include('includes.admin_header')
 
 </head>
 <body>
