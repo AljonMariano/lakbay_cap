@@ -18,7 +18,7 @@
 {{-- <link  href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet"> --}}
 <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
 
-  @include('includes.header')
+  @include('includes.admin_header')
   
     <div class="row">
         <div class="col">
@@ -128,59 +128,70 @@
 
 
 <script type="text/javascript">          
-     $(document).ready( function () {
-     
-      $.ajaxSetup({
-        headers: {
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        }
-      });
-        $('#requestor_table').DataTable({
-          
-               processing: true,
-               serverSide: true,
-               dom: 'Bfrtip',
-               ajax: "{{ url('requestors') }}",
-               search: {
-               return: true
-               },
-               columns: [
-                        { data: 'requestor_id', name: 'requestor_id' },
-                        { data: 'rq_full_name', name: 'rq_full_name' },
-                        { data: 'rq_office', name: 'rq_office' },
-                        {data: 'action', name: 'action', orderable: false,
-                        searchable: false},
+     $(document).ready(function () {
+     $.ajaxSetup({
+     headers: {
+     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+     }
+     });
 
-                     ],
-                     order: [[0, 'desc']],
-               buttons: [
-        {
-            extend: 'excel',
-            exportOptions: {
-                columns: ':visible'
-            }
-        },
-        {
-            extend: 'print',
-            exportOptions: {
-                columns: ':visible'
-            }
-        },
-        {
-            extend: 'pdf',
-            exportOptions: {
-                columns: ':visible'
-            }
-        }
-    ],
-    columnDefs: [
-        {
-            targets: 0,
-            visible: true
-        }
-    ],
-           });  
-      });
+     $('#requestor_table').DataTable({
+     processing: true,
+     serverSide: true,
+     dom: 'Bfrtip',
+     ajax: {
+     url: "{{ url('requestors') }}",
+     type: "GET",
+     error: function (xhr, error, code) {
+     console.log(xhr);
+     console.log(code);
+     }
+     },
+     search: {
+     return: true
+     },
+     columns: [
+     { data: 'requestor_id', name: 'requestor_id' },
+     { data: 'rq_full_name', name: 'rq_full_name' },
+     { data: 'rq_office', name: 'rq_office' },
+     {
+     data: 'action',
+     name: 'action',
+     orderable: false,
+     searchable: false
+     }
+     ],
+     order: [[0, 'desc']],
+     buttons: [
+     {
+     extend: 'excel',
+     exportOptions: {
+     columns: ':visible'
+     }
+     },
+     {
+     extend: 'print',
+     exportOptions: {
+     columns: ':visible'
+     }
+     },
+     {
+     extend: 'pdf',
+     exportOptions: {
+     columns: ':visible'
+     }
+     }
+     ],
+     columnDefs: [
+     {
+     targets: 0,
+     visible: true
+     }
+     ],
+     });
+     });
+
+
 
 
        

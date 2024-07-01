@@ -36,7 +36,7 @@ class OfficesController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('offices');
+        return view('admin.offices');
 
     }
     // public function fetch(){

@@ -11,7 +11,6 @@ use App\Models\Events;
 use App\Models\Vehicles;
 use App\Models\Reservations;
 use App\Models\ReservationVehicle;
-use App\Models\Reservation;
 
 use App\Models\Requestors;
 use Yajra\DataTables\DataTables;
@@ -25,9 +24,6 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-
-
-
 
 class ReservationsController extends Controller
 {
@@ -88,7 +84,9 @@ class ReservationsController extends Controller
 
         $requestors = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
         // return view('reservations')->with(compact('drivers', 'vehicles', 'requestors'));
-        return view('reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors'));
+       
+        return view('admin/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors'));
+
     }
     public function event_calendar()
     {
@@ -112,7 +110,7 @@ class ReservationsController extends Controller
         //     ->join('events', 'reservations.event_id', '=', 'events.event_id')
         //     ->get();
 
-        
+
         $reservations = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers", "events")
             ->select('reservations.*', 'events.ev_name', 'events.ev_date_start', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
             ->join('events', 'reservations.event_id', '=', 'events.event_id')
@@ -539,14 +537,4 @@ class ReservationsController extends Controller
             ->get();
         return response()->json($driversInsert);
     }
-
-    public function index()
-    {
-        
-        $totalReservationsCount = Reservations::count();        
-        $ongoingTravelCount = Reservations::where('rs_status', 'Ongoing Travel')->count();
-        $queuedForTravelCount = Reservations::where('rs_status', 'Queued for Travel')->count();
-         return view('admin.reservations', compact('totalReservationsCount', 'ongoingTravelCount', 'queuedForTravelCount'));
-    }
 }
-

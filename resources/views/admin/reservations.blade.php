@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Reservations</title>
     <?php $title_page = 'Reservations';?>
-    @include('includes.header')
+    @include('includes.admin_header')
 </head>
 <body>
     <div class="row">
