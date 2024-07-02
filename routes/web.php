@@ -42,7 +42,7 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
     // Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('admin.dashboard');
     // Route::get('/admin/compute', [AdminPageController::class, 'compute'])->name('admin.compute');    
     // Route::get('/admin/drivers_schedule', [AdminPageController::class, 'drivers_schedule'])->name('admin.drivers_schedule');
-    // Route::get('/admin/drivers', [AdminPageController::class, 'drivers'])->name('admin.drivers');
+     Route::get('/admin/drivers', [AdminPageController::class, 'drivers'])->name('admin.drivers');
     // Route::get('/admin/event_calendar', [AdminPageController::class, 'event_calendar'])->name('admin.event_calendar');
     // Route::get('/admin/events', [AdminPageController::class, 'events'])->name('admin.events');    
     // Route::get('/admin/navigation-menu', [AdminPageController::class, 'navigation_menu'])->name('admin.navigation-menu');
@@ -141,7 +141,7 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
         // Route::get('/user/drivers', [UserPageController::class, 'drivers'])->name('user.drivers');
         // Route::get('/user/event_calendar', [UserPageController::class, 'event_calendar'])->name('user.event_calendar');
         // Route::get('/user/events', [UserPageController::class, 'events'])->name('user.events');   
-        // Route::get('/user/vehicles', [UserPageController::class, 'vehicles'])->name('user.vehicles');     
+       //  Route::get('/user/vehicles', [UserPageController::class, 'vehicles'])->name('user.vehicles');     
         // Route::get('/user/navigation-menu', [UserPageController::class, 'navigation_menu'])->name('user.navigation-menu');
         // Route::get('/user/offices', [UserPageController::class, 'offices'])->name('user.offices');
         // Route::get('/user/policy', [UserPageController::class, 'policy'])->name('user.policy');
@@ -256,11 +256,11 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
     Route::get('/vehicle-excel', [VehicleController::class, 'vehicles_excel']);
     Route::get('/vehicle-pdf', [VehicleController::class, 'vehicles_pdf']);
 
-    // // Requestors
-    // Route::get('admin/requestor/requestors', [RequestorsController::class, 'index']);
-    // Route::post('store-requestor', [RequestorsController::class, 'store']);
-    // Route::post('edit-requestor', [RequestorsController::class, 'edit']);
-    // Route::post('delete-requestor', [RequestorsController::class, 'destroy']);
+    // Requestors
+    Route::get('admin/requestor/requestors', [RequestorsController::class, 'index']);
+    Route::post('store-requestor', [RequestorsController::class, 'store']);
+    Route::post('edit-requestor', [RequestorsController::class, 'edit']);
+    Route::post('delete-requestor', [RequestorsController::class, 'destroy']);
 
     // Driver Section
     Route::post('/insert-driver', [DriversController::class, 'store']);

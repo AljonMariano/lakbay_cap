@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Drivers</title>
     <?php $title_page = 'Drivers'; ?>
-    @include('includes.admin_header')
+    @include('includes.header')
 </head>
 <body>
     <div class="row">
@@ -14,12 +14,8 @@
             <h4 class="text-uppercase">Drivers</h4>
         </div>
     </div>
-   <div id="insertVehicleModal" class="modal fade" tabindex="-1">
-
-
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
+    <div class="row mb-3">
+        <div class="col">
             <a href="#insertModal" role="button" class="btn btn-lg btn-success" id="insertBtn" data-bs-toggle="modal">Register</a>
             <div id="insertModal" class="modal fade" tabindex="-1">
                 <div class="modal-dialog">
@@ -29,6 +25,8 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
+
+
                             <form action="" method="POST" class="" id="drivers-form">
                                 @csrf
                                 <div class="card rounded-0">
@@ -38,12 +36,10 @@
                                             <div class="col">
                                                 <div class="mb-2">
                                                     <label for="dr_emp_id" class="form-label mb-0">Employee ID</label>
-                                                    <input type="number" class="form-control" name="dr_emp_id" placeholder="Enter employee ID" value="">
+                                                    <input type="number" class="form-control rounded-1" name="dr_emp_id" placeholder="Enter employee ID" value="">
                                                     <span id="dr_emp_id_error"></span>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="row">
                                             <div class="col">
                                                 <div class="mb-2">
                                                     <label for="dr_fname" class="form-label mb-0">First Name</label>
@@ -58,8 +54,6 @@
                                                     <span id="dr_mname_error"></span>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="row">
                                             <div class="col">
                                                 <div class="mb-2">
                                                     <label for="dr_lname" class="form-label mb-0">Last Name</label>
@@ -67,20 +61,17 @@
                                                     <span id="dr_lname_error"></span>
                                                 </div>
                                             </div>
-                                            <div class="col">
-                                                <div class="form-group">
-                                                    <label>Office</label>
-                                                    <select name="dr_office" id="dr_office" class="form-select">
-                                                        <option value="" disabled selected>Select Office</option>
-                                                        @foreach ($offices as $office)
-                                                        <option value="{{ $office->off_id }}">{{ $office->off_acr }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    <span id="dr_office_error"></span>
-                                                </div>
+                                            <div class="form-group">
+                                                <label>Office</label>
+                                                <select name="dr_office" id="dr_office" class="form-select">
+                                                    <option value="" disabled selected>Select Office</option>
+                                                    @foreach ($offices as $office)
+                                                    <option value="{{ $office->off_id }}">{{ $office->off_acr }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <span id="dr_office_error"></span>
                                             </div>
-                                        </div>
-                                        <div class="row">
+
                                             <div class="col">
                                                 <div class="mb-2">
                                                     <label for="dr_status">Status</label>
@@ -104,8 +95,6 @@
                                 </div>
                             </form>
                         </div>
-
-
                     </div>
                 </div>
             </div>
