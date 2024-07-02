@@ -16,6 +16,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\AdminPageController;
 use App\Http\Controllers\UserPageController;
+use App\Http\Controllers\UsersReservationsController;
 
 
 /*
@@ -131,7 +132,9 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
     Route::get('/test-return', [ReservationsController::class, 'test_return'])->name('reservations.testReturn');
 
 });
-Route::prefix('user')->middleware(['role:user', 'auth'])->group(function () {
+Route::middleware(['auth'])->prefix('users')->group(function () {
+  
+
         // Route::get('/user/dashboard', [DashboardController::class, 'dashboard'])->name('user.dashboard');
         // Route::get('/user/compute', [UserPageController::class, 'compute'])->name('user.compute');        
         // Route::get('/user/drivers_schedule', [UserPageController::class, 'drivers_schedule'])->name('user.drivers_schedule');
@@ -204,24 +207,24 @@ Route::prefix('user')->middleware(['role:user', 'auth'])->group(function () {
     
     
         // Reservation Section
-        Route::get('/reservations', [ReservationsController::class, 'show'])->name('reservations.show');
-        Route::get('/event-calendar', [ReservationsController::class, 'event_calendar']);
-        Route::get('/driver-schedules', [ReservationsController::class, 'drivers_schedules']);
-        Route::get('/get-events', [ReservationsController::class, 'events'])->name('reservations.getEvents');
-        Route::get('/get-edit-events', [ReservationsController::class, 'events_edit'])->name('reservations.getEditEvents');
-        Route::get('/reservations-archive', [ReservationsController::class, 'reservations_archive']);
-        Route::get('/reservations-word', [ReservationsController::class, 'reservations_word']);
-        Route::get('/reservations-excel', [ReservationsController::class, 'reservations_excel']);
-        Route::get('/reservations-pdf', [ReservationsController::class, 'reservations_pdf']);
-        Route::post('/insert-reservation', [ReservationsController::class, 'store']);
-        Route::post('/update-reservation', [ReservationsController::class, 'update']);
-        Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit']);
-        Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
-        Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete']);
+        Route::get('/reservations', [UsersReservationsController::class, 'show'])->name('users.reservations.show');
+        Route::get('/event-calendar', [UsersReservationsController::class, 'users.event_calendar']);
+        Route::get('/driver-schedules', [UsersReservationsController::class, 'users.drivers_schedules']);
+        Route::get('/get-events', [UsersReservationsController::class, 'events'])->name('users.reservations.getEvents');
+        Route::get('/get-edit-events', [UsersReservationsController::class, 'events_edit'])->name('users.reservations.getEditEvents');
+        Route::get('/reservations-archive', [UsersReservationsController::class, 'reservations_archive']);
+        Route::get('/reservations-word', [UsersReservationsController::class, 'reservations_word']);
+        Route::get('/reservations-excel', [UsersReservationsController::class, 'reservations_excel']);
+        Route::get('/reservations-pdf', [UsersReservationsController::class, 'reservations_pdf']);
+        Route::post('/insert-reservation', [UsersReservationsController::class, 'stores']);
+        Route::post('/update-reservation', [UsersReservationsController::class, 'update']);
+        Route::get('/edit-reservation/{reservation_id}', [UsersReservationsController::class, 'edit']);
+        Route::get('/cancel-reservation/{reservation_id}', [UsersReservationsController::class, 'cancel']);
+        Route::get('/delete-reservation/{reservation_id}', [UsersReservationsController::class, 'delete']);
     
         // Test Section
-        Route::get('/test-select', [ReservationsController::class, 'test_select'])->name('reservations.testSelect');
-        Route::get('/test-return', [ReservationsController::class, 'test_return'])->name('reservations.testReturn');
+        Route::get('/test-select', [UsersReservationsController::class, 'test_select'])->name('user.reservations.testSelect');
+        Route::get('/test-return', [UsersReservationsController::class, 'test_return'])->name('user.reservations.testReturn');
 
 
     });
@@ -291,7 +294,7 @@ Route::prefix('user')->middleware(['role:user', 'auth'])->group(function () {
     Route::get('/reservations-word', [ReservationsController::class, 'reservations_word']);
     Route::get('/reservations-excel', [ReservationsController::class, 'reservations_excel']);
     Route::get('/reservations-pdf', [ReservationsController::class, 'reservations_pdf']);
-    Route::post('/insert-reservation', [ReservationsController::class, 'store']);
+    Route::post('/insert-reservation', [UsersReservationsController::class, 'store']);
     Route::post('/update-reservation', [ReservationsController::class, 'update']);
     Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit']);
     Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);

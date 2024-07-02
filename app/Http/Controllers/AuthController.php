@@ -18,7 +18,7 @@ class AuthController extends Controller
                 return redirect()->intended('/admin/dashboard');
             } else {
                 // Redirect to user dashboard
-                return redirect()->intended('/user/dashboard');
+                return redirect()->intended('/users/dashboard');
             }
         }
 
