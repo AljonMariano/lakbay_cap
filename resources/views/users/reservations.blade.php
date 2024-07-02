@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Reservations</title>
     <?php $title_page = 'Reservations';?>
-    @include('includes.header')
+    @include('includes.user_header')
 </head>
 <body>
     <div class="row">
@@ -90,7 +90,7 @@
                                             <span id="rs_travel_type_error"></span>
                                         </div>
 
-                                        <div class="mb-2">
+                                        {{-- <div class="mb-2">
                                             <label for="rs_approval_status" class="form-label mb-0">Approval Status</label>
                                             <select class="form-select" name="rs_approval_status" id="rs_approval_status">
                                                 <option value="" disabled selected>Select Approval Status</option>
@@ -110,7 +110,7 @@
                                                 <option value="Done">Done</option>
                                             </select>
                                             <span id="rs_status_error"></span>
-                                        </div>
+                                        </div> --}}
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -143,7 +143,7 @@
                             <td>Date Filed</td>
                             <td>Approval</td>
                             <td>Status</td>
-                            <td width="100px">Actions</td>
+                            
                         </tr>
                     </thead>
                     <tbody>
@@ -152,101 +152,7 @@
             </div>
         </div>
     </div>
-    <!-------------EDIT MODAL --------------->
-    <div class="modal fade" tabindex="-1" id="edit_reservation_modal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form method="post" id="reservation_edit" name="reservation_edit" class="form-horizontal">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="ModalLabel">Edit Reservation</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
-                    </div>
-
-
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label>Event : </label>
-                            <select class="form-select" name="event_edit" id="event_edit">
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Driver : </label>
-                            <select class="form-select drivers-edit" name="driver_edit[]" id="driver_edit">
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Vehicles : </label>
-                            <select class="form-select vehicles-edit" name="vehicle_edit[]" id="vehicle_edit">
-
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Requestor</label>
-                            <select class="form-select" name="requestor_edit" id="requestor_edit" id="requestor_edit">
-                                @foreach ($requestors as $requestor)
-                                <option value="{{ $requestor->requestor_id }}" id="requestor_value">{{ $requestor->rq_full_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="voucher_edit" class="form-label mb-0">Voucher</label>
-                            <input type="text" class="form-control rounded-1" name="voucher_edit" id="voucher_edit" value="">
-                        </div>
-                        <div class="form-group">
-                            <label>Travel Type : </label>
-                            <select class="form-select" name="travel_edit" id="travel_edit">
-                                <option value="Outside Province Transport">Outside Province Transport</option>
-                                <option value="Daily Transport">Daily Transport</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="approval_status_edit">Approval Status</label>
-                            <select name="approval_status_edit" id="approval_status_edit">
-                                <option value="Approved">Approved</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Rejected">Rejected</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="status_edit">Status</label>
-                            <select name="status_edit" id="status_edit">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                                <option value="Cancelled">Cancelled</option>
-                            </select>
-                        </div>
-                        <input type="hidden" name="action" id="action" value="Add" />
-                        <input type="hidden" name="hidden_id" id="hidden_id" value="" />
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <input type="submit" name="action_button" id="action_button" value="Update" class="btn btn-info" />
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <!-------------DELETE MODAL --------------->
-    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form method="post" id="events_form" class="form-horizontal">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="ModalLabel">Confirmation</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <h4 id="confirm_message" align="center" style="margin:0;">Are you sure you want to remove this data?</h4>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" action="" name="ok_button" id="ok_button" class="btn btn-danger">OK</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+   
 </body>
 
 
@@ -382,12 +288,7 @@
                     data: 'rs_status'
                     , name: 'rs_status'
                 }
-                , {
-                    data: 'action'
-                    , name: 'action'
-                    , orderable: false
-                    , searchable: false
-                }
+                
             ]
             , order: [
                 [0, 'asc']

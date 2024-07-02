@@ -67,8 +67,13 @@ class DriversController extends Controller
     {
         if ($request->ajax()) {
             $data = Drivers::select('drivers.*', 'offices.off_name')
-                ->leftJoin('offices', 'drivers.off_id', '=', 'offices.off_id')
-                ->get();
+            ->leftJoin('offices', 'drivers.off_id', '=', 'offices.off_id')
+            ->get()
+            ->map(function ($driver) {
+                $driver->dr_full_name = $driver->dr_fname . ' ' . $driver->dr_mname . ' ' . $driver->dr_lname;
+                return $driver;
+
+            });
 
             return Datatables::of($data)
                 ->addIndexColumn()
@@ -80,8 +85,15 @@ class DriversController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
+
         $offices = DB::table('offices')->select('off_id', 'off_acr')->get();
-        return view('drivers')->with(compact('offices'));
+        
+        // Conditional view rendering based on user role
+        if (auth()->user()->isAdmin()) {
+            return view('admin.drivers')->with(compact('offices'));
+        } else {
+            return view('users.drivers')->with(compact('offices'));
+        }
     }
 
 

@@ -71,7 +71,11 @@ class EventsController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('events');
+        if (auth()->user()->isAdmin()) {
+            return view('admin.events');
+        } else {
+            return view('users.events');
+        }
 }
 public function edit($event_id)
 {

@@ -30,9 +30,11 @@ class ReservationsController extends Controller
     public function show(Request $request)
     {
         if ($request->ajax()) {
-            $data = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")->select('reservations.*', 'events.ev_name', 'requestors.rq_full_name')
+            $data = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")
+                ->select('reservations.*', 'events.ev_name', 'requestors.rq_full_name')
                 ->join('events', 'reservations.event_id', '=', 'events.event_id')
                 ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id');
+            
             return Datatables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($data) {
@@ -44,6 +46,7 @@ class ReservationsController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
+        
         $existingDriverIds = ReservationVehicle::whereNotNull('driver_id')->distinct('driver_id')->pluck('driver_id')->toArray();
         $existingVehicleIds = ReservationVehicle::pluck('vehicle_id')->toArray();
 
@@ -52,14 +55,10 @@ class ReservationsController extends Controller
             ->select('driver_id', 'dr_fname')
             ->get();
 
-
         $vehicles = DB::table('vehicles')
             ->whereNotIn('vehicle_id', $existingVehicleIds)
             ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_capacity')
             ->get();
-
-        // $events = DB::table('events')->select('event_id','ev_name', 'event_id','ev_date_start','ev_date_end')->get();
-        // $existingEventIds = Reservations::distinct('event_id')->pluck('event_id')->toArray();
 
         $events = Events::leftJoin('reservations', 'events.event_id', 'reservations.event_id')
             ->whereNull('reservations.reservation_id')
@@ -72,21 +71,18 @@ class ReservationsController extends Controller
                     ['reservations.rs_status', 'Cancelled'],
                     ['reservations.rs_cancelled', 0]
                 ])->whereNotNull('reservations.deleted_at');
-            })->orWhere(function ($query) {
-                $query->where([
-                    ['reservations.rs_status', 'Cancelled'],
-                    ['reservations.rs_cancelled', 0]
-                ])->whereNotNull('reservations.deleted_at');
             })
             ->orderBy('ev_name')
             ->get();
 
-
         $requestors = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
-        // return view('reservations')->with(compact('drivers', 'vehicles', 'requestors'));
-       
-        return view('admin/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors'));
-
+        
+        if (auth()->user()->isAdmin()) {
+            return view('admin/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors'));
+        } else {
+            return view('users/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors'));
+        }
+    
     }
     public function event_calendar()
     {

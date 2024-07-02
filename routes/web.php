@@ -58,7 +58,7 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
     // Route::get('/admin/requestor/requestors', [AdminPageController::class, 'requestors'])->name('admin.requestor.requestors');
     // Route::get('/admin/navigation-menu', [AdminPageController::class, 'navigation_menu'])->name('admin.navigation-menu');
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
 
     // Offices Section
@@ -131,25 +131,98 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
     Route::get('/test-return', [ReservationsController::class, 'test_return'])->name('reservations.testReturn');
 
 });
-    Route::middleware(['role:user'])->group(function () {
-        Route::get('/user/dashboard', [DashboardController::class, 'dashboard'])->name('user.dashboard');
-        Route::get('/user/compute', [UserPageController::class, 'compute'])->name('user.compute');        
-        Route::get('/user/drivers_schedule', [UserPageController::class, 'drivers_schedule'])->name('user.drivers_schedule');
-        Route::get('/user/drivers', [UserPageController::class, 'drivers'])->name('user.drivers');
-        Route::get('/user/event_calendar', [UserPageController::class, 'event_calendar'])->name('user.event_calendar');
-        Route::get('/user/events', [UserPageController::class, 'events'])->name('user.events');   
-        Route::get('/user/vehicles', [UserPageController::class, 'vehicles'])->name('user.vehicles');     
-        Route::get('/user/navigation-menu', [UserPageController::class, 'navigation_menu'])->name('user.navigation-menu');
-        Route::get('/user/offices', [UserPageController::class, 'offices'])->name('user.offices');
-        Route::get('/user/policy', [UserPageController::class, 'policy'])->name('user.policy');
-        Route::get('/user/reservations', [UserPageController::class, 'reservations'])->name('user.reservations');
-        Route::get('/user/statistics', [UserPageController::class, 'statistics'])->name('user.statistics');
-        Route::get('/user/terms', [UserPageController::class, 'terms'])->name('user.terms');
-        Route::get('/user/test_select', [UserPageController::class, 'test_select'])->name('user.test_select');
-        Route::get('/user/test_word', [UserPageController::class, 'test_word'])->name('user.test_word');
-        Route::get('/user/welcome', [UserPageController::class, 'welcome'])->name('user.welcome');
-        Route::get('/user/worker', [UserPageController::class, 'worker'])->name('user.worker');
-        Route::get('/user/requestors', [UserPageController::class, 'requestors'])->name('user.requestor.requestors');
+Route::prefix('user')->middleware(['role:user', 'auth'])->group(function () {
+        // Route::get('/user/dashboard', [DashboardController::class, 'dashboard'])->name('user.dashboard');
+        // Route::get('/user/compute', [UserPageController::class, 'compute'])->name('user.compute');        
+        // Route::get('/user/drivers_schedule', [UserPageController::class, 'drivers_schedule'])->name('user.drivers_schedule');
+        // Route::get('/user/drivers', [UserPageController::class, 'drivers'])->name('user.drivers');
+        // Route::get('/user/event_calendar', [UserPageController::class, 'event_calendar'])->name('user.event_calendar');
+        // Route::get('/user/events', [UserPageController::class, 'events'])->name('user.events');   
+        // Route::get('/user/vehicles', [UserPageController::class, 'vehicles'])->name('user.vehicles');     
+        // Route::get('/user/navigation-menu', [UserPageController::class, 'navigation_menu'])->name('user.navigation-menu');
+        // Route::get('/user/offices', [UserPageController::class, 'offices'])->name('user.offices');
+        // Route::get('/user/policy', [UserPageController::class, 'policy'])->name('user.policy');
+        // Route::get('/user/reservations', [UserPageController::class, 'reservations'])->name('user.reservations');
+        // Route::get('/user/statistics', [UserPageController::class, 'statistics'])->name('user.statistics');
+        // Route::get('/user/terms', [UserPageController::class, 'terms'])->name('user.terms');
+        // Route::get('/user/test_select', [UserPageController::class, 'test_select'])->name('user.test_select');
+        // Route::get('/user/test_word', [UserPageController::class, 'test_word'])->name('user.test_word');
+        // Route::get('/user/welcome', [UserPageController::class, 'welcome'])->name('user.welcome');
+        // Route::get('/user/worker', [UserPageController::class, 'worker'])->name('user.worker');
+        // Route::get('/user/requestors', [UserPageController::class, 'requestors'])->name('user.requestor.requestors');
+
+        Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+
+
+        // Offices Section
+        Route::get('/offices', [OfficesController::class, 'show'])->name('offices.show');
+        Route::post('/insert-office', [OfficesController::class, 'store'])->name('offices.store');
+        Route::get('/delete-office/{off_id}', [OfficesController::class, 'delete']);
+        Route::get('/edit-office/{off_id}', [OfficesController::class, 'edit']);
+        Route::post('/update-office', [OfficesController::class, 'update']);
+        Route::get('/offices-word', [OfficesController::class, 'offices_word']);
+        Route::get('/offices-excel', [OfficesController::class, 'offices_excel']);
+        Route::get('/offices-pdf', [OfficesController::class, 'offices_pdf']);
+    
+        // Vehicles Section
+        Route::get('/vehicles', [VehicleController::class, 'show'])->name('vehicles.index');
+        Route::get('/vehicles/{id}', [VehicleController::class, 'show'])->name('vehicles.show');
+        Route::post('/insert-vehicle', [VehicleController::class, 'store'])->name('vehicles.store');
+        Route::get('/edit-vehicle/{id}', [VehicleController::class, 'edit'])->name('vehicles.edit');
+        Route::post('/update-vehicle', [VehicleController::class, 'update'])->name('update-vehicle');
+        Route::get('/delete-vehicle/{vehicle_id}', [VehicleController::class, 'delete']);
+        Route::get('/vehicle-word', [VehicleController::class, 'vehicles_word']);
+        Route::get('/vehicle-excel', [VehicleController::class, 'vehicles_excel']);
+        Route::get('/vehicle-pdf', [VehicleController::class, 'vehicles_pdf']);
+    
+        // // Requestors
+        Route::get('/requestors', [RequestorsController::class, 'index']);
+        Route::post('/store-requestor', [RequestorsController::class, 'store']);
+        Route::post('/edit-requestor', [RequestorsController::class, 'edit']);
+        Route::post('/delete-requestor', [RequestorsController::class, 'destroy']);
+    
+        // Driver Section
+        Route::post('/insert-driver', [DriversController::class, 'store']);
+        Route::get('/drivers', [DriversController::class, 'show'])->name('drivers.show');
+        Route::get('/delete-driver/{driver_id}', [DriversController::class, 'delete']);
+        Route::get('/edit-driver/{driver_id}', [DriversController::class, 'edit']);
+        Route::post('/update-driver', [DriversController::class, 'update']);
+        Route::get('/driver-word', [DriversController::class, 'driver_word']);
+        Route::get('/driver-excel', [DriversController::class, 'driver_excel']);
+        Route::get('/driver-pdf', [DriversController::class, 'driver_pdf']);
+    
+        // Event Section
+        Route::post('/insert-event', [EventsController::class, 'store']);
+        Route::get('/events', [EventsController::class, 'show'])->name('events.show');
+        Route::get('/edit-event/{event_id}', [EventsController::class, 'edit']);
+        Route::post('/update-event', [EventsController::class, 'update']);
+        Route::get('/delete-event/{event_id}', [EventsController::class, 'delete']);
+        Route::get('/events-word', [EventsController::class, 'events_word']);
+        Route::get('/events-excel', [EventsController::class, 'events_excel']);
+        Route::get('/events-pdf', [EventsController::class, 'events_pdf']);
+    
+    
+    
+        // Reservation Section
+        Route::get('/reservations', [ReservationsController::class, 'show'])->name('reservations.show');
+        Route::get('/event-calendar', [ReservationsController::class, 'event_calendar']);
+        Route::get('/driver-schedules', [ReservationsController::class, 'drivers_schedules']);
+        Route::get('/get-events', [ReservationsController::class, 'events'])->name('reservations.getEvents');
+        Route::get('/get-edit-events', [ReservationsController::class, 'events_edit'])->name('reservations.getEditEvents');
+        Route::get('/reservations-archive', [ReservationsController::class, 'reservations_archive']);
+        Route::get('/reservations-word', [ReservationsController::class, 'reservations_word']);
+        Route::get('/reservations-excel', [ReservationsController::class, 'reservations_excel']);
+        Route::get('/reservations-pdf', [ReservationsController::class, 'reservations_pdf']);
+        Route::post('/insert-reservation', [ReservationsController::class, 'store']);
+        Route::post('/update-reservation', [ReservationsController::class, 'update']);
+        Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit']);
+        Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
+        Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete']);
+    
+        // Test Section
+        Route::get('/test-select', [ReservationsController::class, 'test_select'])->name('reservations.testSelect');
+        Route::get('/test-return', [ReservationsController::class, 'test_return'])->name('reservations.testReturn');
+
 
     });
 

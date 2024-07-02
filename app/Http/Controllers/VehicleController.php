@@ -31,7 +31,13 @@ class VehicleController extends Controller
         }
 
         $vehicles = Vehicles::all();
-        return view('vehicles')->with(compact('vehicles'));
+        
+        
+        if (auth()->user()->isAdmin()) {
+            return view('admin.vehicles')->with(compact('vehicles'));
+        } else {
+            return view('users.vehicles')->with(compact('vehicles'));
+        }
     }
 
     public function store(Request $request)

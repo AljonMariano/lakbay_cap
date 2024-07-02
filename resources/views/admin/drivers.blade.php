@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Drivers</title>
     <?php $title_page = 'Drivers'; ?>
-    @include('includes.header')
+    @include('includes.admin_header')
 </head>
 <body>
     <div class="row">
@@ -14,8 +14,12 @@
             <h4 class="text-uppercase">Drivers</h4>
         </div>
     </div>
-    <div class="row mb-3">
-        <div class="col">
+   <div id="insertVehicleModal" class="modal fade" tabindex="-1">
+
+
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
             <a href="#insertModal" role="button" class="btn btn-lg btn-success" id="insertBtn" data-bs-toggle="modal">Register</a>
             <div id="insertModal" class="modal fade" tabindex="-1">
                 <div class="modal-dialog">

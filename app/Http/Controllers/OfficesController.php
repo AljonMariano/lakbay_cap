@@ -36,7 +36,11 @@ class OfficesController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('admin.offices');
+        if (auth()->user()->isAdmin()) {
+            return view('admin.offices');
+        } else {
+            return view('users.offices');
+        }
 
     }
     // public function fetch(){
