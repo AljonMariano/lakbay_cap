@@ -58,7 +58,7 @@ class UsersReservationsController extends Controller
 
         $vehicles = DB::table('vehicles')
             ->whereNotIn('vehicle_id', $existingVehicleIds)
-            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_capacity')
+            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_capacity', 'vh_type')
             ->get();
 
         $events = Events::leftJoin('reservations', 'events.event_id', 'reservations.event_id')
@@ -77,11 +77,12 @@ class UsersReservationsController extends Controller
             ->get();
 
         $requestors = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
+        $offices = Offices::select('off_id', 'off_acr', 'off_name')->get();
         
         if (auth()->user()->isAdmin()) {
-            return view('admin/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors'));
+            return view('admin/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors', 'offices'));
         } else {
-            return view('users/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors'));
+            return view('users/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors', 'offices'));
         }
     
     }
@@ -109,7 +110,7 @@ class UsersReservationsController extends Controller
 
 
         $reservations = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers", "events")
-            ->select('reservations.*', 'events.ev_name', 'events.ev_date_start', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
+            ->select('reservations.*', 'events.ev_name', 'events.ev_date_start', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'vh_type', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
             ->join('events', 'reservations.event_id', '=', 'events.event_id')
             ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
             ->leftJoin('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
@@ -143,7 +144,7 @@ class UsersReservationsController extends Controller
 
         $vehiclesInsert = DB::table('vehicles')
             ->whereNotIn('vehicle_id', $existingVehicleIds)
-            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_capacity')
+            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_capacity', 'vh_type')
             ->get();
         $requestorsInsert = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
 
@@ -333,7 +334,7 @@ class UsersReservationsController extends Controller
     {
 
         $reservations = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")
-            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'drivers.dr_mname', 'drivers.dr_lname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
+            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'drivers.dr_mname', 'drivers.dr_lname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'vh_type', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
             ->join('events', 'reservations.event_id', '=', 'events.event_id')
             ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
             ->leftJoin('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
@@ -375,6 +376,7 @@ class UsersReservationsController extends Controller
             $templateProcessor->setValue("event_id#" . ($i + 1), $reservation->ev_name);
             $templateProcessor->setValue("driver_id#" . ($i + 1), $reservation->dr_fname . " " . $reservation->dr_lname);
             $templateProcessor->setValue("vehicle_id#" . ($i + 1), $reservation->vh_brand);
+            $templateProcessor->setValue("vehicle_type#" . ($i + 1), $reservation->vh_type);
             $templateProcessor->setValue("requestor_id#" . ($i + 1),  $reservation->rq_full_name);
             $templateProcessor->setValue("rs_voucher#" . ($i + 1), $reservation->rs_voucher);
             $templateProcessor->setValue("rs_travel_type#" . ($i + 1), $reservation->rs_travel_type);
@@ -394,7 +396,7 @@ class UsersReservationsController extends Controller
 
         // Retrieve filtered reservations based on the search value
         $reservations = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")
-            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
+            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'vh_type', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
             ->join('events', 'reservations.event_id', '=', 'events.event_id')
             ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
             ->leftJoin('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
@@ -449,7 +451,7 @@ class UsersReservationsController extends Controller
     public function reservations_pdf(Request $request)
     {
         $reservations = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")
-            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
+            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'requestors.rq_full_name', 'vh_type', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
             ->join('events', 'reservations.event_id', '=', 'events.event_id')
             ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
             ->leftJoin('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
@@ -486,6 +488,7 @@ class UsersReservationsController extends Controller
             $templateProcessor->setValue("event_id#" . ($index + 1), $reservation->ev_name);
             $templateProcessor->setValue("driver_id#" . ($index + 1), $reservation->dr_fname);
             $templateProcessor->setValue("vehicle_id#" . ($index + 1), $reservation->vh_brand . '-' . $reservation->vh_plate);
+            $templateProcessor->setValue("vehicle_type#" . ($i + 1), $reservation->vh_type);
             $templateProcessor->setValue("requestor_id#" . ($index + 1), $reservation->rq_full_name);
             $templateProcessor->setValue("rs_voucher#" . ($index + 1), $reservation->rs_voucher);
             $templateProcessor->setValue("rs_travel_type#" . ($index + 1), $reservation->rs_travel_type);
@@ -533,4 +536,5 @@ class UsersReservationsController extends Controller
             ->get();
         return response()->json($driversInsert);
     }
+
 }

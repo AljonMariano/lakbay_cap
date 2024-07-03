@@ -88,7 +88,7 @@ class DriversController extends Controller
 
         $offices = DB::table('offices')->select('off_id', 'off_acr')->get();
         
-        // Conditional view rendering based on user role
+        
         if (auth()->user()->isAdmin()) {
             return view('admin.drivers')->with(compact('offices'));
         } else {

@@ -52,12 +52,12 @@ class ReservationsController extends Controller
 
         $drivers = DB::table('drivers')
             ->whereNotIn('driver_id', $existingDriverIds)
-            ->select('driver_id', 'dr_fname')
+            ->select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
             ->get();
 
         $vehicles = DB::table('vehicles')
             ->whereNotIn('vehicle_id', $existingVehicleIds)
-            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_capacity')
+            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
             ->get();
 
         $events = Events::leftJoin('reservations', 'events.event_id', 'reservations.event_id')
@@ -72,15 +72,18 @@ class ReservationsController extends Controller
                     ['reservations.rs_cancelled', 0]
                 ])->whereNotNull('reservations.deleted_at');
             })
-            ->orderBy('ev_name')
+            ->orderBy('ev_name')           
             ->get();
 
         $requestors = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
         
+        // Fetch offices data
+        $offices = DB::table('offices')->select('off_id', 'off_acr', 'off_name')->get();
+        
         if (auth()->user()->isAdmin()) {
-            return view('admin/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors'));
+            return view('admin/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors', 'offices'));
         } else {
-            return view('users/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors'));
+            return view('users/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors', 'offices'));
         }
     
     }
@@ -108,7 +111,7 @@ class ReservationsController extends Controller
 
 
         $reservations = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers", "events")
-            ->select('reservations.*', 'events.ev_name', 'events.ev_date_start', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
+            ->select('reservations.*', 'events.ev_name', 'events.ev_date_start', 'drivers.dr_fname', 'vehicles.vh_brand', 'vh_type' , 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
             ->join('events', 'reservations.event_id', '=', 'events.event_id')
             ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
             ->leftJoin('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
@@ -142,7 +145,7 @@ class ReservationsController extends Controller
 
         $vehiclesInsert = DB::table('vehicles')
             ->whereNotIn('vehicle_id', $existingVehicleIds)
-            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_capacity')
+            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
             ->get();
         $requestorsInsert = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
 
@@ -174,7 +177,7 @@ class ReservationsController extends Controller
         $vehiclesInsert = DB::table('vehicles')
             ->leftJoin('reservation_vehicles', 'vehicles.vehicle_id', 'reservation_vehicles.vehicle_id')
             ->whereNull('reservation_vehicles.vehicle_id')
-            ->select('vehicles.vehicle_id', 'vh_capacity', 'vh_brand')
+            ->select('vehicles.vehicle_id', 'vh_capacity', 'vh_brand', 'vh_type')
             ->get();
 
 
@@ -333,7 +336,7 @@ class ReservationsController extends Controller
     {
 
         $reservations = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")
-            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'drivers.dr_mname', 'drivers.dr_lname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
+            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'drivers.dr_mname', 'drivers.dr_lname', 'vehicles.vh_brand', 'vh_type', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
             ->join('events', 'reservations.event_id', '=', 'events.event_id')
             ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
             ->leftJoin('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
@@ -394,7 +397,7 @@ class ReservationsController extends Controller
 
         // Retrieve filtered reservations based on the search value
         $reservations = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")
-            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
+            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'vehicles.vh_brand', 'vh_type' ,'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
             ->join('events', 'reservations.event_id', '=', 'events.event_id')
             ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
             ->leftJoin('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
@@ -449,7 +452,7 @@ class ReservationsController extends Controller
     public function reservations_pdf(Request $request)
     {
         $reservations = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")
-            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
+            ->select('reservations.*', 'events.ev_name', 'drivers.dr_fname', 'vehicles.vh_brand', 'vh_type', 'vehicles.vh_plate', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
             ->join('events', 'reservations.event_id', '=', 'events.event_id')
             ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
             ->leftJoin('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
@@ -533,4 +536,11 @@ class ReservationsController extends Controller
             ->get();
         return response()->json($driversInsert);
     }
+
+    public function showForm()
+{
+    $offices = Office::all();
+    
+    return view('users.reservations', ['offices' => $offices]);
+}
 }

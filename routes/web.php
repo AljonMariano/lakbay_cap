@@ -17,6 +17,8 @@ use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\AdminPageController;
 use App\Http\Controllers\UserPageController;
 use App\Http\Controllers\UsersReservationsController;
+use App\Http\Controllers\AdminProfileController;
+
 
 
 /*
@@ -61,6 +63,12 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
+    Route::get('/profile', function () {
+        return view('admin.profile.show');
+    })->name('admin.profile.show');
+
+    
+
 
     // Offices Section
     Route::get('/offices', [OfficesController::class, 'show'])->name('offices.show');
@@ -84,10 +92,10 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
     Route::get('/vehicle-pdf', [VehicleController::class, 'vehicles_pdf']);
 
     // // Requestors
-    Route::get('/requestors', [RequestorsController::class, 'index']);
-    Route::post('/store-requestor', [RequestorsController::class, 'store']);
-    Route::post('/edit-requestor', [RequestorsController::class, 'edit']);
-    Route::post('/delete-requestor', [RequestorsController::class, 'destroy']);
+    Route::get('/requestors', [RequestorsController::class, 'index'])->name('requestor.requestors');
+    Route::post('/store-requestor', [RequestorsController::class, 'store'])->name('requestor.requestors');
+    Route::post('/edit-requestor', [RequestorsController::class, 'edit'])->name('requestor.requestors');
+    Route::post('/delete-requestor', [RequestorsController::class, 'destroy'])->name('requestor.requestors');
 
     // Driver Section
     Route::post('/insert-driver', [DriversController::class, 'store']);
@@ -158,7 +166,7 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
 
 
         // Offices Section
-        Route::get('/offices', [OfficesController::class, 'show'])->name('offices.show');
+        Route::get('/offices', [OfficesController::class, 'index'])->name('admin.offices.index');
         Route::post('/insert-office', [OfficesController::class, 'store'])->name('offices.store');
         Route::get('/delete-office/{off_id}', [OfficesController::class, 'delete']);
         Route::get('/edit-office/{off_id}', [OfficesController::class, 'edit']);
@@ -179,10 +187,10 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
         Route::get('/vehicle-pdf', [VehicleController::class, 'vehicles_pdf']);
     
         // // Requestors
-        Route::get('/requestors', [RequestorsController::class, 'index']);
-        Route::post('/store-requestor', [RequestorsController::class, 'store']);
-        Route::post('/edit-requestor', [RequestorsController::class, 'edit']);
-        Route::post('/delete-requestor', [RequestorsController::class, 'destroy']);
+        Route::get('/requestors', [RequestorsController::class, 'index'])->name('requestor.requestors');
+       // Route::post('/store-requestor', [RequestorsController::class, 'store']->name('vehicles.index'));
+        //Route::post('/edit-requestor', [RequestorsController::class, 'edit'])->name('requestor.edit');
+        //Route::post('/delete-requestor', [RequestorsController::class, 'destroy']->name('requestor.index'));
     
         // Driver Section
         Route::post('/insert-driver', [DriversController::class, 'store']);
@@ -257,7 +265,7 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
     Route::get('/vehicle-pdf', [VehicleController::class, 'vehicles_pdf']);
 
     // Requestors
-    Route::get('admin/requestor/requestors', [RequestorsController::class, 'index']);
+    Route::get('/requestor/requestors', [RequestorsController::class, 'index']);
     Route::post('store-requestor', [RequestorsController::class, 'store']);
     Route::post('edit-requestor', [RequestorsController::class, 'edit']);
     Route::post('delete-requestor', [RequestorsController::class, 'destroy']);

@@ -129,7 +129,7 @@
     <a class="nav-link" href="{{ url('/admin/drivers') }}">Drivers</a>
     <a class="nav-link" href="{{ url('/admin/offices') }}">Offices</a>
     <a class="nav-link" href="{{ url('/admin/requestors') }}">Requestors</a>
-    <a class="nav-link" href="{{ route('profile.show') }}">Profile</a>
+    <a class="nav-link" href="{{ route('admin.profile.show') }}">Profile</a>
     <a class="nav-link" href="{{ route('logout') }}"
        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
         Logout

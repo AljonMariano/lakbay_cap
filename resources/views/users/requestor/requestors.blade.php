@@ -18,7 +18,7 @@
 {{-- <link  href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet"> --}}
 <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
 
-  @include('includes.header')
+  @include('includes.user_header')
   
     <div class="row">
         <div class="col">
@@ -52,34 +52,14 @@
                         <td>ID</td>
                         <td>Full Name</td>
                         <td>Office</td>
-                        <td>Actions</td>
+                      
                     </tr>
                 </thead>
             </table>
         </div>
     </div>
     
-  <!--- DELETE MODAL --->
-  <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-          <div class="modal-content">
-              <form method="post" id="office_form" class="form-horizontal">
-                  <div class="modal-header">
-                      <h5 class="modal-title" id="ModalLabel">Confirmation</h5>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <div class="modal-body">
-                      <h4 align="center" style="margin:0;">Are you sure you want to remove this data?</h4>
-                  </div>
-                  <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                      <button type="button" name="ok_button" id="ok_button" class="btn btn-danger">OK</button>
-                  </div>
-              </form>
-          </div>
-      </div>
-  </div>
-  <!--- DELETE MODAL --->
+  
 
      <!-- boostrap requestor model -->
 <div class="modal fade" id="requestor-modal" aria-hidden="true">
@@ -127,106 +107,67 @@
 
 
 
-<script type="text/javascript">          
-     $(document).ready( function () {
-     
-      $.ajaxSetup({
-        headers: {
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        }
-      });
-        $('#requestor_table').DataTable({
-          
-               processing: true,
-               serverSide: true,
-               dom: 'Bfrtip',
-               ajax: "{{ url('requestors') }}",
-               search: {
-               return: true
-               },
-               columns: [
-                        { data: 'requestor_id', name: 'requestor_id' },
-                        { data: 'rq_full_name', name: 'rq_full_name' },
-                        { data: 'rq_office', name: 'rq_office' },
-                        {data: 'action', name: 'action', orderable: false,
-                        searchable: false},
-
-                     ],
-                     order: [[0, 'desc']],
-               buttons: [
-        {
-            extend: 'excel',
-            exportOptions: {
-                columns: ':visible'
-            }
-        },
-        {
-            extend: 'print',
-            exportOptions: {
-                columns: ':visible'
-            }
-        },
-        {
-            extend: 'pdf',
-            exportOptions: {
-                columns: ':visible'
-            }
-        }
-    ],
-    columnDefs: [
-        {
-            targets: 0,
-            visible: true
-        }
-    ],
-           });  
-      });
-
-
-       
-      function add(){
-           $('#requestorForm').trigger("reset");
-           $('#RequestorModal').html("Add Requestor");
-           $('#requestor-modal').modal('show');
-           $('#id').val(''); 
-      }  
-
-
-      function editFunc(id){
-        console.log(id);
-        $.ajax({
-            type:"POST",
-            url: "{{ url('edit-requestor') }}",
-            data: { requestor_id: id },
-            dataType: 'json',
-            success: function(res){
-              $('#RequestorModal').html("Edit Requestor");
-              $('#requestor-modal').modal('show');
-              $('#rq_full_name').val(res.rq_full_name);
-              $('#rq_office').val(res.rq_office);          
-              $('#id').val(id);     
+<script type="text/javascript">
+    $(document).ready(function() {
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
-      } 
-     
-  function deleteFunc(id) {
-    $('#confirmModal').modal('show');
 
-    $('#ok_button').click(function () {
-        $.ajax({
-            type: "POST",
-            url: "{{ url('/delete-requestor') }}",
-            data: { requestor_id: id },
-            dataType: 'json',
-            success: function (res) {
-                var oTable = $('#requestor_table').dataTable();
-                oTable.fnDraw(false);
-                $('#confirmModal').modal('hide');
-            }
+        $('#requestor_table').DataTable({
+            processing: true,
+            serverSide: true,
+            dom: 'Bfrtip',
+            ajax: "{{ url('users/requestors') }}",
+            search: {
+                return: true
+            },
+            columns: [
+                { data: 'requestor_id', name: 'requestor_id' },
+                { data: 'rq_full_name', name: 'rq_full_name' },
+                { data: 'rq_office', name: 'rq_office' },
+                
+            ],
+            order: [[0, 'desc']],
+            buttons: [
+                {
+                    extend: 'excel',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+                {
+                    extend: 'print',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+                {
+                    extend: 'pdf',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                }
+            ],
+            columnDefs: [
+                {
+                    targets: 0,
+                    visible: true
+                }
+            ],
         });
     });
-}
-     
+
+       
+      function add() {
+            $('#requestorForm').trigger("reset");
+            $('#RequestorModal').html("Add Requestor");
+            $('#requestor-modal').modal('show');
+            $('#id').val('');
+        }
+
+  
       $('#requestorForm').submit(function(e) {     
          e.preventDefault();       
          var formData = new FormData(this);       

@@ -51,7 +51,7 @@
                                             <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
                                             <select class="form-select " name="vehicle_id[]" id="vehicle_id">
                                                 @foreach ($vehicles as $vehicle)
-                                                <option value="{{ $vehicle->vehicle_id }}">{{ $vehicle->vh_brand }}-{{ $vehicle->vh_plate }}-{{$vehicle->vh_capacity}}</option>
+                                                <option value="{{ $vehicle->vehicle_id }}">  {{ $vehicle->vh_brand }} - {{ $vehicle->vh_type }} - {{ $vehicle->vh_plate }} - {{$vehicle->vh_capacity}}</option>
                                                 @endforeach
                                             </select>
                                             <span id="vehicle_id_error"></span>
@@ -66,6 +66,16 @@
                                                 @endforeach
                                             </select>
                                             <span id="requestor_id_error"></span>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="office" class="form-label mb-0">Office</label>
+                                            <select class="form-select" name="off_id[]" id="office_id">
+                                                @foreach ($offices as $office)
+                                                <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <span id="office_id_error"></span>
                                         </div>
 
                                         <div class="mb-2">

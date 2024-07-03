@@ -127,140 +127,123 @@
 
 
 
-<script type="text/javascript">          
-     $(document).ready(function () {
-     $.ajaxSetup({
-     headers: {
-     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-     }
-     });
+<script type="text/javascript">
+  $(document).ready(function() {
+      $.ajaxSetup({
+          headers: {
+              'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+          }
+      });
 
-     $('#requestor_table').DataTable({
-     processing: true,
-     serverSide: true,
-     dom: 'Bfrtip',
-     ajax: {
-     url: "{{ url('requestors') }}",
-     type: "GET",
-     error: function (xhr, error, code) {
-     console.log(xhr);
-     console.log(code);
-     }
-     },
-     search: {
-     return: true
-     },
-     columns: [
-     { data: 'requestor_id', name: 'requestor_id' },
-     { data: 'rq_full_name', name: 'rq_full_name' },
-     { data: 'rq_office', name: 'rq_office' },
-     {
-     data: 'action',
-     name: 'action',
-     orderable: false,
-     searchable: false
-     }
-     ],
-     order: [[0, 'desc']],
-     buttons: [
-     {
-     extend: 'excel',
-     exportOptions: {
-     columns: ':visible'
-     }
-     },
-     {
-     extend: 'print',
-     exportOptions: {
-     columns: ':visible'
-     }
-     },
-     {
-     extend: 'pdf',
-     exportOptions: {
-     columns: ':visible'
-     }
-     }
-     ],
-     columnDefs: [
-     {
-     targets: 0,
-     visible: true
-     }
-     ],
-     });
-     });
+      var table = $('#requestor_table').DataTable({
+          processing: true,
+          serverSide: true,
+          dom: 'Bfrtip',
+          ajax: "{{ url('users/requestors') }}",
+          search: {
+              return: true
+          },
+          columns: [
+              { data: 'requestor_id', name: 'requestor_id' },
+              { data: 'rq_full_name', name: 'rq_full_name' },
+              { data: 'rq_office', name: 'rq_office' },
+              { data: 'action', name: 'action', orderable: false, searchable: false, render: function(data, type, row) {
+                      return '<button class="btn btn-primary edit" onclick="editFunc('+row.requestor_id+')">Edit</button> ' +
+                             '<button class="btn btn-danger delete" onclick="deleteFunc('+row.requestor_id+')">Delete</button>';
+                  }
+              },
+          ],
+          order: [[0, 'desc']],
+          buttons: [
+              {
+                  extend: 'excel',
+                  exportOptions: {
+                      columns: ':visible'
+                  }
+              },
+              {
+                  extend: 'print',
+                  exportOptions: {
+                      columns: ':visible'
+                  }
+              },
+              {
+                  extend: 'pdf',
+                  exportOptions: {
+                      columns: ':visible'
+                  }
+              }
+          ],
+          columnDefs: [
+              {
+                  targets: 0,
+                  visible: true
+              }
+          ],
+      });
 
+      function add() {
+          $('#requestorForm').trigger("reset");
+          $('#RequestorModal').html("Add Requestor");
+          $('#requestor-modal').modal('show');
+          $('#id').val('');
+      }
 
+      window.editFunc = function(id) {
+          $.ajax({
+              type: "POST",
+              url: "{{ url('edit-requestor') }}",
+              data: { requestor_id: id },
+              dataType: 'json',
+              success: function(res) {
+                  $('#RequestorModal').html("Edit Requestor");
+                  $('#requestor-modal').modal('show');
+                  $('#rq_full_name').val(res.rq_full_name);
+                  $('#rq_office').val(res.rq_office);
+                  $('#id').val(id);
+              }
+          });
+      };
 
+      window.deleteFunc = function(id) {
+          $('#confirmModal').modal('show');
+          $('#ok_button').off('click').on('click', function() {
+              $.ajax({
+                  type: "POST",
+                  url: "{{ url('/delete-requestor') }}",
+                  data: { requestor_id: id },
+                  dataType: 'json',
+                  success: function(res) {
+                      table.ajax.reload(null, false);
+                      $('#confirmModal').modal('hide');
+                  }
+              });
+          });
+      };
 
-       
-      function add(){
-           $('#requestorForm').trigger("reset");
-           $('#RequestorModal').html("Add Requestor");
-           $('#requestor-modal').modal('show');
-           $('#id').val(''); 
-      }  
+      $('#requestorForm').submit(function(e) {
+          e.preventDefault();
+          var formData = new FormData(this);
+          $.ajax({
+              type: 'POST',
+              url: "{{ url('store-requestor') }}",
+              data: formData,
+              cache: false,
+              contentType: false,
+              processData: false,
+              success: function(data) {
+                  $("#requestor-modal").modal('hide');
+                  table.ajax.reload(null, false);
+                  $("#btn-save").html('Submit');
+                  $("#btn-save").attr("disabled", false);
+              },
+              error: function(data) {
+                  console.log(data);
+              }
+          });
+      });
+  });
+</script>
 
-
-      function editFunc(id){
-        console.log(id);
-        $.ajax({
-            type:"POST",
-            url: "{{ url('edit-requestor') }}",
-            data: { requestor_id: id },
-            dataType: 'json',
-            success: function(res){
-              $('#RequestorModal').html("Edit Requestor");
-              $('#requestor-modal').modal('show');
-              $('#rq_full_name').val(res.rq_full_name);
-              $('#rq_office').val(res.rq_office);          
-              $('#id').val(id);     
-            }
-        });
-      } 
-     
-  function deleteFunc(id) {
-    $('#confirmModal').modal('show');
-
-    $('#ok_button').click(function () {
-        $.ajax({
-            type: "POST",
-            url: "{{ url('/delete-requestor') }}",
-            data: { requestor_id: id },
-            dataType: 'json',
-            success: function (res) {
-                var oTable = $('#requestor_table').dataTable();
-                oTable.fnDraw(false);
-                $('#confirmModal').modal('hide');
-            }
-        });
-    });
-}
-     
-      $('#requestorForm').submit(function(e) {     
-         e.preventDefault();       
-         var formData = new FormData(this);       
-         $.ajax({
-            type:'POST',
-            url: "{{ url('store-requestor')}}",
-            data: formData,
-            cache:false,
-            contentType: false,
-            processData: false,
-            success: (data) => {
-              $("#requestor-modal").modal('hide');
-              var oTable = $('#requestor_table').dataTable();
-              oTable.fnDraw(false);
-              $("#btn-save").html('Submit');
-              $("#btn-save"). attr("disabled", false);  
-            },
-            error: function(data){
-               console.log(data);
-             }
-           });
-       });
-
-    </script>
     
     @include('includes.footer'); 

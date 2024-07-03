@@ -41,7 +41,11 @@ class RequestorsController extends Controller
                     }
 
     $offices = Offices::select('offices.*')->get();
-                    return view('requestor.requestors')->with(compact('offices'));
+    if (auth()->user()->isAdmin()) {
+        return view('admin.requestor.requestors')->with(compact('offices'));
+    } else {
+        return view('users.requestor.requestors')->with(compact('offices'));
+    }
             
     }
 

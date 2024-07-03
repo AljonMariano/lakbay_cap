@@ -7,6 +7,8 @@
     <title>Reservations</title>
     <?php $title_page = 'Reservations';?>
     @include('includes.admin_header')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </head>
 <body>
     <div class="row">
@@ -33,15 +35,21 @@
 
                                         <div class="mb-2">
                                             <label for="event_id" class="form-label mb-0">Event Name</label>
-                                            <select class="form-select" name="event_id" id="event_id"></select>
+                                            <select class="form-select" name="event_id" id="event_id">
+                                                <option value="" disabled selected>Select Event</option>
+                                                @foreach ($events as $event)
+                                                <option value="{{ $event->event_id }}">{{ $event->ev_name }}</option>
+                                                @endforeach
+                                            </select>
                                             <span id="event_id_error"></span>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="driver_id" class="form-label mb-0">Driver</label>
-                                            <select class="form-select " name="driver_id[]" id="driver_id">
+                                            <select class="form-select" name="driver_id[]" id="driver_id">
+                                                <option value="" disabled selected>Select Driver</option>
                                                 @foreach ($drivers as $driver)
-                                                <option value="{{$driver->driver_id}}">{{ $driver->dr_fname }}</option>
+                                                <option value="{{$driver->driver_id}}">{{ $driver->dr_fname }} {{ $driver->dr_mname }} {{ $driver->dr_lname }}</option>
                                                 @endforeach
                                             </select>
                                             <span id="driver_id_error"></span>
@@ -49,9 +57,10 @@
 
                                         <div class="mb-2">
                                             <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
-                                            <select class="form-select " name="vehicle_id[]" id="vehicle_id">
+                                            <select class="form-select" name="vehicle_id[]" id="vehicle_id">
+                                                <option value="" disabled selected>Select Vehicle</option>
                                                 @foreach ($vehicles as $vehicle)
-                                                <option value="{{ $vehicle->vehicle_id }}">{{ $vehicle->vh_brand }}-{{ $vehicle->vh_plate }}-{{$vehicle->vh_capacity}}</option>
+                                                <option value="{{ $vehicle->vehicle_id }}"> {{ $vehicle->vh_brand }} - {{ $vehicle->vh_type }} - {{ $vehicle->vh_plate }} - {{$vehicle->vh_capacity}}</option>
                                                 @endforeach
                                             </select>
                                             <span id="vehicle_id_error"></span>
@@ -69,25 +78,19 @@
                                         </div>
 
                                         <div class="mb-2">
+                                            <label for="office" class="form-label mb-0">Office</label>
+                                            <select class="form-select" name="off_id[]" id="office_id">
+                                                @foreach ($offices as $office)
+                                                <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <span id="office_id_error"></span>
+                                        </div>
+
+                                        <div class="mb-2">
                                             <label for="rs_voucher" class="form-label mb-0">Voucher</label>
                                             <input type="text" class="form-control rounded-1" name="rs_voucher" placeholder="Enter Voucher code" id="rs_voucher" value="">
                                             <span id="rs_voucher_error"></span>
-                                        </div>
-
-                                        <div class="mb-2">
-                                            <label for="rs_passengers" class="form-label mb-0">Passengers</label>
-                                            <input type="text" class="form-control rounded-1" name="rs_passengers" placeholder="Enter Number of Passengers" id="rs_passengers" value="">
-                                            <span id="rs_passengers_error"></span>
-                                        </div>
-
-                                        <div class="mb-2">
-                                            <label for="rs_travel_type" class="form-label mb-0">Travel Type</label>
-                                            <select class="form-select" name="rs_travel_type" id="rs_travel_type">
-                                                <option value="" disabled selected>Select Travel Type</option>
-                                                <option value="Outside Province Transport">Outside Province Transport</option>
-                                                <option value="Daily Transport">Daily Transport</option>
-                                            </select>
-                                            <span id="rs_travel_type_error"></span>
                                         </div>
 
                                         <div class="mb-2">
@@ -139,7 +142,6 @@
                             <td>Driver</td>
                             <td>Requestor</td>
                             <td>Voucher</td>
-                            <td>Travel Type</td>
                             <td>Date Filed</td>
                             <td>Approval</td>
                             <td>Status</td>
@@ -192,13 +194,6 @@
                         <div class="form-group">
                             <label for="voucher_edit" class="form-label mb-0">Voucher</label>
                             <input type="text" class="form-control rounded-1" name="voucher_edit" id="voucher_edit" value="">
-                        </div>
-                        <div class="form-group">
-                            <label>Travel Type : </label>
-                            <select class="form-select" name="travel_edit" id="travel_edit">
-                                <option value="Outside Province Transport">Outside Province Transport</option>
-                                <option value="Daily Transport">Daily Transport</option>
-                            </select>
                         </div>
                         <div class="form-group">
                             <label for="approval_status_edit">Approval Status</label>
@@ -356,10 +351,6 @@
                 , {
                     data: 'rs_voucher'
                     , name: 'rs_voucher'
-                }
-                , {
-                    data: 'rs_travel_type'
-                    , name: 'rs_travel_type'
                 }
                 , {
                     data: 'created_at'

@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Drivers</title>
     <?php $title_page = 'Drivers'; ?>
-    @include('includes.header')
+    @include('includes.admin_header')
 </head>
 <body>
     <div class="row">
