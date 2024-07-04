@@ -38,7 +38,7 @@
                                             <select class="form-select" name="event_id" id="event_id">
                                                 <option value="" disabled selected>Select Event</option>
                                                 @foreach ($events as $event)
-                                                <option value="{{ $event->event_id }}">{{ $event->ev_name }}</option>
+                                                <option value="{{ $event->event_id }}">{{ $event->ev_name }} - {{ $event->ev_venue }}</option>
                                                 @endforeach
                                             </select>
                                             <span id="event_id_error"></span>
@@ -86,6 +86,24 @@
                                             </select>
                                             <span id="office_id_error"></span>
                                         </div>
+
+                                        <div class="mb-2">
+                                            <label for="rs_passengers" class="form-label mb-0">Passengers</label>
+                                            <input type="text" class="form-control rounded-1" name="rs_passengers" placeholder="Enter Number of Passengers" id="rs_passengers" value="">
+                                            <span id="rs_passengers_error"></span>
+                                        </div>
+                                        
+                                            <div class="mb-2">
+                                                <label for="rs_travel_type" class="form-label mb-0">Travel Type</label>
+                                                <select class="form-select" name="rs_travel_type" id="rs_travel_type">
+                                                    <option value="" disabled selected>Select Travel Type</option>
+                                                    <option value="Outside Province Transport">Outside Province Transport</option>
+                                                    <option value="Daily Transport">Daily Transport</option>
+                                                </select>
+                                                <span id="rs_travel_type_error"></span>
+                                            </div>
+                                        
+
 
                                         <div class="mb-2">
                                             <label for="rs_voucher" class="form-label mb-0">Voucher</label>
@@ -396,7 +414,7 @@
             if (data.length > 0) {
                 var selectOptions = [];
                 $.each(data, function(index, event) {
-                    selectOptions += "<option value='" + event.event_id + "'>" + event.ev_name + "</option>";
+                    selectOptions += "<option value='" + event.event_id + "'>" + event.ev_name + " - " + event.ev_venue + "</option>";
                 });
                 $('#event_id').html(selectOptions);
             } else {
@@ -408,7 +426,7 @@
             if (data.length > 0) {
                 var selectOptions = '';
                 $.each(data, function(index, events) {
-                    selectOptions += "<option value='" + events.event_id + "'>" + events.ev_name + "</option>";
+                    selectOptions += "<option value='" + events.event_id + "'>" + events.ev_name + " - " + events.ev_venue + "</option>";
                 });
                 $('#event_edit').html(selectOptions);
                 $('#event_edit').val(id);
@@ -508,6 +526,7 @@
                     events.push({
                         "event_id": row.event_id
                         , "ev_name": row.ev_name
+                        , "ev_venue": row.ev_venue
                     });
 
                     rowVehicles.forEach((item) => {

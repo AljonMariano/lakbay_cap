@@ -72,6 +72,7 @@ class ReservationsController extends Controller
                     ['reservations.rs_cancelled', 0]
                 ])->whereNotNull('reservations.deleted_at');
             })
+            ->select('events.event_id', 'events.ev_name', 'events.ev_venue')  // Add ev_venue here
             ->orderBy('ev_name')           
             ->get();
 
@@ -133,7 +134,7 @@ class ReservationsController extends Controller
                 ['reservations.rs_status', 'Cancelled'],
                 ['rs_cancelled', 0]
             ])
-            ->select('events.event_id', 'ev_name')
+            ->select('events.event_id', 'ev_name', 'ev_venue')  // Add ev_venue here
             ->orderBy('ev_name')
             ->get();
         $existingDriverIds = ReservationVehicle::whereNotNull('driver_id')->distinct('driver_id')->pluck('driver_id')->toArray();
@@ -160,7 +161,7 @@ class ReservationsController extends Controller
                 ['reservations.rs_status', 'Cancelled'],
                 ['rs_cancelled', 0]
             ])
-            ->select('events.event_id', 'ev_name')
+            ->select('events.event_id', 'ev_name', 'ev_venue')  // Add ev_venue here
             ->orderBy('ev_name')
             ->get();
 
