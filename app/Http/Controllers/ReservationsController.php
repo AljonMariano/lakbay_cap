@@ -29,22 +29,59 @@ class ReservationsController extends Controller
 {
     public function show(Request $request)
     {
-        if ($request->ajax()) {
-            $data = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")
-                ->select('reservations.*', 'events.ev_name', 'requestors.rq_full_name')
-                ->join('events', 'reservations.event_id', '=', 'events.event_id')
-                ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id');
-            
-            return Datatables::of($data)
-                ->addIndexColumn()
-                ->addColumn('action', function ($data) {
-                    $button = '<button type="button" name="edit" edit-id="' . $data->reservation_id . '" class="edit btn btn-primary table-btn">Edit</button>';
-                    $button .= '<button type="button" name="cancel" id="' . $data->reservation_id . '" class="cancel btn btn-danger table-btn">Cancel</button>';
-                    $button .= '<button type="button" name="delete" id="' . $data->reservation_id . '" class="delete btn btn-danger table-btn">Delete</button>';
-                    return $button;
-                })
-                ->rawColumns(['action'])
-                ->make(true);
+        try {
+            if ($request->ajax()) {
+                $reservations = Reservations::with(['events', 'requestors', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'office'])
+                    ->select('reservations.*');
+
+                // If the user is not an admin, filter the reservations
+                if (!auth()->user()->isAdmin()) {
+                    $reservations->where('requestor_id', auth()->id());
+                }
+
+                // Log the SQL query
+                \Log::info($reservations->toSql());
+                \Log::info($reservations->getBindings());
+
+                $data = DataTables::of($reservations)
+                    ->addColumn('ev_name', function ($reservation) {
+                        return $reservation->events ? $reservation->events->ev_name : 'N/A';
+                    })
+                    ->addColumn('vehicles', function ($reservation) {
+                        return $reservation->reservation_vehicles->map(function ($rv) {
+                            return $rv->vehicles->vh_brand;
+                        })->implode(', ');
+                    })
+                    ->addColumn('drivers', function ($reservation) {
+                        return $reservation->reservation_vehicles->map(function ($rv) {
+                            return $rv->drivers ? $rv->drivers->dr_fname : 'N/A';
+                        })->filter()->implode(', ');
+                    })
+                    ->addColumn('rq_full_name', function ($reservation) {
+                        return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
+                    })
+                    ->addColumn('office', function ($reservation) {
+                        return $reservation->office ? $reservation->office->off_name : 'N/A';
+                    })
+                    ->editColumn('created_at', function ($reservation) {
+                        return $reservation->created_at->format('F d, Y');
+                    })
+                    ->addColumn('action', function ($reservation) {
+                        return '<a href="'.route('reservations.edit', $reservation->reservation_id).'" class="btn btn-sm btn-primary">Edit</a>
+                                <a href="'.route('reservations.delete', $reservation->reservation_id).'" class="btn btn-sm btn-danger">Delete</a>';
+                    })
+                    ->rawColumns(['action'])
+                    ->make(true);
+
+                // Log the final data being returned
+                \Log::info('DataTables data:', $data->getData(true));
+
+                return $data;
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error in ReservationsController@show: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            return response()->json(['error' => 'An error occurred while processing your request.'], 500);
         }
         
         $existingDriverIds = ReservationVehicle::whereNotNull('driver_id')->distinct('driver_id')->pluck('driver_id')->toArray();
@@ -64,7 +101,7 @@ class ReservationsController extends Controller
             ->whereNull('reservations.reservation_id')
             ->orWhere([
                 ['reservations.rs_status', 'Cancelled'],
-                ['reservations.rs_cancelled', 0]
+                ['rs_cancelled', 0]
             ])
             ->orWhere(function ($query) {
                 $query->where([
@@ -72,13 +109,12 @@ class ReservationsController extends Controller
                     ['reservations.rs_cancelled', 0]
                 ])->whereNotNull('reservations.deleted_at');
             })
-            ->select('events.event_id', 'events.ev_name', 'events.ev_venue')  // Add ev_venue here
+            ->select('events.event_id', 'events.ev_name', 'events.ev_venue')
             ->orderBy('ev_name')           
             ->get();
 
         $requestors = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
         
-        // Fetch offices data
         $offices = DB::table('offices')->select('off_id', 'off_acr', 'off_name')->get();
         
         if (auth()->user()->isAdmin()) {
@@ -134,7 +170,7 @@ class ReservationsController extends Controller
                 ['reservations.rs_status', 'Cancelled'],
                 ['rs_cancelled', 0]
             ])
-            ->select('events.event_id', 'ev_name', 'ev_venue')  // Add ev_venue here
+            ->select('events.event_id', 'ev_name', 'ev_venue')
             ->orderBy('ev_name')
             ->get();
         $existingDriverIds = ReservationVehicle::whereNotNull('driver_id')->distinct('driver_id')->pluck('driver_id')->toArray();
@@ -161,7 +197,7 @@ class ReservationsController extends Controller
                 ['reservations.rs_status', 'Cancelled'],
                 ['rs_cancelled', 0]
             ])
-            ->select('events.event_id', 'ev_name', 'ev_venue')  // Add ev_venue here
+            ->select('events.event_id', 'ev_name', 'ev_venue')
             ->orderBy('ev_name')
             ->get();
 
@@ -310,21 +346,25 @@ class ReservationsController extends Controller
     }
 
     public function edit($reservation_id)
-    {
-        if (request()->ajax()) {
-            $data = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")->select('reservations.*', 'events.ev_name', 'requestors.rq_full_name')
-                ->join('events', 'reservations.event_id', '=', 'events.event_id')
-                ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
-                ->findOrFail($reservation_id);
-            return response()->json(['result' => $data]);
-        }
+{
+    if (request()->ajax()) {
+        $data = Reservations::with(['reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'events', 'requestors', 'office'])
+            ->select('reservations.*', 'events.ev_name', 'requestors.rq_full_name', 'offices.off_name')
+            ->join('events', 'reservations.event_id', '=', 'events.event_id')
+            ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
+            ->join('offices', 'reservations.off_id', '=', 'offices.off_id')
+            ->findOrFail($reservation_id);
+
+        return response()->json(['result' => $data]);
     }
+}
     public function delete($reservation_id)
-    {
-        $data = Reservations::findOrFail($reservation_id);
-        $data->delete();
-        return response()->json(['success' => 'Vehicle successfully Deleted']);
-    }
+{
+    $reservation = Reservations::findOrFail($reservation_id);
+    $reservation->delete();
+
+    return response()->json(['success' => 'Reservation deleted successfully.']);
+}
     public function cancel($reservation_id)
     {
         $reservation = Reservations::findOrFail($reservation_id);

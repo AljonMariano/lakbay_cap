@@ -130,110 +130,17 @@
                             <td>Requestor</td>
                             <td>Voucher</td>
                             <td>Travel Type</td>
+                            <td>Passengers</td>
                             <td>Date Filed</td>
                             <td>Approval</td>
                             <td>Status</td>
+                            <td>Office</td>
                             
                         </tr>
                     </thead>
                     <tbody>
                     </tbody>
                 </table>
-            </div>
-        </div>
-    </div>
-    <!-------------EDIT MODAL --------------->
-    <div class="modal fade" tabindex="-1" id="edit_reservation_modal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form method="post" id="reservation_edit" name="reservation_edit" class="form-horizontal">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="ModalLabel">Edit Reservation</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">&times;</button>
-                    </div>
-
-
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label>Event : </label>
-                            <select class="form-select" name="event_edit" id="event_edit">
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Driver : </label>
-                            <select class="form-select drivers-edit" name="driver_edit[]" id="driver_edit">
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Vehicles : </label>
-                            <select class="form-select vehicles-edit" name="vehicle_edit[]" id="vehicle_edit">
-
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Requestor</label>
-                            <select class="form-select" name="requestor_edit" id="requestor_edit" id="requestor_edit">
-                                @foreach ($requestors as $requestor)
-                                <option value="{{ $requestor->requestor_id }}" id="requestor_value">{{ $requestor->rq_full_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="voucher_edit" class="form-label mb-0">Voucher</label>
-                            <input type="text" class="form-control rounded-1" name="voucher_edit" id="voucher_edit" value="">
-                        </div>
-                        <div class="form-group">
-                            <label>Travel Type : </label>
-                            <select class="form-select" name="travel_edit" id="travel_edit">
-                                <option value="Outside Province Transport">Outside Province Transport</option>
-                                <option value="Daily Transport">Daily Transport</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="approval_status_edit">Approval Status</label>
-                            <select name="approval_status_edit" id="approval_status_edit">
-                                <option value="Approved">Approved</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Rejected">Rejected</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="status_edit">Status</label>
-                            <select name="status_edit" id="status_edit">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                                <option value="Cancelled">Cancelled</option>
-                            </select>
-                        </div>
-                        <input type="hidden" name="action" id="action" value="Add" />
-                        <input type="hidden" name="hidden_id" id="hidden_id" value="" />
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <input type="submit" name="action_button" id="action_button" value="Update" class="btn btn-info" />
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <!-------------DELETE MODAL --------------->
-    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="ModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form method="post" id="events_form" class="form-horizontal">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="ModalLabel">Confirmation</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <h4 id="confirm_message" align="center" style="margin:0;">Are you sure you want to remove this data?</h4>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" action="" name="ok_button" id="ok_button" class="btn btn-danger">OK</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -352,6 +259,10 @@
                     , name: 'rs_travel_type'
                 }
                 , {
+                    data: 'rs_passengers'
+                    , name: 'rs_passengers'
+                }
+                , {
                     data: 'created_at'
                     , name: 'created_at'
                     , render: function(data, type, row, meta) {
@@ -371,6 +282,10 @@
                 , {
                     data: 'rs_status'
                     , name: 'rs_status'
+                }
+                , {
+                    data: 'office'
+                    , name: 'office.off_name'
                 }
                 ,
             ]
@@ -463,88 +378,6 @@
             $("#insertModal").modal("show");
         });
         // INSERT------------------------------------------------------------------//
-        // EDIT-------------------------------------------------------------------//
-        $(document).on('click', '.edit', function(e) {
-            e.preventDefault();
-            $('#reservation_edit')[0].reset();
-            var reservation_id = $(this).attr('edit-id');
-            var row = table.row($(this).parents('tr')).data();
-            // console.log(row);
-            var rowVehicles = row.reservation_vehicles;
-            var vehicle_ids = rowVehicles.map((item) => {
-                return item.vehicle_id;
-            });
-            var driver_ids = rowVehicles.map((item) => {
-                return item.driver_id;
-            });
-            driver_ids = driver_ids.filter((item) => {
-                return item != null;
-            })
-            // console.log(driver_ids);
-
-            var vehicles = row.reservation_vehicles;
-
-            var drivers = row.reservation_vehicles;
-            var action_url = "{{ route('reservations.getEditEvents') }}";
-            $.ajax({
-                type: 'get'
-                , headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-                , url: action_url
-                , dataType: 'json'
-                , success: function(data) {
-                    // console.log(data);
-                    var events = data.events;
-                    var drivers = data.drivers;
-                    var vehicles = data.vehicles;
-
-                    events.push({
-                        "event_id": row.event_id
-                        , "ev_name": row.ev_name
-                    });
-
-                    rowVehicles.forEach((item) => {
-                        vehicles.push({
-                            "vehicle_id": item.vehicles.vehicle_id
-                            , "vh_brand": item.vehicles.vh_brand
-                        , });
-                    })
-                    rowVehicles.forEach((item) => {
-                        if (item.drivers != null) {
-                            drivers.push({
-                                "driver_id": item.drivers.driver_id
-                                , "dr_fname": item.drivers.dr_fname
-                            });
-                        }
-                    })
-                    events.sort((a, b) =>
-                        a.ev_name.localeCompare(b.ev_name));
-
-                    drivers.sort((a, b) =>
-                        a.dr_fname.localeCompare(b.dr_fname));
-
-                    editEvents(events, row.event_id);
-                    editDrivers(drivers, driver_ids);
-                    editVehicles(vehicles, vehicle_ids);
-                }
-                , error: function(xhr, status, error) {
-                    console.error(xhr.responseText);
-                }
-            });
-
-
-            $('#form_result').html('');
-            $('#requestor_edit').val(row.requestor_id);
-            $('#voucher_edit').val(row.rs_voucher);
-            $('#approval_status_edit').val(row.rs_approval_status);
-            $('#status_edit').val(row.rs_status);
-            $('#hidden_id').val(reservation_id);
-            $('#edit_reservation_modal').modal('show');
-        });
-
-        // EDIT-------------------------------------------//
-
 
         // STORE------------------------------------------------------------------- //
         $('#reservations-form').on('submit', function(event) {
@@ -591,97 +424,10 @@
         });
         // STORE---------------------------//
 
-        //UPDATE------------------------------------------//
-        $('#reservation_edit').on('submit', function(event) {
-            event.preventDefault();
-            var action_url = "{{ url('/update-reservation')}}";
-            $.ajax({
-                type: 'post'
-                , headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-                , url: action_url
-                , data: $(this).serialize()
-                , dataType: 'json'
-                , success: function(data) {
-                    console.log('success: ' + data);
-                    var html = '';
-                    if (data.errors) {
-                        html = '<div class="alert alert-danger">';
-                        for (var count = 0; count < data.errors.length; count++) {
-                            html += '<p>' + data.errors[count] + '</p>';
-                        }
-                        html += '</div>';
-                    }
-                    if (data.success) {
-                        html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-                        $('#reservations-table').DataTable().ajax.reload();
-                        $('#edit_reservation_modal').modal('hide');
-                        $('#reservation_edit')[0].reset();
-                    }
-                    $('#form_result').html(html);
-                }
-                , error: function(data) {
-                    var errors = data.responseJSON;
-                    console.log(errors);
-                }
-            });
-        });
-
-
-        //UPDATE----------------------------------------------//
-        //CANCEL----------------------------------------------//
-        var reservation_id;
-        $(document).on('click', '.cancel', function() {
-            reservation_id = $(this).attr('id');
-            $('#confirm_message').text("Are You sure you want to Cancel?");
-            $('#confirmModal').modal('show');
-            $('#ok_button').prop('action', 'cancelled')
-        });
-
-
-
-        //CANCEL-----------------------------------------------//
-        // DELETE----------------------------------------------//
-        var reservation_id;
-        $(document).on('click', '.delete', function() {
-            reservation_id = $(this).attr('id');
-            $('#confirm_message').text("Are You sure you want to Delete?");
-            $('#confirmModal').modal('show');
-            $('#ok_button').prop('action', 'delete')
-        });
-
-        $('#ok_button').click(function() {
-            var action = $(this).prop('action');
-            if (action == 'cancelled') {
-                $.ajax({
-                    url: "/cancel-reservation/" + reservation_id
-                    , success: function(data) {
-                        setTimeout(function() {
-                            $('#confirmModal').modal('hide');
-                            $('#reservations-table').DataTable().ajax.reload();
-                        });
-                    }
-                })
-            } else {
-                $.ajax({
-                    url: "/delete-reservation/" + reservation_id
-                    , success: function(data) {
-                        setTimeout(function() {
-                            $('#confirmModal').modal('hide');
-                            $('#reservations-table').DataTable().ajax.reload();
-                        });
-                    }
-                })
-            }
-
-
-        });
-        //DELETE---------------------------//
-
     });
 
 </script>
 
 @include('includes.footer');
 </html>
+

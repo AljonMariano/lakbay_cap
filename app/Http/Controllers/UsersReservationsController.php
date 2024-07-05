@@ -31,18 +31,12 @@ class UsersReservationsController extends Controller
     public function show(Request $request)
     {
         if ($request->ajax()) {
-            $data = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers")
-                ->select('reservations.*', 'events.ev_name', 'requestors.rq_full_name')
-                ->join('events', 'reservations.event_id', '=', 'events.event_id')
-                ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id');
-            
-            return Datatables::of($data)
-                ->addIndexColumn()
-                ->addColumn('action', function ($data) {
-                    $button = '<button type="button" name="edit" edit-id="' . $data->reservation_id . '" class="edit btn btn-primary table-btn">Edit</button>';
-                    $button .= '<button type="button" name="cancel" id="' . $data->reservation_id . '" class="cancel btn btn-danger table-btn">Cancel</button>';
-                    $button .= '<button type="button" name="delete" id="' . $data->reservation_id . '" class="delete btn btn-danger table-btn">Delete</button>';
-                    return $button;
+            $reservations = Reservations::with(['event', 'requestor', 'reservationVehicles.vehicles', 'reservationVehicles.drivers'])
+                ->select('reservations.*');
+
+            return DataTables::of($reservations)
+                ->addColumn('action', function($row){
+                    // Add your action buttons here
                 })
                 ->rawColumns(['action'])
                 ->make(true);

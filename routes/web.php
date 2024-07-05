@@ -119,21 +119,21 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
 
 
 
-    // Reservation Section
-    Route::get('/reservations', [ReservationsController::class, 'show'])->name('reservations.show');
-    Route::get('/event-calendar', [ReservationsController::class, 'event_calendar']);
-    Route::get('/driver-schedules', [ReservationsController::class, 'drivers_schedules']);
-    Route::get('/get-events', [ReservationsController::class, 'events'])->name('reservations.getEvents');
-    Route::get('/get-edit-events', [ReservationsController::class, 'events_edit'])->name('reservations.getEditEvents');
-    Route::get('/reservations-archive', [ReservationsController::class, 'reservations_archive']);
-    Route::get('/reservations-word', [ReservationsController::class, 'reservations_word']);
-    Route::get('/reservations-excel', [ReservationsController::class, 'reservations_excel']);
-    Route::get('/reservations-pdf', [ReservationsController::class, 'reservations_pdf']);
-    Route::post('/insert-reservation', [ReservationsController::class, 'store']);
-    Route::post('/update-reservation', [ReservationsController::class, 'update']);
-    Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit']);
-    Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
-    Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete']);
+// Reservation Section
+Route::get('/reservations', [ReservationsController::class, 'show'])->name('reservations.show');
+Route::get('/event-calendar', [ReservationsController::class, 'event_calendar']);
+Route::get('/driver-schedules', [ReservationsController::class, 'drivers_schedules']);
+Route::get('/get-events', [ReservationsController::class, 'events'])->name('reservations.getEvents');
+Route::get('/get-edit-events', [ReservationsController::class, 'events_edit'])->name('reservations.getEditEvents');
+Route::get('/reservations-archive', [ReservationsController::class, 'reservations_archive']);
+Route::get('/reservations-word', [ReservationsController::class, 'reservations_word']);
+Route::get('/reservations-excel', [ReservationsController::class, 'reservations_excel']);
+Route::get('/reservations-pdf', [ReservationsController::class, 'reservations_pdf']);
+Route::post('/insert-reservation', [ReservationsController::class, 'store']);
+Route::post('/update-reservation', [ReservationsController::class, 'update']);
+Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit'])->name('reservations.edit');
+Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
+Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete'])->name('reservations.delete');
 
     // Test Section
     Route::get('/test-select', [ReservationsController::class, 'test_select'])->name('reservations.testSelect');
