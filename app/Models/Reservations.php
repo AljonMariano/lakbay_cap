@@ -25,7 +25,8 @@ class Reservations extends Model
         'rs_approval_status',
         'rs_status',
         'event_id',
-        'requestor_id'
+        'requestor_id',
+        'off_id'
     ];
     public function events(): BelongsTo
     {

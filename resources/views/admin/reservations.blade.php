@@ -151,19 +151,19 @@
                 <table class="table table-bordered table-hover reservations-table" id="reservations-table" name="reservations-table">
                     <thead>
                         <tr>
-                            <td>ID</td>
-                            <td>Destination/Activity</td>
-                            <td>Vehicle</td>
-                            <td>Driver</td>
-                            <td>Requestor</td>
-                            <td>Office</td>  
-                            <td>Trip Ticket No.</td>
-                            <td>Travel Type</td>
-                            <td>Passengers</td>
-                            <td>Date Filed</td>
-                            <td>Approval</td>
-                            <td>Status</td>
-                            <td>Action</td>
+                            <th>ID</th>
+                            <th>Event Name</th>
+                            <th>Vehicles</th>
+                            <th>Drivers</th>
+                            <th>Requestor</th>
+                            <th>Office</th>
+                            <th>Voucher</th>
+                            <th>Passengers</th>
+                            <th>Travel Type</th>
+                            <th>Created At</th>
+                            <th>Approval Status</th>
+                            <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -245,6 +245,28 @@
                                     </select>
                                     <span id="rs_status_edit_error"></span>
                                 </div>
+
+                                <div class="mb-2">
+                                    <label for="rs_passengers_edit" class="form-label mb-0">Passengers</label>
+                                    <input type="text" class="form-control rounded-1" name="rs_passengers" id="rs_passengers_edit" placeholder="Enter Number of Passengers">
+                                    <span id="rs_passengers_edit_error"></span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="rs_travel_type_edit" class="form-label mb-0">Travel Type</label>
+                                    <input type="text" class="form-control rounded-1" name="rs_travel_type" id="rs_travel_type_edit" placeholder="Enter Travel Type">
+                                    <span id="rs_travel_type_edit_error"></span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="office_edit" class="form-label mb-0">Office</label>
+                                    <select class="form-select" name="off_id" id="office_edit">
+                                        @foreach ($offices as $office)
+                                        <option value="{{ $office->off_id }}">{{ $office->off_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <span id="office_edit_error"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -278,48 +300,14 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
-            $('.vehicles-select').select2({
-                placeholder: 'Select drivers',
-                allowClear: true
-            });
             $('.drivers-select, .events-edit, .drivers-edit, .vehicles-edit').select2();
 
             var table = $('.reservations-table').DataTable({
-                lengthMenu: [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, "All"]
-                ],
-                search: {
-                    return: true
-                },
                 processing: true,
                 serverSide: true,
-                dom: 'Blfrtip',
-                buttons: [
-                    {
-                        text: 'Word',
-                        action: function(e, dt, node, config) {
-                            var searchValue = $('.dataTables_filter input').val();
-                            window.location.href = '/reservations-word?search=' + searchValue;
-                        }
-                    },
-                    {
-                        text: 'Excel',
-                        action: function(e, dt, node, config) {
-                            var searchValue = $('.dataTables_filter input').val();
-                            window.location.href = '/reservations-excel?search=' + searchValue;
-                        }
-                    },
-                    {
-                        text: 'Pdf',
-                        action: function(e, dt, node, config) {
-                            var searchValue = $('.dataTables_filter input').val();
-                            window.location.href = '/reservations-pdf?search=' + searchValue;
-                        }
-                    }
-                ],
                 ajax: {
-                    url: window.location.pathname,
+                    url: "{{ route('reservations.show') }}",
+                    type: 'GET',
                     error: function (jqXHR, textStatus, errorThrown) {
                         console.error("AJAX error: " + textStatus + ' : ' + errorThrown);
                     }
@@ -328,31 +316,24 @@
                     { data: 'reservation_id', name: 'reservation_id' },
                     { data: 'ev_name', name: 'events.ev_name' },
                     { 
-                        data: 'reservation_vehicles',
-                        render: function(data, type, row, meta) {
-                            var vehicles = [];
-                            data.forEach((item, index) => {
-                                vehicles.push(item.vehicles.vh_brand);
-                            });
-                            return vehicles.join(",");
-                        },
+                        data: 'vehicles',
                         name: 'reservation_vehicles.vehicles.vh_brand'
                     },
                     { 
-                        data: 'reservation_vehicles',
-                        render: function(data, type, row, meta) {
-                            var drivers = [];
-                            data.forEach((item, index) => {
-                                if (item.drivers != null) {
-                                    drivers.push(item.drivers.dr_fname);
-                                }
-                            });
-                            return drivers.join(",");
-                        },
+                        data: 'drivers',
                         name: 'reservation_vehicles.drivers.dr_fname'
                     },
                     { data: 'rq_full_name', name: 'requestors.rq_full_name' },
+                    { 
+                        data: 'office', 
+                        name: 'office.off_name',
+                        render: function(data, type, row, meta) {
+                            return data ? data : 'N/A';
+                        }
+                    },
                     { data: 'rs_voucher', name: 'rs_voucher' },
+                    { data: 'rs_passengers', name: 'rs_passengers' },
+                    { data: 'rs_travel_type', name: 'rs_travel_type' },
                     { 
                         data: 'created_at', 
                         name: 'created_at',
@@ -422,6 +403,8 @@
                     url: action_url,
                     dataType: 'json',
                     success: function(data) {
+                        console.log(data); // Add this line to log the data to the console
+
                         var reservation = data.result;
                         var rowVehicles = reservation.reservation_vehicles;
                         var vehicle_ids = rowVehicles.map((item) => item.vehicle_id);
@@ -435,6 +418,9 @@
                         $('#rs_voucher_edit').val(reservation.rs_voucher);
                         $('#rs_approval_status_edit').val(reservation.rs_approval_status);
                         $('#rs_status_edit').val(reservation.rs_status);
+                        $('#rs_passengers_edit').val(reservation.rs_passengers); // Passengers
+                        $('#rs_travel_type_edit').val(reservation.rs_travel_type); // Travel Type
+                        $('#office_edit').val(reservation.off_id); // Office
                         $('#hidden_id').val(reservation_id);
                         $('#edit_reservation_modal').modal('show');
                     },

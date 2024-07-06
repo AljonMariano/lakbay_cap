@@ -21,8 +21,8 @@ class Offices extends Model
         'off_name',
         'off_head',
     ];
-    public function drivers(): HasMany
+    public function reservations(): HasMany
     {
-        return $this->hasMany(Drivers::class,'off_id');
+        return $this->hasMany(Reservations::class, 'off_id', 'off_id');
     }
 }
