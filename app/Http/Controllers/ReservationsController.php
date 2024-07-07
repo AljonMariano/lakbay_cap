@@ -619,15 +619,5 @@ public function getDriversAndVehicles()
         return response()->json(['error' => 'Failed to fetch drivers and vehicles'], 500);
     }
 }
+}
 
-public function getDriversVehicles()
-{
-    $drivers = Driver::all();
-    $vehicles = Vehicle::all();
-    
-    return response()->json([
-        'drivers' => $drivers,
-        'vehicles' => $vehicles
-    ]);
-}
-}

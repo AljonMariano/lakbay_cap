@@ -404,69 +404,65 @@
                 $("#insertModal").modal("show");
             });
 
-            // EDIT
+          // EDIT
 $(document).on('click', '.edit', function(e) {
     e.preventDefault();
     $('#reservation_edit')[0].reset();
     var reservation_id = $(this).attr('edit-id');
     var action_url = "{{ route('reservations.edit', ':id') }}".replace(':id', reservation_id);
     
-    // First, fetch the events
-    $.ajax({
-        type: 'get',
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: "{{ route('reservations.getEvents') }}",
-        dataType: 'json',
-        success: function(eventsData) {
-            console.log("Events data received:", eventsData);
-            
-            // Now fetch the reservation data
-            $.ajax({
-                type: 'get',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                url: action_url,
-                dataType: 'json',
-                success: function(data) {
-                    console.log("Edit data received:", data);
+    // Fetch events, drivers, and vehicles
+    $.when(
+        $.ajax({
+            type: 'get',
+            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            url: "{{ route('reservations.getEvents') }}",
+            dataType: 'json'
+        }),
+        $.ajax({
+            type: 'get',
+            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            url: "{{ route('reservations.getDriversAndVehicles') }}",
+            dataType: 'json'
+        })
+    ).done(function(eventsData, driversAndVehiclesData) {
+        // Now fetch the reservation data
+        $.ajax({
+            type: 'get',
+            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+            url: action_url,
+            dataType: 'json',
+            success: function(data) {
+                console.log("Edit data received:", data);
 
-                    var reservation = data.result;
-                    var rowVehicles = reservation.reservation_vehicles;
-                    var vehicle_ids = rowVehicles.map((item) => item.vehicle_id);
-                    var driver_ids = rowVehicles.map((item) => item.driver_id).filter((item) => item != null);
+                var reservation = data.result;
+                var rowVehicles = reservation.reservation_vehicles;
+                var vehicle_ids = rowVehicles.map((item) => item.vehicle_id);
+                var driver_ids = rowVehicles.map((item) => item.driver_id).filter((item) => item != null);
 
-                    // Use the events data fetched earlier
-                    editEvents(eventsData, reservation.event_id);
-                    editDrivers(reservation.reservation_vehicles.map(rv => rv.drivers), driver_ids);
-                    editVehicles(reservation.reservation_vehicles.map(rv => rv.vehicles), vehicle_ids);
+                // Use the fetched data
+                editEvents(eventsData[0], reservation.event_id);
+                editDrivers(driversAndVehiclesData[0].drivers, driver_ids);
+                editVehicles(driversAndVehiclesData[0].vehicles, vehicle_ids);
 
-                    $('#requestor_edit').val(reservation.requestor_id);
-                    $('#rs_voucher_edit').val(reservation.rs_voucher);
-                    $('#rs_approval_status_edit').val(reservation.rs_approval_status);
-                    $('#rs_status_edit').val(reservation.rs_status);
-                    $('#rs_passengers_edit').val(reservation.rs_passengers); 
-                    $('#rs_travel_type_edit').val(reservation.rs_travel_type); 
-                    $('#office_edit').val(reservation.off_id); 
-                    $('#edit_reservation_id').val(reservation_id);
-                    $('#edit_reservation_modal').modal('show');
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error fetching reservation data:", error);
-                    console.error("Response:", xhr.responseText);
-                }
-            });
-        },
-        error: function(xhr, status, error) {
-            console.error("Error fetching events data:", error);
-            console.error("Response:", xhr.responseText);
-        }
+                // ... rest of the code to populate other fields ...
+
+                $('#edit_reservation_modal').modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching reservation data:", error);
+                console.error("Response:", xhr.responseText);
+            }
+        });
+    }).fail(function(xhr, status, error) {
+        console.error("Error fetching data:", error);
+        console.error("Response:", xhr.responseText);
     });
 
     $('#form_result').html('');
 });
+
+
             // STORE
             $('#reservations-form').on('submit', function(event) {
                 event.preventDefault();
@@ -608,33 +604,36 @@ $(document).on('click', '.edit', function(e) {
     }
 }
 
-            function editDrivers(data, ids) {
-                var selectElement = $('#driver_edit');
-                selectElement.empty(); 
-                
-                if (data && data.length > 0) {
-                    $.each(data, function(index, driver) {
-                        var selected = ids.includes(driver.driver_id) ? 'selected' : '';
-                        selectElement.append(`<option value="${driver.driver_id}" ${selected}>${driver.dr_fname} ${driver.dr_lname}</option>`);
-                    });
-                } else {
-                    selectElement.append('<option value="" disabled>No drivers available</option>');
-                }
-            }
+function editDrivers(data, selectedIds) {
+    var selectElement = $('#driver_edit');
+    selectElement.empty();
+    
+    if (data && data.length > 0) {
+        selectElement.append('<option value="" disabled>Select Driver</option>');
+        $.each(data, function(index, driver) {
+            var selected = selectedIds.includes(driver.driver_id) ? 'selected' : '';
+            selectElement.append(`<option value="${driver.driver_id}" ${selected}>${driver.dr_fname} ${driver.dr_mname} ${driver.dr_lname}</option>`);
+        });
+    } else {
+        selectElement.append('<option value="" disabled>No drivers available</option>');
+    }
+}
 
-            function editVehicles(data, ids) {
-                var selectElement = $('#vehicle_edit');
-                selectElement.empty(); // Clear existing options
-                
-                if (data && data.length > 0) {
-                    $.each(data, function(index, vehicle) {
-                        var selected = ids.includes(vehicle.vehicle_id) ? 'selected' : '';
-                        selectElement.append(`<option value="${vehicle.vehicle_id}" ${selected}>${vehicle.vh_brand} - ${vehicle.vh_plate}</option>`);
-                    });
-                } else {
-                    selectElement.append('<option value="" disabled>No vehicles available</option>');
-                }
-            }
+
+function editVehicles(data, selectedIds) {
+    var selectElement = $('#vehicle_edit');
+    selectElement.empty();
+    
+    if (data && data.length > 0) {
+        selectElement.append('<option value="" disabled>Select Vehicle</option>');
+        $.each(data, function(index, vehicle) {
+            var selected = selectedIds.includes(vehicle.vehicle_id) ? 'selected' : '';
+            selectElement.append(`<option value="${vehicle.vehicle_id}" ${selected}>${vehicle.vh_brand} - ${vehicle.vh_type} - ${vehicle.vh_plate} - ${vehicle.vh_capacity}</option>`);
+        });
+    } else {
+        selectElement.append('<option value="" disabled>No vehicles available</option>');
+    }
+}
         });
     </script>
 

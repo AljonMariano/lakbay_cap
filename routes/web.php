@@ -134,6 +134,8 @@ Route::post('/update-reservation', [ReservationsController::class, 'update']);
 Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit'])->name('reservations.edit');
 Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
 Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete'])->name('reservations.delete');
+Route::get('/get-drivers-and-vehicles', [ReservationsController::class, 'getDriversAndVehicles'])->name('reservations.getDriversAndVehicles');
+
 
 
     // Test Section
