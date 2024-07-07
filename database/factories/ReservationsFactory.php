@@ -6,6 +6,7 @@ use App\Models\Driver;
 use App\Models\Drivers;
 use App\Models\Requestors;
 use App\Models\Vehicles;
+use App\Models\Offices;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -26,8 +27,9 @@ class ReservationsFactory extends Factory
             'rs_travel_type'=> fake()->randomElement(['Daily Travel', 'Outside Province']),
             'rs_approval_status' => fake()->randomElement(['Pending', 'Approved', 'Rejected']),
             'rs_status' => fake()->randomElement(['Active', 'Inactive']),
-            'event_id' => fake()->numberBetween(1,50), // Assuming event_id is a foreign key
-            'requestor_id' => fake()->numberBetween(1,10), // Assuming requestor_id is a foreign key
+            'event_id' => fake()->numberBetween(1,50), 
+            'requestor_id' => fake()->numberBetween(1,10), 
+            'off_id' => Offices::factory(), 
             'created_at' => fake()->dateTimeBetween('-1 year', 'now'),
             'updated_at' => fake()->dateTimeBetween('-1 year', 'now'),
             

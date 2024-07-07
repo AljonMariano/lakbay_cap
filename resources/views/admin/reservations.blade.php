@@ -175,7 +175,7 @@
     </div>
 
     <!-------------EDIT MODAL --------------->
-    <div class="modal fade" tabindex="-1" id="edit_reservation_modal">
+    <div class="modal fade" tabindex="-1" id="edit_reservation_modal" aria-labelledby="reservationModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form method="post" id="reservation_edit" name="reservation_edit" class="form-horizontal">
@@ -281,7 +281,7 @@
     </div>
 
     <!-------------CONFIRM MODAL --------------->
-    <div class="modal fade" tabindex="-1" id="confirmModal">
+    <div class="modal fade" tabindex="-1" id="confirmModal" aria-labelledby="reservationModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -439,6 +439,8 @@
             $('#reservations-form').on('submit', function(event) {
                 event.preventDefault();
                 var action_url = "{{url('/insert-reservation')}}";
+                
+                
                 $.ajax({
                     type: 'post',
                     headers: {

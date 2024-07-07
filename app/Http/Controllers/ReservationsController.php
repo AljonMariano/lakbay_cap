@@ -115,7 +115,7 @@ class ReservationsController extends Controller
     }
     public function event_calendar()
     {
-        $colors = ['#d5c94c', '#4522ea', '#45a240', '#7c655a', '#cf4c11']; // Example colors
+        $colors = ['#d5c94c', '#4522ea', '#45a240', '#7c655a', '#cf4c11'];
 
         $events = Events::all()->map(function ($event) use ($colors) {
             return [
@@ -211,75 +211,62 @@ class ReservationsController extends Controller
 
     public function store(Request $request)
     {
-        // Log the request data for debugging
-        \Log::info('Request Data:', $request->all());
+        \Log::info('Received reservation data:', $request->all());
+        \Log::info('off_id in request:', [$request->input('off_id')]);
+        
+        $validatedData = $request->validate([
+            'event_id' => 'required|exists:events,event_id',
+            'driver_id' => 'required|array',
+            'driver_id.*' => 'exists:drivers,driver_id',
+            'vehicle_id' => 'required|array',
+            'vehicle_id.*' => 'exists:vehicles,vehicle_id',
+            'requestor_id' => 'required|exists:requestors,requestor_id',
+            'off_id' => 'required|exists:offices,off_id',
+            'rs_passengers' => 'required|integer',
+            'rs_travel_type' => 'required|string',
+            'rs_voucher' => 'required|string',
+            'rs_approval_status' => 'required|string',
+            'rs_status' => 'required|string',
+        ]);
 
-        // Validate the request data
-        $validation = $request->validate(
-            [
-                "rs_voucher" => "required",
-                "rs_travel_type" => "required",
-                "rs_approval_status" => "required",
-                "rs_status" => "required",
-                "event_id" => "required",
-                "driver_id" => "required|array",
-                "vehicle_id" => "required|array",
-                "requestor_id" => "required",
-                "rs_passengers" => "required",
-                "off_id" => "required", 
-            ],
-            [
-                "required" => "This field is required",
-            ]
-        );
+        \Log::info('Validated reservation data:', $validatedData);
 
-        // Create a new reservation instance
-        $reservations = new Reservations();
+        try {
+            DB::beginTransaction();
 
-        // Assign values from the request to the reservation instance
-        $reservations->rs_voucher = $request->rs_voucher;
-        $reservations->rs_travel_type = $request->rs_travel_type;
-        $reservations->rs_approval_status = $request->rs_approval_status;
-        $reservations->rs_status = $request->rs_status;
-        $reservations->event_id = $request->event_id;
-        $reservations->requestor_id = $request->requestor_id;
-        $reservations->rs_passengers = $request->rs_passengers;
-        $reservations->off_id = $request->off_id; 
+            $reservation = new Reservations();
+            $reservation->event_id = $validatedData['event_id'];
+            $reservation->requestor_id = $validatedData['requestor_id'];
+            $reservation->off_id = $validatedData['off_id'];
+            $reservation->rs_passengers = $validatedData['rs_passengers'];
+            $reservation->rs_travel_type = $validatedData['rs_travel_type'];
+            $reservation->rs_voucher = $validatedData['rs_voucher'];
+            $reservation->rs_approval_status = $validatedData['rs_approval_status'];
+            $reservation->rs_status = $validatedData['rs_status'];
+            $reservation->save();
 
-        // Log the reservation data for debugging
-        \Log::info('Reservation Data before save:', $reservations->toArray());
+            \Log::info('Reservation saved:', $reservation->toArray());
 
-        // Save the reservation
-        $reservations->save();
-
-        // Verify that the reservation was saved correctly
-        $savedReservation = Reservations::find($reservations->reservation_id);
-        \Log::info('Saved Reservation Data:', $savedReservation->toArray());
-
-        // Handle reservation vehicles
-        $vehicle_ids = $request->vehicle_id;
-        $driver_ids = $request->driver_id;
-        $off_id = $request->off_id;
-        $count = count($vehicle_ids);
-
-        for ($i = 0; $i < $count; $i++) {
-            $reservation_vh = new ReservationVehicle();
-            $reservation_vh->reservation_id = $reservations->reservation_id;
-            $reservation_vh->vehicle_id = $vehicle_ids[$i];
-            $reservation_vh->off_id = $off_id;
-
-            if (isset($driver_ids[$i])) {
-                $reservation_vh->driver_id = $driver_ids[$i];
-                $reservation_vh->off_id = $off_id;
-
+            // Save driver and vehicle associations
+            foreach ($validatedData['driver_id'] as $index => $driverId) {
+                $vehicleId = $validatedData['vehicle_id'][$index] ?? null;
+                if ($vehicleId) {
+                    ReservationVehicles::create([
+                        'reservation_id' => $reservation->reservation_id,
+                        'driver_id' => $driverId,
+                        'vehicle_id' => $vehicleId,
+                    ]);
+                }
             }
 
-            $reservation_vh->save();
+            DB::commit();
 
+            return response()->json(['success' => 'Reservation created successfully.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error creating reservation: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to create reservation.'], 500);
         }
-
-        return response()->json(['success' => 'Reservation successfully recorded']);
-
     }
 
 
@@ -295,6 +282,9 @@ class ReservationsController extends Controller
         $reservations->rs_approval_status = $request->approval_status_edit;
         $reservations->rs_status = $request->status_edit;
         $reservations->off_id = $request->off_id_edit;
+
+        \Log::info('Updating reservation with off_id: ' . $reservations->off_id);
+        $reservations->save();
 
         $cancelled =  Reservations::where([['rs_cancelled', 0], ['event_id', $request->event_edit]])->latest()->first();
         // dd($cancelled);
