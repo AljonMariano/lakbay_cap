@@ -8,25 +8,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\ReservationVehicle;
 
 class Reservations extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    protected $table = 'reservations';
     protected $primaryKey = 'reservation_id';
     protected $fillable=[
-        'rs_voucher',
-        'rs_daily_transport',
-        'rs_cancelled',
-        'rs_outside_province',
-        'rs_date_filed',
-        'rs_passengers',
-        'rs_approval_status',
-        'rs_status',
-        'event_id',
-        'requestor_id',
-        'off_id'
+        'event_id', 'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
+        'rs_voucher', 'rs_approval_status', 'rs_status'
     ];
     public function events(): BelongsTo
     {
@@ -38,7 +29,7 @@ class Reservations extends Model
     }
     public function reservation_vehicles(): HasMany
     {
-        return $this->hasMany(ReservationVehicle::class, 'reservation_id', 'reservation_id');
+        return $this->hasMany(ReservationVehicle::class, 'reservation_id');
     }
     public function office(): BelongsTo
     {

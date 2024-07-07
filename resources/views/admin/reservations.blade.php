@@ -179,7 +179,8 @@
     <div class="modal fade" tabindex="-1" id="edit_reservation_modal" aria-labelledby="reservationModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form method="post" id="reservation_edit" name="reservation_edit" class="form-horizontal">
+                <form id="reservation_edit" name="reservation_edit" class="form-horizontal">
+                    @csrf
                     <div class="modal-header">
                         <h5 class="modal-title" id="ModalLabel">Edit Reservation</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -187,7 +188,7 @@
                     <div class="modal-body">
                         <div class="card rounded-0">
                             <div class="card-body">
-                                <input type="hidden" name="reservation_id" id="edit_reservation_id" value="">
+                                <input type="hidden" name="hidden_id" id="edit_reservation_id" value="">
 
                                 <div class="mb-2">
                                     <label for="event_edit" class="form-label mb-0">Destination/Activity</label>
@@ -508,40 +509,30 @@ $(document).on('click', '.edit', function(e) {
             });
 
             // UPDATE
-            $('#reservation_edit').on('submit', function(event) {
-                event.preventDefault();
-                var action_url = "{{ url('/update-reservation')}}";
-                $.ajax({
-                    type: 'post',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    url: action_url,
-                    data: $(this).serialize(),
-                    dataType: 'json',
-                    success: function(data) {
-                        var html = '';
-                        if (data.errors) {
-                            html = '<div class="alert alert-danger">';
-                            for (var count = 0; count < data.errors.length; count++) {
-                                html += '<p>' + data.errors[count] + '</p>';
-                            }
-                            html += '</div>';
-                        }
-                        if (data.success) {
-                            html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-                            $('#reservations-table').DataTable().ajax.reload();
-                            $('#edit_reservation_modal').modal('hide');
-                            $('#reservation_edit')[0].reset();
-                        }
-                        $('#form_result').html(html);
-                    },
-                    error: function(data) {
-                        var errors = data.responseJSON;
-                        console.log(errors);
-                    }
-                });
-            });
+            $('#reservation_edit').on('submit', function(e) {
+    e.preventDefault();
+    var formData = $(this).serialize();
+    console.log('Form data being sent:', formData);
+
+    $.ajax({
+        url: '/admin/reservations/update',
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            if (response.success) {
+                alert('Reservation updated successfully');
+                $('#edit_reservation_modal').modal('hide');
+                // Refresh your data table or page here
+            } else {
+                alert('Failed to update reservation: ' + (response.error || 'Unknown error'));
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Update error:', xhr.responseText);
+            alert('An error occurred while updating the reservation');
+        }
+    });
+});
 
             // CANCEL
             var reservation_id;

@@ -272,38 +272,23 @@ class ReservationsController extends Controller
 
     public function update(Request $request)
     {
-        $id = $request->hidden_id;
-        
-        try {
-            $reservations = Reservations::findOrFail($id);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            \Log::error('Reservation not found: ' . $id);
-            return response()->json(['error' => 'Reservation not found'], 404);
+        \Log::info('Update method called with data:', $request->all());
+        $id = $request->input('hidden_id');
+        \Log::info('Attempting to find reservation with ID: ' . $id);
+
+        if (!$id) {
+            return response()->json(['error' => 'No reservation ID provided'], 400);
         }
-    
-        // Log the incoming data
-        \Log::info('Updating reservation:', $request->all());
-    
-        $reservations->event_id = $request->event_edit;
-        $reservations->requestor_id = $request->requestor_edit;
-        $reservations->rs_voucher = $request->voucher_edit;
-        $reservations->rs_travel_type = $request->travel_edit;
-        $reservations->rs_approval_status = $request->approval_status_edit;
-        $reservations->rs_status = $request->status_edit;
-        $reservations->off_id = $request->off_id_edit;
-    
-        \Log::info('Updating reservation with off_id: ' . $reservations->off_id);
-        
+
         try {
-            $reservations->save();
+            $reservation = Reservations::findOrFail($id);
+            $reservation->update($request->except(['_token', 'hidden_id']));
+
+            return response()->json(['success' => 'Reservation updated successfully']);
         } catch (\Exception $e) {
-            \Log::error('Error saving reservation: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to save reservation'], 500);
+            \Log::error('Error updating reservation: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to update reservation: ' . $e->getMessage()], 500);
         }
-    
-        // ... rest of your update logic ...
-    
-        return response()->json(['success' => 'Reservation successfully updated']);
     }
     public function edit($reservation_id)
     {
