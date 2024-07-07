@@ -46,7 +46,7 @@
 
                                         <div class="mb-2">
                                             <label for="driver_id" class="form-label mb-0">Driver</label>
-                                            <select class="form-select" name="driver_id[]" id="driver_id">
+                                            <select class="form-select driver-select" name="driver_id[]" id="driver_id">
                                                 <option value="" disabled selected>Select Driver</option>
                                                 @foreach ($drivers as $driver)
                                                 <option value="{{$driver->driver_id}}">{{ $driver->dr_fname }} {{ $driver->dr_mname }} {{ $driver->dr_lname }}</option>
@@ -57,7 +57,7 @@
 
                                         <div class="mb-2">
                                             <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
-                                            <select class="form-select" name="vehicle_id[]" id="vehicle_id">
+                                            <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id">
                                                 <option value="" disabled selected>Select Vehicle</option>
                                                 @foreach ($vehicles as $vehicle)
                                                 <option value="{{ $vehicle->vehicle_id }}"> {{ $vehicle->vh_brand }} - {{ $vehicle->vh_type }} - {{ $vehicle->vh_plate }} - {{$vehicle->vh_capacity}}</option>
@@ -370,26 +370,26 @@
 
             // INSERT
             $("#insertBtn").click(function() {
-    var action_url = "{{ route('reservations.getEvents') }}";
-    $.ajax({
-        type: 'get',
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: action_url,
-        dataType: 'json',
-        success: function(data) {
-            console.log("Events data received:", data);
-            getEvents(data);
-        },
-        error: function(xhr, status, error) {
-            console.error("AJAX error:", error);
-            console.error("Response:", xhr.responseText);
-        }
-    });
+                var action_url = "{{ route('reservations.getEvents') }}";
+                $.ajax({
+                    type: 'get',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: action_url,
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log("Events data received:", data);
+                        getEvents(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("AJAX error:", error);
+                        console.error("Response:", xhr.responseText);
+                    }
+                });
 
-    $("#insertModal").modal("show");
-});
+                $("#insertModal").modal("show");
+            });
 
             // EDIT
             $(document).on('click', '.edit', function(e) {
@@ -542,20 +542,20 @@
 
             // Helper functions
             function getEvents(data) {
-    console.log("Inside getEvents function, data:", data);
-    if (data && data.length > 0) {
-        var selectOptions = '<option value="" disabled selected>Select Event</option>';
-        $.each(data, function(index, event) {
-            console.log("Processing event:", event);
-            selectOptions += "<option value='" + event.event_id + "'>" + event.ev_name + " - " + event.ev_venue + "</option>";
-        });
-        console.log("Generated options:", selectOptions);
-        $('#event_id').html(selectOptions);
-    } else {
-        console.log("No events data or empty array");
-        $('#event_id').html('<option value="" disabled selected>No events available</option>');
-    }
-}
+                console.log("Inside getEvents function, data:", data);
+                if (data && data.length > 0) {
+                    var selectOptions = '<option value="" disabled selected>Select Event</option>';
+                    $.each(data, function(index, event) {
+                        console.log("Processing event:", event);
+                        selectOptions += "<option value='" + event.event_id + "'>" + event.ev_name + " - " + event.ev_venue + "</option>";
+                    });
+                    console.log("Generated options:", selectOptions);
+                    $('#event_id').html(selectOptions);
+                } else {
+                    console.log("No events data or empty array");
+                    $('#event_id').html('<option value="" disabled selected>No events available</option>');
+                }
+            }
 
             function editEvents(data, id) {
                 if (data.length > 0) {

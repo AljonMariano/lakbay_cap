@@ -87,14 +87,12 @@ class ReservationsController extends Controller
         $existingDriverIds = ReservationVehicle::whereNotNull('driver_id')->distinct('driver_id')->pluck('driver_id')->toArray();
         $existingVehicleIds = ReservationVehicle::pluck('vehicle_id')->toArray();
 
-        $drivers = DB::table('drivers')
-            ->whereNotIn('driver_id', $existingDriverIds)
-            ->select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
+        $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
+            ->orderBy('dr_fname')
             ->get();
 
-        $vehicles = DB::table('vehicles')
-            ->whereNotIn('vehicle_id', $existingVehicleIds)
-            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
+        $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
+            ->orderBy('vh_brand')
             ->get();
 
         $events = Events::select('event_id', 'ev_name', 'ev_venue')
@@ -604,5 +602,31 @@ class ReservationsController extends Controller
     $offices = Office::all();
     
     return view('users.reservations', ['offices' => $offices]);
+}
+
+public function getDriversAndVehicles()
+{
+    try {
+        $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
+            ->orderBy('dr_fname')
+            ->get();
+
+        $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
+            ->orderBy('vh_brand')
+            ->get();
+
+        \Log::info('Drivers and Vehicles fetched:', [
+            'drivers_count' => $drivers->count(),
+            'vehicles_count' => $vehicles->count()
+        ]);
+
+        return response()->json([
+            'drivers' => $drivers,
+            'vehicles' => $vehicles
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error fetching drivers and vehicles: ' . $e->getMessage());
+        return response()->json(['error' => 'Failed to fetch drivers and vehicles'], 500);
+    }
 }
 }
