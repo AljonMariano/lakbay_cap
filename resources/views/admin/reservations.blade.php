@@ -34,7 +34,7 @@
                                         <input type="hidden" name="reservation_id" value="">
 
                                         <div class="mb-2">
-                                            <label for="event_id" class="form-label mb-0">Event</label>
+                                            <label for="event_id" class="form-label mb-0">Destination/ Activity</label>
                                             <select class="form-select" name="event_id" id="event_id" required>
                                                 <option value="" disabled selected>Select Event</option>
                                                 @foreach ($events as $event)
@@ -105,7 +105,7 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <label for="rs_voucher" class="form-label mb-0">Voucher</label>
+                                            <label for="rs_voucher" class="form-label mb-0">Trip Ticket No.</label>
                                             <input type="text" class="form-control rounded-1" name="rs_voucher" placeholder="Enter Voucher code" id="rs_voucher" value="">
                                             <span id="rs_voucher_error"></span>
                                         </div>
@@ -153,12 +153,12 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Event Name</th>
+                            <th>Destination/Activity</th>
                             <th>Vehicles</th>
                             <th>Drivers</th>
                             <th>Requestor</th>
                             <th>Office</th>
-                            <th>Voucher</th>
+                            <th>Trip Ticket No.</th>
                             <th>Passengers</th>
                             <th>Travel Type</th>
                             <th>Created At</th>
@@ -220,7 +220,7 @@
                                 </div>
 
                                 <div class="mb-2">
-                                    <label for="rs_voucher_edit" class="form-label mb-0">Voucher</label>
+                                    <label for="rs_voucher_edit" class="form-label mb-0">Trip Ticket No.</label>
                                     <input type="text" class="form-control rounded-1" name="rs_voucher" id="rs_voucher_edit" placeholder="Enter Voucher code">
                                     <span id="rs_voucher_edit_error"></span>
                                 </div>

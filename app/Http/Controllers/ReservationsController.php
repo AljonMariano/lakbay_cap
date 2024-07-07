@@ -61,7 +61,7 @@ class ReservationsController extends Controller
                         return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
                     })
                     ->addColumn('office', function ($reservation) {
-                        return $reservation->office ? $reservation->office->off_name : 'N/A';
+                        return $reservation->office ? $reservation->office->off_name: 'N/A';
                     })
                     ->editColumn('created_at', function ($reservation) {
                         return $reservation->created_at->format('F d, Y');
@@ -212,8 +212,8 @@ class ReservationsController extends Controller
     public function store(Request $request)
     {
         \Log::info('Received reservation data:', $request->all());
-        \Log::info('off_id in request:', [$request->input('off_id')]);
-        
+        \Log::info('off_id value:', [$request->input('off_id')]);
+
         $validatedData = $request->validate([
             'event_id' => 'required|exists:events,event_id',
             'driver_id' => 'required|array',
