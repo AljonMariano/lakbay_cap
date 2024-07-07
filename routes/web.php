@@ -142,6 +142,7 @@ Route::post('/reservations/update', [ReservationsController::class, 'update'])->
 
 
 
+
     // Test Section
     Route::get('/test-select', [ReservationsController::class, 'test_select'])->name('reservations.testSelect');
     Route::get('/test-return', [ReservationsController::class, 'test_return'])->name('reservations.testReturn');

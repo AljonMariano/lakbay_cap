@@ -270,53 +270,53 @@ class ReservationsController extends Controller
     }
 
 
-    public function update(Request $request)
-    {
-        \Log::info('Update method called with data:', $request->all());
-        $id = $request->input('hidden_id');
-        \Log::info('Attempting to find reservation with ID: ' . $id);
+public function update(Request $request)
+{
+    \Log::info('Update method called with data:', $request->all());
+    $id = $request->input('hidden_id');
+    \Log::info('Extracted hidden_id:', ['id' => $id]);
 
-        if (!$id) {
-            return response()->json(['error' => 'No reservation ID provided'], 400);
-        }
-
-        try {
-            $reservation = Reservations::findOrFail($id);
-            $reservation->update($request->except(['_token', 'hidden_id']));
-
-            return response()->json(['success' => 'Reservation updated successfully']);
-        } catch (\Exception $e) {
-            \Log::error('Error updating reservation: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to update reservation: ' . $e->getMessage()], 500);
-        }
+    if (!$id) {
+        \Log::warning('No reservation ID provided in the request');
+        return response()->json(['error' => 'No reservation ID provided'], 400);
     }
-    public function edit($reservation_id)
-    {
-        if (request()->ajax()) {
-            \Log::info('Edit method called with reservation_id: ' . $reservation_id);
-            
-            try {
-                $data = Reservations::with(['reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'events', 'requestors', 'office'])
-                    ->select('reservations.*', 'events.ev_name', 'requestors.rq_full_name', 'offices.off_name')
-                    ->join('events', 'reservations.event_id', '=', 'events.event_id')
-                    ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
-                    ->leftJoin('offices', 'reservations.off_id', '=', 'offices.off_id')
-                    ->where('reservations.reservation_id', $reservation_id)
-                    ->firstOrFail();
-    
-                \Log::info('Fetched reservation data:', $data->toArray());
-    
-                return response()->json(['result' => $data]);
-            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-                \Log::error('Reservation not found: ' . $reservation_id);
-                return response()->json(['error' => 'Reservation not found'], 404);
-            } catch (\Exception $e) {
-                \Log::error('Error in edit method: ' . $e->getMessage());
-                \Log::error($e->getTraceAsString());
-                return response()->json(['error' => 'An error occurred while fetching the reservation'], 500);
-            }
+
+    try {
+        $reservation = Reservations::findOrFail($id);
+        \Log::info('Found reservation:', $reservation->toArray());
+
+        $updateData = $request->except(['_token', 'hidden_id']);
+        \Log::info('Update data:', $updateData);
+
+        $reservation->update($updateData);
+
+        // Update the reservation_vehicles relationship
+        if ($request->has('driver_id') && $request->has('vehicle_id')) {
+            $reservation->reservation_vehicles()->updateOrCreate(
+                ['reservation_id' => $id],
+                ['driver_id' => $request->driver_id, 'vehicle_id' => $request->vehicle_id]
+            );
         }
+
+        \Log::info('Reservation updated successfully', ['id' => $id]);
+        return response()->json(['success' => 'Reservation updated successfully']);
+    } catch (\Exception $e) {
+        \Log::error('Error updating reservation: ' . $e->getMessage(), ['id' => $id]);
+        return response()->json(['error' => 'Failed to update reservation: ' . $e->getMessage()], 500);
     }
+}
+
+public function edit($id)
+{
+    try {
+        $reservation = Reservations::with('reservation_vehicles')->findOrFail($id);
+        return response()->json(['result' => $reservation]);
+    } catch (\Exception $e) {
+        \Log::error('Error fetching reservation: ' . $e->getMessage());
+        return response()->json(['error' => 'Failed to fetch reservation'], 500);
+    }
+}
+
     public function delete($reservation_id)
 {
     // Delete related records in reservation_vehicles

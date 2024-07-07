@@ -405,7 +405,7 @@
                 $("#insertModal").modal("show");
             });
 
-          // EDIT
+// EDIT
 $(document).on('click', '.edit', function(e) {
     e.preventDefault();
     $('#reservation_edit')[0].reset();
@@ -447,6 +447,12 @@ $(document).on('click', '.edit', function(e) {
                 editVehicles(driversAndVehiclesData[0].vehicles, vehicle_ids);
 
                 // Populate other fields
+                $('#edit_reservation_id').val(reservation.reservation_id); 
+                $('#event_edit').val(reservation.event_id);
+                $('#driver_edit').val(reservation.reservation_vehicles[0].driver_id);
+                $('#vehicle_edit').val(reservation.reservation_vehicles[0].vehicle_id);
+                $('#requestor_edit').val(reservation.requestor_id);
+                $('#office_edit').val(reservation.off_id);
                 $('#rs_passengers_edit').val(reservation.rs_passengers);
                 $('#rs_travel_type_edit').val(reservation.rs_travel_type);
                 $('#rs_voucher_edit').val(reservation.rs_voucher);
@@ -466,6 +472,35 @@ $(document).on('click', '.edit', function(e) {
     });
 
     $('#form_result').html('');
+});
+
+// UPDATE
+$('#reservation_edit').on('submit', function(e) {
+    e.preventDefault();
+    var formData = $(this).serialize();
+    console.log('Form data being sent:', formData);
+
+    $.ajax({
+        url: '/admin/reservations/update',
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            var html = '';
+            if (response.success) {
+                html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + response.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
+                $('#reservations-table').DataTable().ajax.reload();
+                $('#edit_reservation_modal').modal('hide');
+            } else {
+                html = "<div class='alert alert-danger alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + (response.error || 'Unknown error') + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
+            }
+            $('#form_result').html(html);
+        },
+        error: function(xhr, status, error) {
+            console.error('Update error:', xhr.responseText);
+            var html = "<div class='alert alert-danger alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;An error occurred while updating the reservation</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
+            $('#form_result').html(html);
+        }
+    });
 });
 
 
@@ -520,9 +555,9 @@ $(document).on('click', '.edit', function(e) {
         data: formData,
         success: function(response) {
             if (response.success) {
-                alert('Reservation updated successfully');
+                
                 $('#edit_reservation_modal').modal('hide');
-                // Refresh your data table or page here
+                
             } else {
                 alert('Failed to update reservation: ' + (response.error || 'Unknown error'));
             }
