@@ -61,7 +61,7 @@ class ReservationsController extends Controller
                         return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
                     })
                     ->addColumn('office', function ($reservation) {
-                        return $reservation->office ? $reservation->office->off_name: 'N/A';
+                        return $reservation->office ? $reservation->office->off_name : 'N/A';
                     })
                     ->editColumn('created_at', function ($reservation) {
                         return $reservation->created_at->format('F d, Y');
@@ -618,5 +618,16 @@ public function getDriversAndVehicles()
         \Log::error('Error fetching drivers and vehicles: ' . $e->getMessage());
         return response()->json(['error' => 'Failed to fetch drivers and vehicles'], 500);
     }
+}
+
+public function getDriversVehicles()
+{
+    $drivers = Driver::all();
+    $vehicles = Vehicle::all();
+    
+    return response()->json([
+        'drivers' => $drivers,
+        'vehicles' => $vehicles
+    ]);
 }
 }

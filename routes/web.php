@@ -135,6 +135,7 @@ Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class,
 Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
 Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete'])->name('reservations.delete');
 
+
     // Test Section
     Route::get('/test-select', [ReservationsController::class, 'test_select'])->name('reservations.testSelect');
     Route::get('/test-return', [ReservationsController::class, 'test_return'])->name('reservations.testReturn');

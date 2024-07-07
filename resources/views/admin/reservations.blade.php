@@ -9,6 +9,7 @@
     @include('includes.admin_header')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
 </head>
 <body>
     <div class="row">
@@ -190,33 +191,67 @@
 
                                 <div class="mb-2">
                                     <label for="event_edit" class="form-label mb-0">Destination/Activity</label>
-                                    <select class="form-select" name="event_id" id="event_edit">
+                                    <select class="form-select" name="event_id" id="event_edit" required>
                                     </select>
                                     <span id="event_edit_error"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="driver_edit" class="form-label mb-0">Driver</label>
-                                    <select class="form-select" name="driver_id[]" id="driver_edit" multiple>
+                                    <select class="form-select" name="driver_id" id="driver_edit">
+                                        <option value="" disabled selected>Select Driver</option>
+                                        @foreach ($drivers as $driver)
+                                        <option value="{{$driver->driver_id}}">{{ $driver->dr_fname }} {{ $driver->dr_mname }} {{ $driver->dr_lname }}</option>
+                                        @endforeach
                                     </select>
-                                    <span id="driver_edit_error"></span>
+                                    <span id="driver_id_error"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="vehicle_edit" class="form-label mb-0">Vehicle</label>
-                                    <select class="form-select" name="vehicle_id[]" id="vehicle_edit" multiple>
+                                    <select class="form-select" name="vehicle_id" id="vehicle_edit">
+                                        <option value="" disabled selected>Select Vehicle</option>
+                                        @foreach ($vehicles as $vehicle)
+                                        <option value="{{ $vehicle->vehicle_id }}"> {{ $vehicle->vh_brand }} - {{ $vehicle->vh_type }} - {{ $vehicle->vh_plate }} - {{$vehicle->vh_capacity}}</option>
+                                        @endforeach
                                     </select>
-                                    <span id="vehicle_edit_error"></span>
+                                    <span id="vehicle_id_error"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="requestor_edit" class="form-label mb-0">Requestor</label>
-                                    <select class="form-select" name="requestor_id" id="requestor_edit">
+                                    <select class="form-select" name="requestor_id" id="requestor_edit" required>
                                         @foreach ($requestors as $requestor)
                                         <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
                                         @endforeach
                                     </select>
                                     <span id="requestor_edit_error"></span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="office_edit" class="form-label mb-0">Office</label>
+                                    <select class="form-select" name="off_id" id="office_edit" required>
+                                        @foreach ($offices as $office)
+                                        <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <span id="office_edit_error"></span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="rs_passengers_edit" class="form-label mb-0">Passengers</label>
+                                    <input type="text" class="form-control rounded-1" name="rs_passengers" id="rs_passengers_edit" placeholder="Enter Number of Passengers">
+                                    <span id="rs_passengers_edit_error"></span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="rs_travel_type_edit" class="form-label mb-0">Travel Type</label>
+                                    <select class="form-select" name="rs_travel_type" id="rs_travel_type_edit">
+                                        <option value="" disabled selected>Select Travel Type</option>
+                                        <option value="Outside Province Transport">Outside Province Transport</option>
+                                        <option value="Daily Transport">Daily Transport</option>
+                                    </select>
+                                    <span id="rs_travel_type_edit_error"></span>
                                 </div>
 
                                 <div class="mb-2">
@@ -245,28 +280,6 @@
                                         <option value="Done">Done</option>
                                     </select>
                                     <span id="rs_status_edit_error"></span>
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="rs_passengers_edit" class="form-label mb-0">Passengers</label>
-                                    <input type="text" class="form-control rounded-1" name="rs_passengers" id="rs_passengers_edit" placeholder="Enter Number of Passengers">
-                                    <span id="rs_passengers_edit_error"></span>
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="rs_travel_type_edit" class="form-label mb-0">Travel Type</label>
-                                    <input type="text" class="form-control rounded-1" name="rs_travel_type" id="rs_travel_type_edit" placeholder="Enter Travel Type">
-                                    <span id="rs_travel_type_edit_error"></span>
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="office_edit" class="form-label mb-0">Office</label>
-                                    <select class="form-select" name="off_id" id="office_edit">
-                                        @foreach ($offices as $office)
-                                        <option value="{{ $office->off_id }}">{{ $office->off_name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <span id="office_edit_error"></span>
                                 </div>
                             </div>
                         </div>
@@ -301,7 +314,7 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
-            $('.drivers-select, .events-edit, .drivers-edit, .vehicles-edit').select2();
+            // $('.drivers-select, .events-edit, .drivers-edit, .vehicles-edit').select2();
 
             var table = $('.reservations-table').DataTable({
                 processing: true,
@@ -392,49 +405,68 @@
             });
 
             // EDIT
-            $(document).on('click', '.edit', function(e) {
-                e.preventDefault();
-                $('#reservation_edit')[0].reset();
-                var reservation_id = $(this).attr('edit-id');
-                var action_url = "{{ route('reservations.edit', ':id') }}".replace(':id', reservation_id);
-                
-                $.ajax({
-                    type: 'get',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    url: action_url,
-                    dataType: 'json',
-                    success: function(data) {
-                        console.log(data); // Add this line to log the data to the console
+$(document).on('click', '.edit', function(e) {
+    e.preventDefault();
+    $('#reservation_edit')[0].reset();
+    var reservation_id = $(this).attr('edit-id');
+    var action_url = "{{ route('reservations.edit', ':id') }}".replace(':id', reservation_id);
+    
+    // First, fetch the events
+    $.ajax({
+        type: 'get',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: "{{ route('reservations.getEvents') }}",
+        dataType: 'json',
+        success: function(eventsData) {
+            console.log("Events data received:", eventsData);
+            
+            // Now fetch the reservation data
+            $.ajax({
+                type: 'get',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: action_url,
+                dataType: 'json',
+                success: function(data) {
+                    console.log("Edit data received:", data);
 
-                        var reservation = data.result;
-                        var rowVehicles = reservation.reservation_vehicles;
-                        var vehicle_ids = rowVehicles.map((item) => item.vehicle_id);
-                        var driver_ids = rowVehicles.map((item) => item.driver_id).filter((item) => item != null);
+                    var reservation = data.result;
+                    var rowVehicles = reservation.reservation_vehicles;
+                    var vehicle_ids = rowVehicles.map((item) => item.vehicle_id);
+                    var driver_ids = rowVehicles.map((item) => item.driver_id).filter((item) => item != null);
 
-                        editEvents(reservation.events, reservation.event_id);
-                        editDrivers(reservation.reservation_vehicles.map(rv => rv.drivers), driver_ids);
-                        editVehicles(reservation.reservation_vehicles.map(rv => rv.vehicles), vehicle_ids);
+                    // Use the events data fetched earlier
+                    editEvents(eventsData, reservation.event_id);
+                    editDrivers(reservation.reservation_vehicles.map(rv => rv.drivers), driver_ids);
+                    editVehicles(reservation.reservation_vehicles.map(rv => rv.vehicles), vehicle_ids);
 
-                        $('#requestor_edit').val(reservation.requestor_id);
-                        $('#rs_voucher_edit').val(reservation.rs_voucher);
-                        $('#rs_approval_status_edit').val(reservation.rs_approval_status);
-                        $('#rs_status_edit').val(reservation.rs_status);
-                        $('#rs_passengers_edit').val(reservation.rs_passengers); 
-                        $('#rs_travel_type_edit').val(reservation.rs_travel_type); 
-                        $('#office_edit').val(reservation.off_id); 
-                        $('#hidden_id').val(reservation_id);
-                        $('#edit_reservation_modal').modal('show');
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(xhr.responseText);
-                    }
-                });
-
-                $('#form_result').html('');
+                    $('#requestor_edit').val(reservation.requestor_id);
+                    $('#rs_voucher_edit').val(reservation.rs_voucher);
+                    $('#rs_approval_status_edit').val(reservation.rs_approval_status);
+                    $('#rs_status_edit').val(reservation.rs_status);
+                    $('#rs_passengers_edit').val(reservation.rs_passengers); 
+                    $('#rs_travel_type_edit').val(reservation.rs_travel_type); 
+                    $('#office_edit').val(reservation.off_id); 
+                    $('#edit_reservation_id').val(reservation_id);
+                    $('#edit_reservation_modal').modal('show');
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching reservation data:", error);
+                    console.error("Response:", xhr.responseText);
+                }
             });
+        },
+        error: function(xhr, status, error) {
+            console.error("Error fetching events data:", error);
+            console.error("Response:", xhr.responseText);
+        }
+    });
 
+    $('#form_result').html('');
+});
             // STORE
             $('#reservations-form').on('submit', function(event) {
                 event.preventDefault();
@@ -558,44 +590,49 @@
                     $('#event_id').html('<option value="" disabled selected>No events available</option>');
                 }
             }
+            function editEvents(data, selectedId) {
+    var selectElement = $('#event_edit');
+    selectElement.empty();
+    
+    console.log("Editing events, data:", data);
+    console.log("Selected ID:", selectedId);
 
-            function editEvents(data, id) {
-                if (data.length > 0) {
-                    var selectOptions = '';
-                    $.each(data, function(index, events) {
-                        selectOptions += "<option value='" + events.event_id + "'>" + events.ev_name + " - " + events.ev_venue + "</option>";
-                    });
-                    $('#event_edit').html(selectOptions);
-                    $('#event_edit').val(id);
-                } else {
-                    $('#event_edit').html('<option value="" disabled selected>No events available</option>');
-                }
-            }
+    if (data && data.length > 0) {
+        selectElement.append('<option value="" disabled>Select Destination/Activity</option>');
+        $.each(data, function(index, event) {
+            var selected = (event.event_id == selectedId) ? 'selected' : '';
+            selectElement.append(`<option value="${event.event_id}" ${selected}>${event.ev_name} - ${event.ev_venue}</option>`);
+        });
+    } else {
+        selectElement.append('<option value="" disabled selected>No events available</option>');
+    }
+}
 
             function editDrivers(data, ids) {
-                if (data.length > 0) {
-                    var selectOptions = [];
+                var selectElement = $('#driver_edit');
+                selectElement.empty(); 
+                
+                if (data && data.length > 0) {
                     $.each(data, function(index, driver) {
-                        selectOptions += "<option value='" + driver.driver_id + "'>" + driver.dr_fname + "</option>";
+                        var selected = ids.includes(driver.driver_id) ? 'selected' : '';
+                        selectElement.append(`<option value="${driver.driver_id}" ${selected}>${driver.dr_fname} ${driver.dr_lname}</option>`);
                     });
-                    $('#driver_edit').html(selectOptions);
-                    $('#drivers-edit').select2();
-                    $('#driver_edit').select2().val(ids).change();
                 } else {
-                    $('#driver_edit').html('<option value="" disabled selected>No drivers available</option>');
+                    selectElement.append('<option value="" disabled>No drivers available</option>');
                 }
             }
 
             function editVehicles(data, ids) {
-                if (data.length > 0) {
-                    var selectOptions = [];
+                var selectElement = $('#vehicle_edit');
+                selectElement.empty(); // Clear existing options
+                
+                if (data && data.length > 0) {
                     $.each(data, function(index, vehicle) {
-                        selectOptions += "<option value='" + vehicle.vehicle_id + "'>" + vehicle.vh_brand + "</option>";
+                        var selected = ids.includes(vehicle.vehicle_id) ? 'selected' : '';
+                        selectElement.append(`<option value="${vehicle.vehicle_id}" ${selected}>${vehicle.vh_brand} - ${vehicle.vh_plate}</option>`);
                     });
-                    $('#vehicle_edit').html(selectOptions);
-                    $('#vehicle_edit').select2().val(ids).change();
                 } else {
-                    $('#vehicle_edit').html('<option value="" disabled selected>No vehicles available</option>');
+                    selectElement.append('<option value="" disabled>No vehicles available</option>');
                 }
             }
         });
