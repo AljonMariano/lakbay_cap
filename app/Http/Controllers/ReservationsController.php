@@ -97,21 +97,12 @@ class ReservationsController extends Controller
             ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
             ->get();
 
-        $events = Events::leftJoin('reservations', 'events.event_id', 'reservations.event_id')
-            ->whereNull('reservations.reservation_id')
-            ->orWhere([
-                ['reservations.rs_status', 'Cancelled'],
-                ['rs_cancelled', 0]
-            ])
-            ->orWhere(function ($query) {
-                $query->where([
-                    ['reservations.rs_status', 'Cancelled'],
-                    ['reservations.rs_cancelled', 0]
-                ])->whereNotNull('reservations.deleted_at');
-            })
-            ->select('events.event_id', 'events.ev_name', 'events.ev_venue')
-            ->orderBy('ev_name')           
+        $events = Events::select('event_id', 'ev_name', 'ev_venue')
+            ->orderBy('ev_name')
             ->get();
+
+        // Add this line to log the events
+        \Log::info('Events:', $events->toArray());
 
         $requestors = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
         
@@ -164,29 +155,18 @@ class ReservationsController extends Controller
 
     public function events()
     {
-        $eventsInsert = Events::leftJoin('reservations', 'events.event_id', 'reservations.event_id')
-            ->whereNull('reservations.reservation_id')
-            ->orWhere([
-                ['reservations.rs_status', 'Cancelled'],
-                ['rs_cancelled', 0]
-            ])
-            ->select('events.event_id', 'ev_name', 'ev_venue')
-            ->orderBy('ev_name')
-            ->get();
-        $existingDriverIds = ReservationVehicle::whereNotNull('driver_id')->distinct('driver_id')->pluck('driver_id')->toArray();
-        $existingVehicleIds = ReservationVehicle::pluck('vehicle_id')->toArray();
-        $driversInsert = DB::table('drivers')
-            ->whereNotIn('driver_id', $existingDriverIds)
-            ->select('driver_id', 'dr_fname')
-            ->get();
+        try {
+            $events = Events::select('event_id', 'ev_name', 'ev_venue')
+                ->orderBy('ev_name')
+                ->get();
 
-        $vehiclesInsert = DB::table('vehicles')
-            ->whereNotIn('vehicle_id', $existingVehicleIds)
-            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
-            ->get();
-        $requestorsInsert = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
+            \Log::info('Events fetched:', ['count' => $events->count(), 'events' => $events->toArray()]);
 
-        return response()->json($eventsInsert);
+            return response()->json($events);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching events: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch events'], 500);
+        }
     }
 
     public function events_edit()
@@ -236,6 +216,7 @@ class ReservationsController extends Controller
         // Log the request data for debugging
         \Log::info('Request Data:', $request->all());
 
+        // Validate the request data
         $validation = $request->validate(
             [
                 "rs_voucher" => "required",
@@ -243,8 +224,8 @@ class ReservationsController extends Controller
                 "rs_approval_status" => "required",
                 "rs_status" => "required",
                 "event_id" => "required",
-                "driver_id" => "required",
-                "vehicle_id" => "required",
+                "driver_id" => "required|array",
+                "vehicle_id" => "required|array",
                 "requestor_id" => "required",
                 "rs_passengers" => "required",
                 "off_id" => "required", 
@@ -254,9 +235,10 @@ class ReservationsController extends Controller
             ]
         );
 
+        // Create a new reservation instance
         $reservations = new Reservations();
-        $reservation_vh = new ReservationVehicle();
 
+        // Assign values from the request to the reservation instance
         $reservations->rs_voucher = $request->rs_voucher;
         $reservations->rs_travel_type = $request->rs_travel_type;
         $reservations->rs_approval_status = $request->rs_approval_status;
@@ -267,30 +249,39 @@ class ReservationsController extends Controller
         $reservations->off_id = $request->off_id; 
 
         // Log the reservation data for debugging
-        \Log::info('Reservation Data:', $reservations->toArray());
+        \Log::info('Reservation Data before save:', $reservations->toArray());
 
+        // Save the reservation
         $reservations->save();
 
         // Verify that the reservation was saved correctly
         $savedReservation = Reservations::find($reservations->reservation_id);
         \Log::info('Saved Reservation Data:', $savedReservation->toArray());
 
+        // Handle reservation vehicles
         $vehicle_ids = $request->vehicle_id;
         $driver_ids = $request->driver_id;
+        $off_id = $request->off_id;
         $count = count($vehicle_ids);
 
         for ($i = 0; $i < $count; $i++) {
             $reservation_vh = new ReservationVehicle();
             $reservation_vh->reservation_id = $reservations->reservation_id;
             $reservation_vh->vehicle_id = $vehicle_ids[$i];
+            $reservation_vh->off_id = $off_id;
 
             if (isset($driver_ids[$i])) {
                 $reservation_vh->driver_id = $driver_ids[$i];
+                $reservation_vh->off_id = $off_id;
+
             }
 
             $reservation_vh->save();
+
         }
+
         return response()->json(['success' => 'Reservation successfully recorded']);
+
     }
 
 
@@ -305,6 +296,8 @@ class ReservationsController extends Controller
         $reservations->rs_travel_type = $request->travel_edit;
         $reservations->rs_approval_status = $request->approval_status_edit;
         $reservations->rs_status = $request->status_edit;
+        $reservations->off_id = $request->off_id_edit;
+
         $cancelled =  Reservations::where([['rs_cancelled', 0], ['event_id', $request->event_edit]])->latest()->first();
         // dd($cancelled);
         if ($cancelled != null) {
@@ -436,8 +429,27 @@ class ReservationsController extends Controller
             $templateProcessor->setValue("rs_status#" . ($i + 1), $reservation->rs_status);
         }
 
-        $templateProcessor->saveAs(public_path() . '\\' . "WordDownloads\sample_downloads.docx");
-        return response()->download(public_path() . '\\' . "WordDownloads\sample_downloads.docx", "ReservationsList.docx")->deleteFileAfterSend(true);
+        $wordFilePath = public_path() . '\\' . "WordDownloads\\reservations_list.docx";
+        $pdfFilePath = public_path() . '\\' . "PdfDownloads\\reservations_list.pdf";
+
+        $templateProcessor->saveAs($wordFilePath);
+
+        // Load Word document
+        $phpWord = \PhpOffice\PhpWord\IOFactory::load($wordFilePath);
+
+        // Set up Dompdf renderer
+        Settings::setPdfRendererPath(base_path('vendor/dompdf/dompdf'));
+        Settings::setPdfRendererName('DomPDF');
+
+        // Save PDF file
+        $pdfWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'PDF');
+        $pdfWriter->save($pdfFilePath);
+
+        // Delete the Word file
+        unlink($wordFilePath);
+
+        // Return response for PDF download
+        return response()->download($pdfFilePath, "ReservationsList.pdf")->deleteFileAfterSend(true);
     }
 
     public function reservations_excel(Request $request)

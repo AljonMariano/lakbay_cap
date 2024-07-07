@@ -129,7 +129,7 @@ Route::get('/reservations-archive', [ReservationsController::class, 'reservation
 Route::get('/reservations-word', [ReservationsController::class, 'reservations_word']);
 Route::get('/reservations-excel', [ReservationsController::class, 'reservations_excel']);
 Route::get('/reservations-pdf', [ReservationsController::class, 'reservations_pdf']);
-Route::post('/insert-reservation', [ReservationsController::class, 'store']);
+Route::post('/insert-reservation', [ReservationsController::class, 'store'])->name('reservations.store');
 Route::post('/update-reservation', [ReservationsController::class, 'update']);
 Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit'])->name('reservations.edit');
 Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);

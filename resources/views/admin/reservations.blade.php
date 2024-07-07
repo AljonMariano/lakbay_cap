@@ -27,15 +27,15 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form action="" method="POST" class="reservations-form" id="reservations-form" name="reservations-form">
+                            <form action="{{ route('reservations.store') }}" method="POST" class="reservations-form" id="reservations-form" name="reservations-form">
                                 @csrf
                                 <div class="card rounded-0">
                                     <div class="card-body">
                                         <input type="hidden" name="reservation_id" value="">
 
                                         <div class="mb-2">
-                                            <label for="event_id" class="form-label mb-0">Event Name</label>
-                                            <select class="form-select" name="event_id" id="event_id">
+                                            <label for="event_id" class="form-label mb-0">Event</label>
+                                            <select class="form-select" name="event_id" id="event_id" required>
                                                 <option value="" disabled selected>Select Event</option>
                                                 @foreach ($events as $event)
                                                 <option value="{{ $event->event_id }}">{{ $event->ev_name }} - {{ $event->ev_venue }}</option>
@@ -68,7 +68,7 @@
 
                                         <div class="mb-2">
                                             <label for="requestor_id" class="form-label mb-0">Requestor</label>
-                                            <select class="form-select" name="requestor_id" id="requestor_id">
+                                            <select class="form-select" name="requestor_id" id="requestor_id" required>
                                                 <option value="" disabled selected>Select Requestor</option>
                                                 @foreach ($requestors as $requestor)
                                                 <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
@@ -78,10 +78,11 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <label for="office" class="form-label mb-0">Office</label>
-                                            <select class="form-select" name="off_id[]" id="office_id">
+                                            <label for="off_id" class="form-label mb-0">Office</label>
+                                            <select class="form-select" name="off_id" id="off_id" required>
+                                                <option value="" disabled selected>Select Office</option>
                                                 @foreach ($offices as $office)
-                                                <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                                    <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
                                                 @endforeach
                                             </select>
                                             <span id="office_id_error"></span>
@@ -369,24 +370,26 @@
 
             // INSERT
             $("#insertBtn").click(function() {
-                var action_url = "{{ route('reservations.getEvents') }}";
-                $.ajax({
-                    type: 'get',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    url: action_url,
-                    dataType: 'json',
-                    success: function(data) {
-                        getEvents(data);
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(xhr.responseText);
-                    }
-                });
+    var action_url = "{{ route('reservations.getEvents') }}";
+    $.ajax({
+        type: 'get',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: action_url,
+        dataType: 'json',
+        success: function(data) {
+            console.log("Events data received:", data);
+            getEvents(data);
+        },
+        error: function(xhr, status, error) {
+            console.error("AJAX error:", error);
+            console.error("Response:", xhr.responseText);
+        }
+    });
 
-                $("#insertModal").modal("show");
-            });
+    $("#insertModal").modal("show");
+});
 
             // EDIT
             $(document).on('click', '.edit', function(e) {
@@ -418,9 +421,9 @@
                         $('#rs_voucher_edit').val(reservation.rs_voucher);
                         $('#rs_approval_status_edit').val(reservation.rs_approval_status);
                         $('#rs_status_edit').val(reservation.rs_status);
-                        $('#rs_passengers_edit').val(reservation.rs_passengers); // Passengers
-                        $('#rs_travel_type_edit').val(reservation.rs_travel_type); // Travel Type
-                        $('#office_edit').val(reservation.off_id); // Office
+                        $('#rs_passengers_edit').val(reservation.rs_passengers); 
+                        $('#rs_travel_type_edit').val(reservation.rs_travel_type); 
+                        $('#office_edit').val(reservation.off_id); 
                         $('#hidden_id').val(reservation_id);
                         $('#edit_reservation_modal').modal('show');
                     },
@@ -539,16 +542,20 @@
 
             // Helper functions
             function getEvents(data) {
-                if (data.length > 0) {
-                    var selectOptions = [];
-                    $.each(data, function(index, event) {
-                        selectOptions += "<option value='" + event.event_id + "'>" + event.ev_name + " - " + event.ev_venue + "</option>";
-                    });
-                    $('#event_id').html(selectOptions);
-                } else {
-                    $('#event_id').html('<option value="" disabled selected>No events available</option>');
-                }
-            }
+    console.log("Inside getEvents function, data:", data);
+    if (data && data.length > 0) {
+        var selectOptions = '<option value="" disabled selected>Select Event</option>';
+        $.each(data, function(index, event) {
+            console.log("Processing event:", event);
+            selectOptions += "<option value='" + event.event_id + "'>" + event.ev_name + " - " + event.ev_venue + "</option>";
+        });
+        console.log("Generated options:", selectOptions);
+        $('#event_id').html(selectOptions);
+    } else {
+        console.log("No events data or empty array");
+        $('#event_id').html('<option value="" disabled selected>No events available</option>');
+    }
+}
 
             function editEvents(data, id) {
                 if (data.length > 0) {

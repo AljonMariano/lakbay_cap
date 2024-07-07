@@ -15,16 +15,17 @@ class PreventBackHistory
      * @param  \Closure  $next
      * @return mixed
      */
-  public function handle(Request $request, Closure $next)
-{
-    $response = $next($request);
+    public function handle(Request $request, Closure $next)
+    {
+        $response = $next($request);
 
-    if ($request->method() === 'GET') {
-        return $response->header('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate')
-                        ->header('Pragma', 'no-cache')
-                        ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
+        // Check if the response is an instance of Response or JsonResponse
+        if ($response instanceof \Illuminate\Http\Response || $response instanceof \Illuminate\Http\JsonResponse) {
+            $response->header('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+            $response->header('Pragma', 'no-cache');
+            $response->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
+        }
+
+        return $response;
     }
-
-    return $response;
-}
 }
