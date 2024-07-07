@@ -445,7 +445,12 @@ $(document).on('click', '.edit', function(e) {
                 editDrivers(driversAndVehiclesData[0].drivers, driver_ids);
                 editVehicles(driversAndVehiclesData[0].vehicles, vehicle_ids);
 
-                // ... rest of the code to populate other fields ...
+                // Populate other fields
+                $('#rs_passengers_edit').val(reservation.rs_passengers);
+                $('#rs_travel_type_edit').val(reservation.rs_travel_type);
+                $('#rs_voucher_edit').val(reservation.rs_voucher);
+                $('#rs_approval_status_edit').val(reservation.rs_approval_status);
+                $('#rs_status_edit').val(reservation.rs_status);
 
                 $('#edit_reservation_modal').modal('show');
             },

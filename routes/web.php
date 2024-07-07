@@ -21,6 +21,7 @@ use App\Http\Controllers\AdminProfileController;
 
 
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -130,11 +131,12 @@ Route::get('/reservations-word', [ReservationsController::class, 'reservations_w
 Route::get('/reservations-excel', [ReservationsController::class, 'reservations_excel']);
 Route::get('/reservations-pdf', [ReservationsController::class, 'reservations_pdf']);
 Route::post('/insert-reservation', [ReservationsController::class, 'store'])->name('reservations.store');
-Route::post('/update-reservation', [ReservationsController::class, 'update']);
+Route::put('/reservations/{reservation}', [ReservationsController::class, 'update'])->name('reservations.update');
 Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit'])->name('reservations.edit');
 Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
 Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete'])->name('reservations.delete');
 Route::get('/get-drivers-and-vehicles', [ReservationsController::class, 'getDriversAndVehicles'])->name('reservations.getDriversAndVehicles');
+Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
 
 
 
