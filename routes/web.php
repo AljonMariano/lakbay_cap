@@ -138,6 +138,7 @@ Route::get('/delete-reservation/{reservation_id}', [ReservationsController::clas
 Route::get('/get-drivers-and-vehicles', [ReservationsController::class, 'getDriversAndVehicles'])->name('reservations.getDriversAndVehicles');
 Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
 Route::post('/reservations/update', [ReservationsController::class, 'update'])->name('reservations.update');
+Route::post('/reservations', [ReservationsController::class, 'store'])->name('reservations.store');
 
 
 

@@ -79,14 +79,14 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <label for="off_id" class="form-label mb-0">Office</label>
+                                            <label for="office" class="form-label mb-0">Office</label>
                                             <select class="form-select" name="off_id" id="off_id" required>
-                                                <option value="" disabled selected>Select Office</option>
+                                                <option value="">Select Office</option>
                                                 @foreach ($offices as $office)
-                                                    <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                                <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
                                                 @endforeach
                                             </select>
-                                            <span id="office_id_error"></span>
+                                            <span id="office_error"></span>
                                         </div>
 
                                         <div class="mb-2">
@@ -505,44 +505,45 @@ $('#reservation_edit').on('submit', function(e) {
 
 
             // STORE
-            $('#reservations-form').on('submit', function(event) {
-                event.preventDefault();
-                var action_url = "{{url('/insert-reservation')}}";
-                
-                
-                $.ajax({
-                    type: 'post',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    url: action_url,
-                    data: $(this).serialize(),
-                    dataType: 'json',
-                    success: function(data) {
-                        var html = '';
-                        if (data.success) {
-                            html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-                            $('#reservations-table').DataTable().ajax.reload();
+ // STORE
+ $('#reservations-form').on('submit', function(event) {
+    event.preventDefault();
+    var formData = $(this).serialize();
+    console.log('Insertion form data being sent:', formData);
+    console.log('off_id value:', $('#office').val()); 
 
-                            $("#insertModal").modal("hide");
-                        }
-                        $('#form_result').html(html);
-                    },
-                    error: function(data) {
-                        var errors = data.responseJSON.errors;
-                        var html = '<span class="text-danger">';
-                        $.each(errors, function(key, value) {
-                            $('#' + key + '_error').html(html + value + '</span>');
-                            $('#' + key).on('input', function() {
-                                if ($(this).val().trim() !== '') {
-                                    $('#' + key + '_error').empty();
-                                }
-                            });
-                        });
+    $.ajax({
+        type: 'post',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: "{{url('/insert-reservation')}}",
+        data: formData,
+        dataType: 'json',
+        success: function(data) {
+            var html = '';
+            if (data.success) {
+                html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
+                $('#reservations-table').DataTable().ajax.reload();
+                $("#insertModal").modal("hide");
+            }
+            $('#form_result').html(html);
+        },
+        error: function(xhr, status, error) {
+            console.error('Insertion error:', xhr.responseText);
+            var errors = xhr.responseJSON.errors;
+            var html = '<span class="text-danger">';
+            $.each(errors, function(key, value) {
+                $('#' + key + '_error').html(html + value + '</span>');
+                $('#' + key).on('input', function() {
+                    if ($(this).val().trim() !== '') {
+                        $('#' + key + '_error').empty();
                     }
                 });
             });
-
+        }
+    });
+});
             // UPDATE
             $('#reservation_edit').on('submit', function(e) {
     e.preventDefault();

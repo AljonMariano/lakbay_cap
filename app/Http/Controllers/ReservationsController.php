@@ -25,6 +25,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
+
 class ReservationsController extends Controller
 {
     public function show(Request $request)
@@ -61,7 +62,7 @@ class ReservationsController extends Controller
                         return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
                     })
                     ->addColumn('office', function ($reservation) {
-                        return $reservation->office ? $reservation->office->off_name: 'N/A';
+                        return $reservation->office ? $reservation->office->off_name . ' (off_id: ' . ($reservation->off_id ?? 'null') . ')' : 'N/A';
                     })
                     ->editColumn('created_at', function ($reservation) {
                         return $reservation->created_at->format('F d, Y');
@@ -158,7 +159,7 @@ class ReservationsController extends Controller
                 ->orderBy('ev_name')
                 ->get();
 
-            \Log::info('Events fetched:', ['count' => $events->count(), 'events' => $events->toArray()]);
+            \Log::channel('custom')->info('Events fetched:', ['count' => $events->count(), 'events' => $events->toArray()]);
 
             return response()->json($events);
         } catch (\Exception $e) {
@@ -211,101 +212,53 @@ class ReservationsController extends Controller
 
     public function store(Request $request)
     {
-        \Log::info('Received reservation data:', $request->all());
-        \Log::info('off_id value:', [$request->input('off_id')]);
-
-        $validatedData = $request->validate([
-            'event_id' => 'required|exists:events,event_id',
-            'driver_id' => 'required|array',
-            'driver_id.*' => 'exists:drivers,driver_id',
-            'vehicle_id' => 'required|array',
-            'vehicle_id.*' => 'exists:vehicles,vehicle_id',
-            'requestor_id' => 'required|exists:requestors,requestor_id',
-            'off_id' => 'required|exists:offices,off_id',
-            'rs_passengers' => 'required|integer',
-            'rs_travel_type' => 'required|string',
-            'rs_voucher' => 'required|string',
-            'rs_approval_status' => 'required|string',
-            'rs_status' => 'required|string',
-        ]);
-
-        \Log::info('Validated reservation data:', $validatedData);
-
+        \Log::channel('custom')->info('Reservation store method called', $request->all());
+    
         try {
-            DB::beginTransaction();
-
-            $reservation = new Reservations();
-            $reservation->event_id = $validatedData['event_id'];
-            $reservation->requestor_id = $validatedData['requestor_id'];
-            $reservation->off_id = $validatedData['off_id'];
-            $reservation->rs_passengers = $validatedData['rs_passengers'];
-            $reservation->rs_travel_type = $validatedData['rs_travel_type'];
-            $reservation->rs_voucher = $validatedData['rs_voucher'];
-            $reservation->rs_approval_status = $validatedData['rs_approval_status'];
-            $reservation->rs_status = $validatedData['rs_status'];
-            $reservation->save();
-
-            \Log::info('Reservation saved:', $reservation->toArray());
-
-            // Save driver and vehicle associations
-            foreach ($validatedData['driver_id'] as $index => $driverId) {
-                $vehicleId = $validatedData['vehicle_id'][$index] ?? null;
-                if ($vehicleId) {
-                    ReservationVehicles::create([
-                        'reservation_id' => $reservation->reservation_id,
-                        'driver_id' => $driverId,
-                        'vehicle_id' => $vehicleId,
+            $validatedData = $request->validate([
+                'event_id' => 'required|exists:events,event_id',
+                'requestor_id' => 'required|exists:requestors,requestor_id',
+                'off_id' => 'required|exists:offices,off_id',
+                'rs_passengers' => 'required|integer',
+                'rs_travel_type' => 'required|string',
+                'rs_voucher' => 'required|string',
+                'rs_approval_status' => 'required|string',
+                'rs_status' => 'required|string',
+            ]);
+    
+            \Log::channel('custom')->info('Validated data', $validatedData);
+    
+            $reservation = Reservations::create($validatedData);
+    
+            \Log::channel('custom')->info('Reservation created', $reservation->toArray());
+    
+            // Handle driver and vehicle assignments
+            if ($request->has('driver_id') && $request->has('vehicle_id')) {
+                $driverIds = $request->driver_id;
+                $vehicleIds = $request->vehicle_id;
+                for ($i = 0; $i < count($driverIds); $i++) {
+                    ReservationVehicle::create([
+                        'reservation_id' => $reservation->id,
+                        'driver_id' => $driverIds[$i],
+                        'vehicle_id' => $vehicleIds[$i],
                     ]);
                 }
             }
-
-            DB::commit();
-
-            return response()->json(['success' => 'Reservation created successfully.']);
+    
+            // Return JSON response for debugging
+            return response()->json([
+                'message' => 'Reservation created successfully',
+                'reservation' => $reservation->load('office'),
+            ]);
+    
         } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error creating reservation: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to create reservation.'], 500);
+            \Log::channel('custom')->error('Error in store method', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Error creating reservation: ' . $e->getMessage()], 500);
         }
     }
-
-
-public function update(Request $request)
-{
-    \Log::info('Update method called with data:', $request->all());
-    $id = $request->input('hidden_id');
-    \Log::info('Extracted hidden_id:', ['id' => $id]);
-
-    if (!$id) {
-        \Log::warning('No reservation ID provided in the request');
-        return response()->json(['error' => 'No reservation ID provided'], 400);
-    }
-
-    try {
-        $reservation = Reservations::findOrFail($id);
-        \Log::info('Found reservation:', $reservation->toArray());
-
-        $updateData = $request->except(['_token', 'hidden_id']);
-        \Log::info('Update data:', $updateData);
-
-        $reservation->update($updateData);
-
-        // Update the reservation_vehicles relationship
-        if ($request->has('driver_id') && $request->has('vehicle_id')) {
-            $reservation->reservation_vehicles()->updateOrCreate(
-                ['reservation_id' => $id],
-                ['driver_id' => $request->driver_id, 'vehicle_id' => $request->vehicle_id]
-            );
-        }
-
-        \Log::info('Reservation updated successfully', ['id' => $id]);
-        return response()->json(['success' => 'Reservation updated successfully']);
-    } catch (\Exception $e) {
-        \Log::error('Error updating reservation: ' . $e->getMessage(), ['id' => $id]);
-        return response()->json(['error' => 'Failed to update reservation: ' . $e->getMessage()], 500);
-    }
-}
-
 public function edit($id)
 {
     try {
