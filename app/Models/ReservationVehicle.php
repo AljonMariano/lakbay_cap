@@ -11,6 +11,7 @@ use App\Models\Vehicles;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class ReservationVehicle extends Model
 {
     use HasFactory;

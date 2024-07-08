@@ -12,6 +12,7 @@ use App\Models\Vehicles;
 use App\Models\Reservations;
 use App\Models\ReservationVehicle;
 
+
 use App\Models\Requestors;
 use Yajra\DataTables\DataTables;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -62,7 +63,7 @@ class ReservationsController extends Controller
                         return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
                     })
                     ->addColumn('office', function ($reservation) {
-                        return $reservation->office ? $reservation->office->off_name . ' (off_id: ' . ($reservation->off_id ?? 'null') . ')' : 'N/A';
+                        return $reservation->office ? $reservation->office->off_name : 'N/A';
                     })
                     ->editColumn('created_at', function ($reservation) {
                         return $reservation->created_at->format('F d, Y');
@@ -224,34 +225,51 @@ class ReservationsController extends Controller
                 'rs_voucher' => 'required|string',
                 'rs_approval_status' => 'required|string',
                 'rs_status' => 'required|string',
+                'driver_id' => 'required|array',
+                'vehicle_id' => 'required|array',
             ]);
     
             \Log::channel('custom')->info('Validated data', $validatedData);
     
-            $reservation = Reservations::create($validatedData);
+            DB::beginTransaction();
     
-            \Log::channel('custom')->info('Reservation created', $reservation->toArray());
+            $reservation = new Reservations();
+            $reservation->fill($validatedData);
+            $reservation->save();
+    
+            \Log::channel('custom')->info('Reservation created', ['id' => $reservation->id, 'data' => $reservation->toArray()]);
     
             // Handle driver and vehicle assignments
-            if ($request->has('driver_id') && $request->has('vehicle_id')) {
-                $driverIds = $request->driver_id;
-                $vehicleIds = $request->vehicle_id;
-                for ($i = 0; $i < count($driverIds); $i++) {
-                    ReservationVehicle::create([
-                        'reservation_id' => $reservation->id,
-                        'driver_id' => $driverIds[$i],
-                        'vehicle_id' => $vehicleIds[$i],
-                    ]);
-                }
+            $driverIds = $request->driver_id;
+            $vehicleIds = $request->vehicle_id;
+            
+            \Log::channel('custom')->info('Driver and Vehicle IDs', ['driver_ids' => $driverIds, 'vehicle_ids' => $vehicleIds]);
+    
+            foreach ($driverIds as $index => $driverId) {
+                $reservationVehicle = new ReservationVehicle([
+                    'reservation_id' => $reservation->id,
+                    'driver_id' => $driverId,
+                    'vehicle_id' => $vehicleIds[$index],
+                ]);
+                $reservationVehicle->save();
+                
+                \Log::channel('custom')->info('ReservationVehicle created', ['id' => $reservationVehicle->id, 'data' => $reservationVehicle->toArray()]);
             }
+    
+            DB::commit();
     
             // Return JSON response for debugging
             return response()->json([
                 'message' => 'Reservation created successfully',
-                'reservation' => $reservation->load('office'),
+                'reservation' => $reservation->load('office', 'reservationVehicles'),
             ]);
     
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            \Log::channel('custom')->error('Validation error', ['errors' => $e->errors()]);
+            return response()->json(['error' => 'Validation failed', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
+            DB::rollBack();
             \Log::channel('custom')->error('Error in store method', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -259,6 +277,10 @@ class ReservationsController extends Controller
             return response()->json(['error' => 'Error creating reservation: ' . $e->getMessage()], 500);
         }
     }
+
+
+
+
 public function edit($id)
 {
     try {

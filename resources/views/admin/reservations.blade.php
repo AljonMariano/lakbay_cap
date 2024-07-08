@@ -504,46 +504,49 @@ $('#reservation_edit').on('submit', function(e) {
 });
 
 
-            // STORE
+    
  // STORE
- $('#reservations-form').on('submit', function(event) {
-    event.preventDefault();
-    var formData = $(this).serialize();
-    console.log('Insertion form data being sent:', formData);
-    console.log('off_id value:', $('#office').val()); 
+ $('#reservations-form').submit(function(e) {
+    e.preventDefault();
+    var formData = new FormData(this);
+    
+    console.log('Form data being sent:');
+    for (var pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
 
     $.ajax({
-        type: 'post',
+        url: $(this).attr('action'),
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: "{{url('/insert-reservation')}}",
-        data: formData,
-        dataType: 'json',
-        success: function(data) {
-            var html = '';
-            if (data.success) {
-                html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-                $('#reservations-table').DataTable().ajax.reload();
-                $("#insertModal").modal("hide");
+        success: function(response) {
+            console.log('Response:', response);
+            if(response.reservation) {
+                console.log('Saved reservation:', response.reservation);
+                alert('Reservation created successfully');
+                $('#insertModal').modal('hide');
+                // Reload your DataTable here if needed
+            } else {
+                console.error('Unexpected response structure:', response);
+                alert('Error: Unexpected response from server');
             }
-            $('#form_result').html(html);
         },
         error: function(xhr, status, error) {
-            console.error('Insertion error:', xhr.responseText);
-            var errors = xhr.responseJSON.errors;
-            var html = '<span class="text-danger">';
-            $.each(errors, function(key, value) {
-                $('#' + key + '_error').html(html + value + '</span>');
-                $('#' + key).on('input', function() {
-                    if ($(this).val().trim() !== '') {
-                        $('#' + key + '_error').empty();
-                    }
-                });
-            });
+            console.error('Error creating reservation:', xhr.responseText);
+            alert('Error creating reservation: ' + error);
         }
     });
 });
+
+
+
+
+
             // UPDATE
             $('#reservation_edit').on('submit', function(e) {
     e.preventDefault();
