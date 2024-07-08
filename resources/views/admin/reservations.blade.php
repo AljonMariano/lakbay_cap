@@ -525,10 +525,12 @@ $('#reservation_edit').on('submit', function(e) {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
         success: function(response) {
+            html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + response.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
+            $('#reservations-table').DataTable().ajax.reload(null, false);
             console.log('Response:', response);
             if(response.reservation) {
                 console.log('Saved reservation:', response.reservation);
-                alert('Reservation created successfully');
+                
                 $('#insertModal').modal('hide');
                 // Reload your DataTable here if needed
             } else {
