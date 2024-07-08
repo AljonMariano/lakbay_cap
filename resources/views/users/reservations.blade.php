@@ -16,32 +16,41 @@
     </div>
     <div class="row mb-3">
         <div class="col">
-            <a href="" role="button" class="btn btn-lg btn-success" id="insertBtn" data-bs-toggle="modal">Reserve</a>
-            <div id="insertModal" class="modal fade" tabindex="-1">
+            <button type="button" class="btn btn-lg btn-success" data-bs-toggle="modal" data-bs-target="#insertModal">
+                Reserve
+            </button>
+
+            <div class="modal fade" id="insertModal" tabindex="-1" aria-labelledby="insertModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Reservation Form</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <h5 class="modal-title" id="insertModalLabel">Reservation Form</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form action="" method="POST" class="reservations-form" id="reservations-form" name="reservations-form">
+                            <form action="{{ route('users.reservations.store') }}" method="POST" class="reservations-form" id="reservations-form" name="reservations-form">
                                 @csrf
                                 <div class="card rounded-0">
                                     <div class="card-body">
                                         <input type="hidden" name="reservation_id" value="">
 
                                         <div class="mb-2">
-                                            <label for="event_id" class="form-label mb-0">Event Name</label>
-                                            <select class="form-select" name="event_id" id="event_id"></select>
+                                            <label for="event_id" class="form-label mb-0">Destination/ Activity</label>
+                                            <select class="form-select" name="event_id" id="event_id" required>
+                                                <option value="" disabled selected>Select Event</option>
+                                                @foreach ($events as $event)
+                                                <option value="{{ $event->event_id }}">{{ $event->ev_name }} - {{ $event->ev_venue }}</option>
+                                                @endforeach
+                                            </select>
                                             <span id="event_id_error"></span>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="driver_id" class="form-label mb-0">Driver</label>
-                                            <select class="form-select " name="driver_id[]" id="driver_id">
+                                            <select class="form-select driver-select" name="driver_id[]" id="driver_id">
+                                                <option value="" disabled selected>Select Driver</option>
                                                 @foreach ($drivers as $driver)
-                                                <option value="{{$driver->driver_id}}">{{ $driver->dr_fname }}</option>
+                                                <option value="{{$driver->driver_id}}">{{ $driver->dr_fname }} {{ $driver->dr_mname }} {{ $driver->dr_lname }}</option>
                                                 @endforeach
                                             </select>
                                             <span id="driver_id_error"></span>
@@ -49,9 +58,10 @@
 
                                         <div class="mb-2">
                                             <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
-                                            <select class="form-select " name="vehicle_id[]" id="vehicle_id">
+                                            <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id">
+                                                <option value="" disabled selected>Select Vehicle</option>
                                                 @foreach ($vehicles as $vehicle)
-                                                <option value="{{ $vehicle->vehicle_id }}">  {{ $vehicle->vh_brand }} - {{ $vehicle->vh_type }} - {{ $vehicle->vh_plate }} - {{$vehicle->vh_capacity}}</option>
+                                                <option value="{{ $vehicle->vehicle_id }}"> {{ $vehicle->vh_brand }} - {{ $vehicle->vh_type }} - {{ $vehicle->vh_plate }} - {{$vehicle->vh_capacity}}</option>
                                                 @endforeach
                                             </select>
                                             <span id="vehicle_id_error"></span>
@@ -59,7 +69,7 @@
 
                                         <div class="mb-2">
                                             <label for="requestor_id" class="form-label mb-0">Requestor</label>
-                                            <select class="form-select" name="requestor_id" id="requestor_id">
+                                            <select class="form-select" name="requestor_id" id="requestor_id" required>
                                                 <option value="" disabled selected>Select Requestor</option>
                                                 @foreach ($requestors as $requestor)
                                                 <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
@@ -70,18 +80,13 @@
 
                                         <div class="mb-2">
                                             <label for="office" class="form-label mb-0">Office</label>
-                                            <select class="form-select" name="off_id[]" id="office_id">
+                                            <select class="form-select" name="off_id" id="off_id" required>
+                                                <option value="">Select Office</option>
                                                 @foreach ($offices as $office)
                                                 <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
                                                 @endforeach
                                             </select>
-                                            <span id="office_id_error"></span>
-                                        </div>
-
-                                        <div class="mb-2">
-                                            <label for="rs_voucher" class="form-label mb-0">Voucher</label>
-                                            <input type="text" class="form-control rounded-1" name="rs_voucher" placeholder="Enter Voucher code" id="rs_voucher" value="">
-                                            <span id="rs_voucher_error"></span>
+                                            <span id="office_error"></span>
                                         </div>
 
                                         <div class="mb-2">
@@ -89,7 +94,7 @@
                                             <input type="text" class="form-control rounded-1" name="rs_passengers" placeholder="Enter Number of Passengers" id="rs_passengers" value="">
                                             <span id="rs_passengers_error"></span>
                                         </div>
-
+                                        
                                         <div class="mb-2">
                                             <label for="rs_travel_type" class="form-label mb-0">Travel Type</label>
                                             <select class="form-select" name="rs_travel_type" id="rs_travel_type">
@@ -99,6 +104,13 @@
                                             </select>
                                             <span id="rs_travel_type_error"></span>
                                         </div>
+
+                                        <div class="mb-2">
+                                            <label for="rs_voucher" class="form-label mb-0">Trip Ticket No.</label>
+                                            <input type="text" class="form-control rounded-1" name="rs_voucher" placeholder="Enter Voucher code" id="rs_voucher" value="">
+                                            <span id="rs_voucher_error"></span>
+                                        </div>
+
 
                                         
                                     </div>
@@ -147,287 +159,99 @@
 </body>
 
 
+
 <script type="text/javascript">
     $(document).ready(function() {
-        $('.vehicles-select').select2({
-            placeholder: 'Select drivers'
-            , allowClear: true
-        });
-        $('.drivers-select, .events-edit, .drivers-edit, .vehicles-edit').select2();
-
-        //Testing Unselect
-        $(".select2-selection__choice__remove").click(() => {
-            console.log('asdasd');
-        })
-        $(".select2-selection__choice__remove").click(function() {
-
-            console.log('asdasd');
-
-        });
-        $(".select2-selection__choice").click(() => {
-
-            console.log('asdasd');
-        })
-        $(".select2-selection__rendered").click(() => {
-
-
-            console.log('asdasd');
-        })
-
-
-
-
-
-        var events = [];
-        //----------------------------------DATA TABLES---------------------------------//
         var table = $('.reservations-table').DataTable({
-            lengthMenu: [
-                [10, 25, 50, -1]
-                , [10, 25, 50, "All"]
-            ]
-            , search: {
-                return: true
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{{ route('users.reservations.show') }}",
+                error: function (xhr, error, thrown) {
+                    console.error('DataTables AJAX error:', error, thrown);
+                }
+            },
+            columns: [
+                {data: 'reservation_id', name: 'reservation_id'},
+                {data: 'ev_name', name: 'ev_name'},
+                {data: 'vehicles', name: 'vehicles'},
+                {data: 'drivers', name: 'drivers'},
+                {data: 'rq_full_name', name: 'rq_full_name'},
+                {data: 'rs_voucher', name: 'rs_voucher'},
+                {data: 'rs_travel_type', name: 'rs_travel_type'},
+                {data: 'rs_passengers', name: 'rs_passengers'},
+                {data: 'created_at', name: 'created_at'},
+                {data: 'rs_approval_status', name: 'rs_approval_status'},
+                {data: 'rs_status', name: 'rs_status'},
+                {data: 'office', name: 'office'},
+            ],
+            order: [[0, 'desc']],
+            drawCallback: function(settings) {
+                console.log('DataTables draw callback', settings);
             }
-            , processing: true
-            , serverSide: true
-            , dom: 'Blfrtip'
-            , buttons: [{
-                    text: 'Word'
-                    , action: function(e, dt, node, config) {
-                        var searchValue = $('.dataTables_filter input').val();
-                        window.location.href = '/reservations-word?search=' + searchValue;
-                    }
-                }
-                , {
-                    text: 'Excel'
-                    , action: function(e, dt, node, config) {
-                        var searchValue = $('.dataTables_filter input').val();
-                        window.location.href = '/reservations-excel?search=' + searchValue;
-                    }
-                }
-                , {
-                    text: 'Pdf'
-                    , action: function(e, dt, node, config) {
-                        var searchValue = $('.dataTables_filter input').val();
-                        window.location.href = '/reservations-pdf?search=' + searchValue;
-                    }
-                }
-            ]
-            , ajax: "{{ route('reservations.show') }}"
-            , columns: [{
-                    data: 'reservation_id'
-                    , name: 'reservation_id'
-                }
-                , {
-                    data: 'ev_name'
-                    , name: 'events.ev_name'
-                }
-                , {
-                    data: 'reservation_vehicles'
-                    , render: function(data, type, row, meta) {
-                        var vehicles = [];
-                        data.forEach((item, index) => {
-                            vehicles.push(item.vehicles.vh_brand);
-                        });
-                        return vehicles.join(",");
-                    }
-                    , name: 'reservation_vehicles.vehicles.vh_brand'
-                }
-                , {
-                    data: 'reservation_vehicles'
-                    , render: function(data, type, row, meta) {
-                        var drivers = [];
-                        data.forEach((item, index) => {
-                            if (item.drivers != null) {
-                                drivers.push(item.drivers.dr_fname);
-                            }
-                        });
-                        return drivers.join(",");
-                    }
-                    , name: 'reservation_vehicles.drivers.dr_fname'
-                }
-                , {
-                    data: 'rq_full_name'
-                    , name: 'requestors.rq_full_name'
-                }
-                , {
-                    data: 'rs_voucher'
-                    , name: 'rs_voucher'
-                }
-                , {
-                    data: 'rs_travel_type'
-                    , name: 'rs_travel_type'
-                }
-                , {
-                    data: 'rs_passengers'
-                    , name: 'rs_passengers'
-                }
-                , {
-                    data: 'created_at'
-                    , name: 'created_at'
-                    , render: function(data, type, row, meta) {
-                        var date = new Date(data);
-                        var formattedDate = date.toLocaleDateString('en-US', {
-                            year: 'numeric'
-                            , month: 'long'
-                            , day: 'numeric'
-                        });
-                        return formattedDate;
-                    }
-                }
-                , {
-                    data: 'rs_approval_status'
-                    , name: 'rs_approval_status'
-                }
-                , {
-                    data: 'rs_status'
-                    , name: 'rs_status'
-                }
-                , {
-                    data: 'office'
-                    , name: 'office.off_name'
-                }
-                ,
-            ]
-            , order: [
-                [0, 'asc']
-            ]
-
         });
-
-
-
-
-        //----------------------------------DATA TABLES---------------------------------//
-
-        //----------------------------------FUNCTIONS-----------------------------------//
-        function getEvents(data) {
-            if (data.length > 0) {
-                var selectOptions = [];
-                $.each(data, function(index, event) {
-                    selectOptions += "<option value='" + event.event_id + "'>" + event.ev_name + "</option>";
-                });
-                $('#event_id').html(selectOptions);
-            } else {
-                $('#event_id').html('<option value="" disabled selected>No events available</option>');
-            }
-        }
-
-        function editEvents(data, id) {
-            if (data.length > 0) {
-                var selectOptions = '';
-                $.each(data, function(index, events) {
-                    selectOptions += "<option value='" + events.event_id + "'>" + events.ev_name + "</option>";
-                });
-                $('#event_edit').html(selectOptions);
-                $('#event_edit').val(id);
-            } else {
-                $('#event_edit').html('<option value="" disabled selected>No events available</option>');
-            }
-        }
-
-        function editDrivers(data, ids) {
-            // console.log(ids);
-            if (data.length > 0) {
-                var selectOptions = [];
-                $.each(data, function(index, driver) {
-                    selectOptions += "<option value='" + driver.driver_id + "'>" + driver.dr_fname + "</option>";
-                });
-                $('#driver_edit').html(selectOptions);
-                $('#drivers-edit').select2();
-                $('#driver_edit').select2().val(ids).change();
-
-            } else {
-                $('#driver_edit').html('<option value="" disabled selected>No drivers available</option>');
-            }
-        }
-
-        function editVehicles(data, ids) {
-            // console.log(ids);
-            if (data.length > 0) {
-                var selectOptions = [];
-                $.each(data, function(index, vehicle) {
-                    selectOptions += "<option value='" + vehicle.vehicle_id + "'>" + vehicle.vh_brand + "</option>";
-                });
-                $('#vehicle_edit').html(selectOptions);
-                $('#vehicle_edit').select2().val(ids).change();
-            } else {
-                $('#vehicle_edit').html('<option value="" disabled selected>No vehicles available</option>');
-            }
-        }
-
-        //----------------------------------FUNCTIONS-----------------------------------//
-        // INSERT----------------------------------------------------------------------//
-        $("#insertBtn").click(function() {
-            var action_url = "{{ route('reservations.getEvents') }}";
-            $.ajax({
-                type: 'get'
-                , headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-                , url: action_url
-                , dataType: 'json'
-                , success: function(data) {
-                    getEvents(data);
-                }
-                , error: function(xhr, status, error) {
-                    console.error(xhr.responseText);
-                }
-            });
-
-            $("#insertModal").modal("show");
-        });
-        // INSERT------------------------------------------------------------------//
-
-        // STORE------------------------------------------------------------------- //
-        $('#reservations-form').on('submit', function(event) {
-            event.preventDefault();
-
-            $('#rs_approval_status').val('Pending');
-            $('#rs_status').val('Queued');
-
-            var action_url = "{{url('/insert-reservation')}}";
-            $.ajax({
-                type: 'post'
-                , headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-                , url: action_url
-                , data: $(this).serialize()
-                , dataType: 'json'
-                , success: function(data) {
-                    var html = '';
-                    if (data.success) {
-                        html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + data.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-                        $('#reservations-table').DataTable().ajax.reload();
-
-                        $("#insertModal").modal("hide");
-                    }
-                    $('#form_result').html(html);
-                }
-                , error: function(data) {
-                    var errors = data.responseJSON.errors;
-                    var html = '<span class="text-danger">';
-                    $.each(errors, function(key, value) {
-                        // console.log(key);
-                        $('#' + key + '_error').html(html + value + '</span>');
-                        $('#' + key).on('input', function() {
-                            if ($(this).val().trim() !== '') {
-                                $('#' + key + '_error').empty();
-                            }
-                        });
-                    });
-                }
-
-
-            });
-        });
-        // STORE---------------------------//
-
     });
 
+
+// STORE
+$('#reservations-form').submit(function(e) {
+    e.preventDefault();
+    var formData = new FormData(this);
+    
+    console.log('Form data being sent:');
+    for (var pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
+
+    $.ajax({
+        url: "{{ route('users.reservations.store') }}",
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            console.log('Response:', response);
+            if(response.success) {
+                console.log('Saved reservation:', response.reservation);
+                
+                // Hide the modal
+                $('#insertModal').modal('hide');
+                
+                // Reload the DataTable
+                $('#reservations-table').DataTable().ajax.reload(null, false);
+                
+                // Show success message
+                showSuccessMessage('Reservation created successfully');
+
+                // Clear the form
+                clearReservationForm();
+            } else {
+                console.error('Unexpected response structure:', response);
+                showErrorMessage('Error: Unexpected response from server');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error creating reservation:', xhr.responseText);
+            var errorMessage = 'Error creating reservation';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMessage += ': ' + xhr.responseJSON.error;
+            }
+            showErrorMessage(errorMessage);
+        }
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var myModal = new bootstrap.Modal(document.getElementById('insertModal'), {
+        keyboard: false
+    });
+});
 </script>
 
 @include('includes.footer');
 </html>
-

@@ -11,6 +11,7 @@ use App\Models\Events;
 use App\Models\Vehicles;
 use App\Models\Reservations;
 use App\Models\ReservationVehicle;
+use Illuminate\Support\Facades\Validator;
 
 use App\Models\Requestors;
 use Yajra\DataTables\DataTables;
@@ -26,97 +27,87 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 
 
+
+
 class UsersReservationsController extends Controller
 {
     public function show(Request $request)
     {
-        if ($request->ajax()) {
-            $reservations = Reservations::with(['event', 'requestor', 'reservationVehicles.vehicles', 'reservationVehicles.drivers'])
-                ->select('reservations.*');
-
-            return DataTables::of($reservations)
-                ->addColumn('action', function($row){
-                    // Add your action buttons here
-                })
-                ->rawColumns(['action'])
-                ->make(true);
-        }
-        
-        $existingDriverIds = ReservationVehicle::whereNotNull('driver_id')->distinct('driver_id')->pluck('driver_id')->toArray();
-        $existingVehicleIds = ReservationVehicle::pluck('vehicle_id')->toArray();
-
-        $drivers = DB::table('drivers')
-            ->whereNotIn('driver_id', $existingDriverIds)
-            ->select('driver_id', 'dr_fname')
-            ->get();
-
-        $vehicles = DB::table('vehicles')
-            ->whereNotIn('vehicle_id', $existingVehicleIds)
-            ->select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_capacity', 'vh_type')
-            ->get();
-
-        $events = Events::leftJoin('reservations', 'events.event_id', 'reservations.event_id')
-            ->whereNull('reservations.reservation_id')
-            ->orWhere([
-                ['reservations.rs_status', 'Cancelled'],
-                ['reservations.rs_cancelled', 0]
-            ])
-            ->orWhere(function ($query) {
-                $query->where([
-                    ['reservations.rs_status', 'Cancelled'],
-                    ['reservations.rs_cancelled', 0]
-                ])->whereNotNull('reservations.deleted_at');
-            })
-            ->orderBy('ev_name')
-            ->get();
-
-        $requestors = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
-        $offices = Offices::select('off_id', 'off_acr', 'off_name')->get();
-        
-        if (auth()->user()->isAdmin()) {
-            return view('admin/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors', 'offices'));
-        } else {
-            return view('users/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors', 'offices'));
-        }
+        try {
+            \Log::info('UsersReservationsController@show method called');
+            $userId = auth()->id();
+            \Log::info("Authenticated user ID: $userId");
     
+            if ($request->ajax()) {
+                \Log::info('AJAX request received');
+    
+                $reservations = Reservations::with(['events', 'requestors', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'office'])
+                    ->select('reservations.*');
+    
+                \Log::info('Reservations query:', [
+                    'sql' => $reservations->toSql(),
+                    'bindings' => $reservations->getBindings()
+                ]);
+    
+                $count = $reservations->count();
+                \Log::info("Total number of reservations: $count");
+    
+                return DataTables::of($reservations)
+                    ->addColumn('ev_name', function ($reservation) {
+                        return $reservation->events ? $reservation->events->ev_name . ' - ' . $reservation->events->ev_venue : 'N/A';
+                    })
+                    ->addColumn('vehicles', function ($reservation) {
+                        return $reservation->reservation_vehicles->map(function ($rv) {
+                            $vehicle = $rv->vehicles;
+                            return $vehicle
+                                ? "{$vehicle->vh_brand} - {$vehicle->vh_type} - {$vehicle->vh_plate} - {$vehicle->vh_capacity}"
+                                : 'N/A';
+                        })->implode('<br>');
+                    })
+                    ->addColumn('drivers', function ($reservation) {
+                        return $reservation->reservation_vehicles->map(function ($rv) {
+                            $driver = $rv->drivers;
+                            return $driver
+                                ? "{$driver->dr_fname} {$driver->dr_mname} {$driver->dr_lname}"
+                                : 'N/A';
+                        })->implode('<br>');
+                    })
+                    ->addColumn('rq_full_name', function ($reservation) {
+                        return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
+                    })
+                    ->addColumn('office', function ($reservation) {
+                        return $reservation->office ? $reservation->office->off_acr . ' - ' . $reservation->office->off_name : 'N/A';
+                    })
+                    ->editColumn('created_at', function ($reservation) {
+                        return $reservation->created_at->format('F d, Y');
+                    })
+                    ->rawColumns(['vehicles', 'drivers'])
+                    ->make(true);
+            }
+    
+            $events = Events::select('event_id', 'ev_name', 'ev_venue')
+                ->orderBy('ev_name')
+                ->get();
+    
+            $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
+                ->orderBy('dr_fname')
+                ->get();
+    
+            $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
+                ->orderBy('vh_brand')
+                ->get();
+    
+            $requestors = Requestors::all();
+            $offices = Offices::select('off_id', 'off_acr', 'off_name')->get();
+    
+            return view('users.reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors', 'offices'));
+        } catch (\Exception $e) {
+            \Log::error('Error in UsersReservationsController@show: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            return response()->json(['error' => 'An error occurred while processing your request.'], 500);
+        }
     }
-    public function event_calendar()
-    {
-        $colors = ['#d5c94c', '#4522ea', '#45a240', '#7c655a', '#cf4c11']; 
 
-        $events = Events::all()->map(function ($event) use ($colors) {
-            return [
-                'title' => $event->ev_name,
-                'start' => $event->ev_date_start,
-                'end' => $event->ev_date_end,
-                'color' => $colors[array_rand($colors)],
-            ];
-        });
-
-        return view('event_calendar')->with(compact('events'));
-    }
-    public function drivers_schedules()
-    {
-        // $reservations = Reservations::with("events")
-        //     ->select('reservations.*', 'events.ev_name', 'events.ev_date_start','events.event_id')
-        //     ->join('events', 'reservations.event_id', '=', 'events.event_id')
-        //     ->get();
-
-
-        $reservations = Reservations::with("reservation_vehicles", "reservation_vehicles.vehicles", "reservation_vehicles.drivers", "events")
-            ->select('reservations.*', 'events.ev_name', 'events.ev_date_start', 'drivers.dr_fname', 'vehicles.vh_brand', 'vehicles.vh_plate', 'vh_type', 'requestors.rq_full_name', 'reservations.created_at', 'reservations.rs_approval_status', 'reservations.rs_status')
-            ->join('events', 'reservations.event_id', '=', 'events.event_id')
-            ->join('requestors', 'reservations.requestor_id', '=', 'requestors.requestor_id')
-            ->leftJoin('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
-            ->leftJoin('vehicles', 'reservation_vehicles.vehicle_id', '=', 'vehicles.vehicle_id')
-            ->leftJoin('drivers', 'reservation_vehicles.driver_id', '=', 'drivers.driver_id')
-            ->get();
-
-
-        $drivers = Drivers::all();
-        $existingVehicleIds = ReservationVehicle::pluck('driver_id')->toArray();
-        return view('drivers_schedule')->with(compact('drivers', 'reservations'));
-    }
 
     public function events()
     {
@@ -189,62 +180,63 @@ class UsersReservationsController extends Controller
 
     public function store(Request $request)
     {
-        $reservations = new Reservations();
-        $reservation_vh = new ReservationVehicle();
-
-        $validation = $request->validate(
-            [
-                "rs_voucher" => "required",
-                "rs_travel_type" => "required",               
-                "event_id" => "required",
-                "driver_id" => "required",
-                "vehicle_id" => "required",
-                "requestor_id" => "required",
-                "rs_passengers" => "required",
-            ],
-            [
-                "required" => "This field is required",
-            ]
-        );
-
-        $rs_approval_status = $request->input('rs_approval_status', 'Pending');
-        $rs_status = $request->input('rs_status', 'Queued');
-
-        $reservations->rs_voucher = $request->rs_voucher;
-    $reservations->rs_travel_type = $request->rs_travel_type;
-    $reservations->event_id = $request->event_id;
-    $reservations->requestor_id = $request->requestor_id;
-    $reservations->rs_passengers = $request->rs_passengers;
-    $reservations->rs_approval_status = $rs_approval_status;
-    $reservations->rs_status = $rs_status;
-
-    $cancelled = Reservations::where([['rs_cancelled', 0], ['event_id', $request->event_id]])->latest()->first();
-    if ($cancelled) {
-        $cancelled_reservation = Reservations::find($cancelled->reservation_id);
-        $cancelled_reservation->rs_cancelled = true;
-        $cancelled_reservation->save();
-    }
-    $reservations->save();
-
-    $vehicle_ids = $request->vehicle_id;
-    $driver_ids = $request->driver_id;
-    $count = count($vehicle_ids);
-
-    for ($i = 0; $i < $count; $i++) {
-        $reservation_vh = new ReservationVehicle();
-        $reservation_vh->reservation_id = $reservations->reservation_id;
-        $reservation_vh->vehicle_id = $vehicle_ids[$i];
-
-        if (isset($driver_ids[$i])) {
-            $reservation_vh->driver_id = $driver_ids[$i];
+        try {
+            \Log::info('UsersReservationsController@store method called');
+            \Log::info('Request data:', $request->all());
+    
+            $validator = Validator::make($request->all(), [
+                'event_id' => 'required|exists:events,event_id',
+                'driver_id' => 'required|array',
+                'driver_id.*' => 'exists:drivers,driver_id',
+                'vehicle_id' => 'required|array',
+                'vehicle_id.*' => 'exists:vehicles,vehicle_id',
+                'requestor_id' => 'required|exists:requestors,requestor_id',
+                'off_id' => 'required|exists:offices,off_id',
+                'rs_voucher' => 'nullable|string|max:255',
+                'rs_passengers' => 'required|integer|min:1',
+                'rs_travel_type' => 'required|string|in:Outside Province Transport,Daily Transport',
+            ]);
+    
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 422);
+            }
+    
+            DB::beginTransaction();
+    
+            $reservation = new Reservations;
+            $reservation->event_id = $request->event_id;
+            $reservation->requestor_id = $request->requestor_id;
+            $reservation->off_id = $request->off_id;
+            $reservation->rs_voucher = $request->rs_voucher;
+            $reservation->rs_passengers = $request->rs_passengers;
+            $reservation->rs_travel_type = $request->rs_travel_type;
+            $reservation->rs_approval_status = 'Pending';
+            $reservation->rs_status = 'Queued';
+            $reservation->save();
+    
+            foreach ($request->vehicle_id as $key => $vehicleId) {
+                $reservationVehicle = new ReservationVehicle;
+                $reservationVehicle->reservation_id = $reservation->reservation_id;
+                $reservationVehicle->vehicle_id = $vehicleId;
+                $reservationVehicle->driver_id = $request->driver_id[$key] ?? null;
+                $reservationVehicle->save();
+            }
+    
+            DB::commit();
+    
+            \Log::info('Reservation created successfully', ['reservation_id' => $reservation->reservation_id]);
+    
+            return response()->json(['success' => 'Reservation created successfully', 'reservation' => $reservation]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            \Log::error('Error in UsersReservationsController@store: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            return response()->json(['error' => 'An error occurred while creating the reservation'], 500);
         }
-
-        $reservation_vh->save();
     }
 
-    return response()->json(['success' => 'Reservation successfully recorded']);
-}
 
+    
     public function update(Request $request)
     {
         $id = $request->hidden_id;

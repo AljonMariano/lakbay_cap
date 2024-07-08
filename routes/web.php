@@ -241,6 +241,7 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
         Route::get('/edit-reservation/{reservation_id}', [UsersReservationsController::class, 'edit']);
         Route::get('/cancel-reservation/{reservation_id}', [UsersReservationsController::class, 'cancel']);
         Route::get('/delete-reservation/{reservation_id}', [UsersReservationsController::class, 'delete']);
+        Route::post('/user/reservations', [UsersReservationsController::class, 'store'])->name('users.reservations.store');
     
         // Test Section
         Route::get('/test-select', [UsersReservationsController::class, 'test_select'])->name('user.reservations.testSelect');
@@ -339,3 +340,25 @@ Route::post('/logout', function () {
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+
+Route::get('/check-all-reservations', function() {
+    $reservations = \App\Models\Reservations::with(['requestors', 'events'])
+        ->select('reservations.*')
+        ->get();
+
+    $summary = $reservations->groupBy('requestor_id')
+        ->map(function ($group) {
+            return [
+                'requestor_id' => $group->first()->requestor_id,
+                'requestor_name' => $group->first()->requestors->rq_full_name ?? 'N/A',
+                'count' => $group->count()
+            ];
+        });
+
+    dd([
+        'total_reservations' => $reservations->count(),
+        'reservations_by_requestor' => $summary->toArray(),
+        'sample_reservation' => $reservations->first()->toArray()
+    ]);
+});
