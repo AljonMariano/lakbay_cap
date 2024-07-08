@@ -537,6 +537,9 @@ $('#reservations-form').submit(function(e) {
                 
                 // Show success message
                 showSuccessMessage('Reservation created successfully');
+
+                // Clear the form
+                clearReservationForm();
             } else {
                 console.error('Unexpected response structure:', response);
                 showErrorMessage('Error: Unexpected response from server');
@@ -552,6 +555,21 @@ $('#reservations-form').submit(function(e) {
         }
     });
 });
+
+// Function to clear the reservation form
+function clearReservationForm() {
+    $('#reservations-form')[0].reset();
+    
+    // Reset select2 dropdowns if you're using them
+    $('#reservations-form select').val(null).trigger('change');
+    
+    // Clear any error messages
+    $('#reservations-form .error').text('');
+    
+    // Reset any custom elements or plugins
+    // For example, if you're using a date picker:
+    // $('#date_field').datepicker('setDate', null);
+}
 
 // Function to show success message
 function showSuccessMessage(message) {
