@@ -538,7 +538,11 @@ $('#reservation_edit').on('submit', function(e) {
         },
         error: function(xhr, status, error) {
             console.error('Error creating reservation:', xhr.responseText);
-            alert('Error creating reservation: ' + error);
+            var errorMessage = 'Error creating reservation';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMessage += ': ' + xhr.responseJSON.error;
+            }
+            alert(errorMessage);
         }
     });
 });

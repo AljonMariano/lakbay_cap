@@ -12,7 +12,6 @@ use App\Models\Vehicles;
 use App\Models\Reservations;
 use App\Models\ReservationVehicle;
 
-
 use App\Models\Requestors;
 use Yajra\DataTables\DataTables;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -210,13 +209,15 @@ class ReservationsController extends Controller
 
 
 
+    
+
 
     public function store(Request $request)
     {
-        \Log::channel('custom')->info('Reservation store method called', $request->all());
-    
         try {
-            $validatedData = $request->validate([
+            DB::beginTransaction();
+    
+            $reservation = Reservations::create($request->validate([
                 'event_id' => 'required|exists:events,event_id',
                 'requestor_id' => 'required|exists:requestors,requestor_id',
                 'off_id' => 'required|exists:offices,off_id',
@@ -225,55 +226,28 @@ class ReservationsController extends Controller
                 'rs_voucher' => 'required|string',
                 'rs_approval_status' => 'required|string',
                 'rs_status' => 'required|string',
-                'driver_id' => 'required|array',
-                'vehicle_id' => 'required|array',
-            ]);
+            ]));
     
-            \Log::channel('custom')->info('Validated data', $validatedData);
-    
-            DB::beginTransaction();
-    
-            $reservation = new Reservations();
-            $reservation->fill($validatedData);
-            $reservation->save();
-    
-            \Log::channel('custom')->info('Reservation created', ['id' => $reservation->id, 'data' => $reservation->toArray()]);
-    
-            // Handle driver and vehicle assignments
-            $driverIds = $request->driver_id;
-            $vehicleIds = $request->vehicle_id;
-            
-            \Log::channel('custom')->info('Driver and Vehicle IDs', ['driver_ids' => $driverIds, 'vehicle_ids' => $vehicleIds]);
+            $driverIds = $request->input('driver_id');
+            $vehicleIds = $request->input('vehicle_id');
     
             foreach ($driverIds as $index => $driverId) {
-                $reservationVehicle = new ReservationVehicle([
-                    'reservation_id' => $reservation->id,
+                $reservation->reservation_vehicles()->create([
                     'driver_id' => $driverId,
                     'vehicle_id' => $vehicleIds[$index],
                 ]);
-                $reservationVehicle->save();
-                
-                \Log::channel('custom')->info('ReservationVehicle created', ['id' => $reservationVehicle->id, 'data' => $reservationVehicle->toArray()]);
             }
     
             DB::commit();
     
-            // Return JSON response for debugging
             return response()->json([
                 'message' => 'Reservation created successfully',
-                'reservation' => $reservation->load('office', 'reservationVehicles'),
+                'reservation' => $reservation->load('office', 'reservation_vehicles'),
             ]);
     
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
-            \Log::channel('custom')->error('Validation error', ['errors' => $e->errors()]);
-            return response()->json(['error' => 'Validation failed', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::channel('custom')->error('Error in store method', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            \Log::error('Error creating reservation: ' . $e->getMessage());
             return response()->json(['error' => 'Error creating reservation: ' . $e->getMessage()], 500);
         }
     }
