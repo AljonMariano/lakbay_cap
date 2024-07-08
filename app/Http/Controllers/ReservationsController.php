@@ -255,6 +255,90 @@ class ReservationsController extends Controller
 
 
 
+
+
+
+
+
+
+
+
+
+    public function update(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+    
+            $id = $request->input('hidden_id');
+            \Log::info('Attempting to update reservation with ID: ' . $id);
+            \Log::info('Request data:', $request->all());
+    
+            $reservation = Reservations::findOrFail($id);
+    
+            \Log::info('Found reservation:', $reservation->toArray());
+    
+            $reservation->update($request->validate([
+                'event_id' => 'required|exists:events,event_id',
+                'requestor_id' => 'required|exists:requestors,requestor_id',
+                'off_id' => 'required|exists:offices,off_id',
+                'rs_passengers' => 'required|integer',
+                'rs_travel_type' => 'required|string',
+                'rs_voucher' => 'required|string',
+                'rs_approval_status' => 'required|string',
+                'rs_status' => 'required|string',
+            ]));
+    
+            // Update reservation vehicles
+            $reservation->reservation_vehicles()->delete();
+    
+            $driverIds = $request->input('driver_id');
+            $vehicleIds = $request->input('vehicle_id');
+    
+            // Check if driver_id and vehicle_id are arrays
+            if (is_array($driverIds) && is_array($vehicleIds)) {
+                foreach ($driverIds as $index => $driverId) {
+                    if (isset($vehicleIds[$index])) {
+                        $reservation->reservation_vehicles()->create([
+                            'driver_id' => $driverId,
+                            'vehicle_id' => $vehicleIds[$index],
+                        ]);
+                    }
+                }
+            } else {
+                // If they're not arrays, create a single reservation vehicle
+                $reservation->reservation_vehicles()->create([
+                    'driver_id' => $driverIds,
+                    'vehicle_id' => $vehicleIds,
+                ]);
+            }
+    
+            DB::commit();
+    
+            \Log::info('Reservation updated successfully');
+    
+            return response()->json([
+                'message' => 'Reservation updated successfully',
+                'reservation' => $reservation->load('office', 'reservation_vehicles'),
+            ]);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error updating reservation: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json(['error' => 'Error updating reservation: ' . $e->getMessage()], 500);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
 public function edit($id)
 {
     try {

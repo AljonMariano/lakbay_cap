@@ -22,6 +22,7 @@ use App\Http\Controllers\AdminProfileController;
 
 
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -139,6 +140,8 @@ Route::get('/get-drivers-and-vehicles', [ReservationsController::class, 'getDriv
 Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
 Route::post('/reservations/update', [ReservationsController::class, 'update'])->name('reservations.update');
 Route::post('/reservations', [ReservationsController::class, 'store'])->name('reservations.store');
+Route::put('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
+Route::put('/reservations/update', [ReservationsController::class, 'update'])->name('reservations.update');
 
 
 

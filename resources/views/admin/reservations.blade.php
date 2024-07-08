@@ -505,8 +505,8 @@ $('#reservation_edit').on('submit', function(e) {
 
 
     
- // STORE
- $('#reservations-form').submit(function(e) {
+// STORE
+$('#reservations-form').submit(function(e) {
     e.preventDefault();
     var formData = new FormData(this);
     
@@ -525,17 +525,21 @@ $('#reservation_edit').on('submit', function(e) {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
         success: function(response) {
-            html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + response.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-            $('#reservations-table').DataTable().ajax.reload(null, false);
             console.log('Response:', response);
             if(response.reservation) {
                 console.log('Saved reservation:', response.reservation);
                 
+                // Hide the modal
                 $('#insertModal').modal('hide');
-                // Reload your DataTable here if needed
+                
+                // Reload the DataTable
+                $('#reservations-table').DataTable().ajax.reload(null, false);
+                
+                // Show success message
+                showSuccessMessage('Reservation created successfully');
             } else {
                 console.error('Unexpected response structure:', response);
-                alert('Error: Unexpected response from server');
+                showErrorMessage('Error: Unexpected response from server');
             }
         },
         error: function(xhr, status, error) {
@@ -544,40 +548,88 @@ $('#reservation_edit').on('submit', function(e) {
             if (xhr.responseJSON && xhr.responseJSON.error) {
                 errorMessage += ': ' + xhr.responseJSON.error;
             }
-            alert(errorMessage);
+            showErrorMessage(errorMessage);
         }
     });
 });
 
+// Function to show success message
+function showSuccessMessage(message) {
+    var html = "<div class='alert alert-success alert-dismissible fade show' role='alert'>" +
+               "<strong>Success!</strong> " + message +
+               "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>" +
+               "</div>";
+    $('#form_result').html(html);
+    // Automatically close the alert after 5 seconds
+    setTimeout(function() {
+        $('.alert').alert('close');
+    }, 5000);
+}
+
+// Function to show error message
+function showErrorMessage(message) {
+    var html = "<div class='alert alert-danger alert-dismissible fade show' role='alert'>" +
+               "<strong>Error!</strong> " + message +
+               "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>" +
+               "</div>";
+    $('#form_result').html(html);
+}
 
 
 
 
-            // UPDATE
-            $('#reservation_edit').on('submit', function(e) {
+
+$('#reservation_edit').on('submit', function(e) {
     e.preventDefault();
     var formData = $(this).serialize();
-    console.log('Form data being sent:', formData);
+    console.log('Form data:', formData);
 
     $.ajax({
         url: '/admin/reservations/update',
-        type: 'POST',
+        type: 'PUT',
         data: formData,
         success: function(response) {
-            if (response.success) {
-                
+            console.log('Update success:', response);
+            if (response.reservation) {
+                // Hide the modal
                 $('#edit_reservation_modal').modal('hide');
                 
-            } else {
-                alert('Failed to update reservation: ' + (response.error || 'Unknown error'));
+                // Reload the DataTable
+                $('#reservations-table').DataTable().ajax.reload();
+                
+                // Show success message
+                showSuccessMessage('Reservation updated successfully');
             }
         },
         error: function(xhr, status, error) {
             console.error('Update error:', xhr.responseText);
-            alert('An error occurred while updating the reservation');
+            // Show error message
+            showErrorMessage('An error occurred while updating the reservation');
         }
     });
 });
+
+// Function to show success message
+function showSuccessMessage(message) {
+    var html = "<div class='alert alert-success alert-dismissible fade show' role='alert'>" +
+               "<strong>Success!</strong> " + message +
+               "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>" +
+               "</div>";
+    $('#form_result').html(html);
+    // Automatically close the alert after 5 seconds
+    setTimeout(function() {
+        $('.alert').alert('close');
+    }, 5000);
+}
+
+// Function to show error message
+function showErrorMessage(message) {
+    var html = "<div class='alert alert-danger alert-dismissible fade show' role='alert'>" +
+               "<strong>Error!</strong> " + message +
+               "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>" +
+               "</div>";
+    $('#form_result').html(html);
+}
 
             // CANCEL
             var reservation_id;
