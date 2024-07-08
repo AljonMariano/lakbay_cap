@@ -34,49 +34,53 @@ class ReservationsController extends Controller
             if ($request->ajax()) {
                 $reservations = Reservations::with(['events', 'requestors', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'office'])
                     ->select('reservations.*');
-
                 // If the user is not an admin, filter the reservations
                 if (!auth()->user()->isAdmin()) {
                     $reservations->where('requestor_id', auth()->id());
                 }
-
+    
                 // Log the SQL query
                 \Log::info($reservations->toSql());
                 \Log::info($reservations->getBindings());
-
+    
                 $data = DataTables::of($reservations)
-                    ->addColumn('ev_name', function ($reservation) {
-                        return $reservation->events ? $reservation->events->ev_name : 'N/A';
-                    })
-                    ->addColumn('vehicles', function ($reservation) {
-                        return $reservation->reservation_vehicles->map(function ($rv) {
-                            return $rv->vehicles ? $rv->vehicles->vh_brand : 'N/A';
-                        })->implode(', ');
-                    })
-                    ->addColumn('drivers', function ($reservation) {
-                        return $reservation->reservation_vehicles->map(function ($rv) {
-                            return $rv->drivers ? $rv->drivers->dr_fname : 'N/A';
-                        })->filter()->implode(', ');
-                    })
-                    ->addColumn('rq_full_name', function ($reservation) {
-                        return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
-                    })
-                    ->addColumn('office', function ($reservation) {
-                        return $reservation->office ? $reservation->office->off_name : 'N/A';
-                    })
-                    ->editColumn('created_at', function ($reservation) {
-                        return $reservation->created_at->format('F d, Y');
-                    })
-                    ->addColumn('action', function ($reservation) {
-                        return '<a href="'.route('reservations.edit', $reservation->reservation_id).'" class="btn btn-sm btn-primary">Edit</a>
-                                <a href="'.route('reservations.delete', $reservation->reservation_id).'" class="btn btn-sm btn-danger">Delete</a>';
-                    })
-                    ->rawColumns(['action'])
-                    ->make(true);
-
+    ->addColumn('ev_name', function ($reservation) {
+        return $reservation->events ? $reservation->events->ev_name . ' - ' . $reservation->events->ev_venue : 'N/A';
+    })
+    ->addColumn('vehicles', function ($reservation) {
+        return $reservation->reservation_vehicles->map(function ($rv) {
+            $vehicle = $rv->vehicles;
+            return $vehicle
+                ? "{$vehicle->vh_brand} - {$vehicle->vh_type} - {$vehicle->vh_plate} - {$vehicle->vh_capacity}"
+                : 'N/A';
+        })->implode('<br>');
+    })
+    ->addColumn('drivers', function ($reservation) {
+        return $reservation->reservation_vehicles->map(function ($rv) {
+            $driver = $rv->drivers;
+            return $driver
+                ? "{$driver->dr_fname} {$driver->dr_mname} {$driver->dr_lname}"
+                : 'N/A';
+        })->implode('<br>');
+    })
+    ->addColumn('rq_full_name', function ($reservation) {
+        return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
+    })
+    ->addColumn('office', function ($reservation) {
+        return $reservation->office ? $reservation->office->off_acr . ' - ' . $reservation->office->off_name : 'N/A';
+    })
+    ->editColumn('created_at', function ($reservation) {
+        return $reservation->created_at->format('F d, Y');
+    })
+    ->addColumn('action', function ($reservation) {
+        return '<a href="'.route('reservations.edit', $reservation->reservation_id).'" class="btn btn-sm btn-primary">Edit</a>
+                <a href="'.route('reservations.delete', $reservation->reservation_id).'" class="btn btn-sm btn-danger">Delete</a>';
+    })
+                ->rawColumns(['action', 'vehicles', 'drivers'])
+                ->make(true);
                 // Log the final data being returned
                 \Log::info('DataTables data:', $data->getData(true));
-
+    
                 return $data;
             }
         } catch (\Exception $e) {
@@ -87,22 +91,22 @@ class ReservationsController extends Controller
         
         $existingDriverIds = ReservationVehicle::whereNotNull('driver_id')->distinct('driver_id')->pluck('driver_id')->toArray();
         $existingVehicleIds = ReservationVehicle::pluck('vehicle_id')->toArray();
-
+    
         $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
             ->orderBy('dr_fname')
             ->get();
-
+    
         $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
             ->orderBy('vh_brand')
             ->get();
-
+    
         $events = Events::select('event_id', 'ev_name', 'ev_venue')
             ->orderBy('ev_name')
             ->get();
-
+    
         // Add this line to log the events
         \Log::info('Events:', $events->toArray());
-
+    
         $requestors = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
         
         $offices = DB::table('offices')->select('off_id', 'off_acr', 'off_name')->get();
@@ -112,8 +116,9 @@ class ReservationsController extends Controller
         } else {
             return view('users/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors', 'offices'));
         }
-    
     }
+        
+    
     public function event_calendar()
     {
         $colors = ['#d5c94c', '#4522ea', '#45a240', '#7c655a', '#cf4c11'];

@@ -315,73 +315,79 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
-            // $('.drivers-select, .events-edit, .drivers-edit, .vehicles-edit').select2();
-
-            var table = $('.reservations-table').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: "{{ route('reservations.show') }}",
-                    type: 'GET',
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        console.error("AJAX error: " + textStatus + ' : ' + errorThrown);
-                    }
-                },
-                columns: [
-                    { data: 'reservation_id', name: 'reservation_id' },
-                    { data: 'ev_name', name: 'events.ev_name' },
-                    { 
-                        data: 'vehicles',
-                        name: 'reservation_vehicles.vehicles.vh_brand'
-                    },
-                    { 
-                        data: 'drivers',
-                        name: 'reservation_vehicles.drivers.dr_fname'
-                    },
-                    { data: 'rq_full_name', name: 'requestors.rq_full_name' },
-                    { 
-                        data: 'office', 
-                        name: 'office.off_name',
-                        render: function(data, type, row, meta) {
-                            return data ? data : 'N/A';
-                        }
-                    },
-                    { data: 'rs_voucher', name: 'rs_voucher' },
-                    { data: 'rs_passengers', name: 'rs_passengers' },
-                    { data: 'rs_travel_type', name: 'rs_travel_type' },
-                    { 
-                        data: 'created_at', 
-                        name: 'created_at',
-                        render: function(data, type, row, meta) {
-                            var date = new Date(data);
-                            var formattedDate = date.toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            });
-                            return formattedDate;
-                        }
-                    },
-                    { data: 'rs_approval_status', name: 'rs_approval_status' },
-                    { data: 'rs_status', name: 'rs_status' },
-                    { 
-                        data: 'action', 
-                        name: 'action', 
-                        orderable: false, 
-                        searchable: false,
-                        render: function(data, type, row) {
-                            return `
-                                <button type="button" class="btn btn-sm btn-primary edit" edit-id="${row.reservation_id}">Edit</button>
-                                <button type="button" class="btn btn-sm btn-danger delete" id="${row.reservation_id}">Delete</button>
-                            `;
-                        }
-                    }
-                ],
-                order: [
-                    [0, 'asc']
-                ]
+    var table = $('.reservations-table').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{{ route('reservations.show') }}",
+            type: 'GET',
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error("AJAX error: " + textStatus + ' : ' + errorThrown);
+            }
+        },
+        columns: [
+    { data: 'reservation_id', name: 'reservation_id' },
+    { data: 'ev_name', name: 'events.ev_name' },
+    { 
+        data: 'vehicles',
+        name: 'vehicles',
+        render: function(data, type, row) {
+            return data ? data : 'N/A';
+        }
+    },
+    { 
+        data: 'drivers',
+        name: 'drivers',
+        render: function(data, type, row) {
+            return data ? data : 'N/A';
+        }
+    },
+    { data: 'rq_full_name', name: 'requestors.rq_full_name' },
+    { 
+        data: 'office', 
+        name: 'office.off_name',
+        render: function(data, type, row) {
+            return data ? data : 'N/A';
+        }
+    },
+    { data: 'rs_voucher', name: 'rs_voucher' },
+    { data: 'rs_passengers', name: 'rs_passengers' },
+    { data: 'rs_travel_type', name: 'rs_travel_type' },
+    { 
+        data: 'created_at', 
+        name: 'created_at',
+        render: function(data, type, row) {
+            var date = new Date(data);
+            var formattedDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
+            return formattedDate;
+        }
+    },
+    { data: 'rs_approval_status', name: 'rs_approval_status' },
+    { data: 'rs_status', name: 'rs_status' },
+    { 
+        data: 'action', 
+        name: 'action', 
+        orderable: false, 
+        searchable: false,
+        render: function(data, type, row) {
+            return `
+                <button type="button" class="btn btn-sm btn-primary edit" edit-id="${row.reservation_id}">Edit</button>
+                <button type="button" class="btn btn-sm btn-danger delete" id="${row.reservation_id}">Delete</button>
+            `;
+        }
+    }
+],
+        order: [
+            [0, 'asc']
+        ]
+    });
 
+
+            
             // INSERT
             $("#insertBtn").click(function() {
                 var action_url = "{{ route('reservations.getEvents') }}";
