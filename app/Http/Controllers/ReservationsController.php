@@ -45,7 +45,7 @@ class ReservationsController extends Controller
     
                 $data = DataTables::of($reservations)
     ->addColumn('ev_name', function ($reservation) {
-        return $reservation->events ? $reservation->events->ev_name . ' - ' . $reservation->events->ev_venue : 'N/A';
+        return $reservation->events ? $reservation->events->ev_name : 'N/A';
     })
     ->addColumn('vehicles', function ($reservation) {
         return $reservation->reservation_vehicles->map(function ($rv) {
@@ -222,8 +222,15 @@ class ReservationsController extends Controller
         try {
             DB::beginTransaction();
     
+            // Create a new event
+            $event = Events::create([
+                'ev_name' => $request->input('event_name'),
+                'ev_venue' => '', // Set this to an empty string or null
+                'ev_date_start' => now(), // You might want to add date fields to your form
+                'ev_date_end' => now(),
+            ]);
+    
             $reservation = Reservations::create($request->validate([
-                'event_id' => 'required|exists:events,event_id',
                 'requestor_id' => 'required|exists:requestors,requestor_id',
                 'off_id' => 'required|exists:offices,off_id',
                 'rs_passengers' => 'required|integer',
@@ -231,7 +238,7 @@ class ReservationsController extends Controller
                 'rs_voucher' => 'required|string',
                 'rs_approval_status' => 'required|string',
                 'rs_status' => 'required|string',
-            ]));
+            ]) + ['event_id' => $event->event_id]);
     
             $driverIds = $request->input('driver_id');
             $vehicleIds = $request->input('vehicle_id');
@@ -274,16 +281,36 @@ class ReservationsController extends Controller
         try {
             DB::beginTransaction();
     
-            $id = $request->input('hidden_id');
-            \Log::info('Attempting to update reservation with ID: ' . $id);
-            \Log::info('Request data:', $request->all());
-    
-            $reservation = Reservations::findOrFail($id);
-    
-            \Log::info('Found reservation:', $reservation->toArray());
-    
+            $reservationId = $request->input('hidden_id');
+            \Log::info("Attempting to update reservation with ID: " . $reservationId);
+
+            $reservation = Reservations::with('events')->find($reservationId);
+
+            if (!$reservation) {
+                \Log::error("Reservation not found with ID: " . $reservationId);
+                return response()->json(['error' => 'Reservation not found'], 404);
+            }
+
+            \Log::info("Reservation found:", $reservation->toArray());
+
+            // Update the event
+            if ($reservation->events) {
+                $reservation->events->update([
+                    'ev_name' => $request->input('event_name'),
+                    'ev_venue' => '', // Set this to an empty string or null
+                ]);
+            } else {
+                // If there's no associated event, create a new one
+                $event = new Events([
+                    'ev_name' => $request->input('event_name'),
+                    'ev_venue' => '',
+                    'ev_date_start' => now(),
+                    'ev_date_end' => now(),
+                ]);
+                $reservation->events()->save($event);
+            }
+
             $reservation->update($request->validate([
-                'event_id' => 'required|exists:events,event_id',
                 'requestor_id' => 'required|exists:requestors,requestor_id',
                 'off_id' => 'required|exists:offices,off_id',
                 'rs_passengers' => 'required|integer',
@@ -292,40 +319,35 @@ class ReservationsController extends Controller
                 'rs_approval_status' => 'required|string',
                 'rs_status' => 'required|string',
             ]));
-    
+
             // Update reservation vehicles
             $reservation->reservation_vehicles()->delete();
-    
+
             $driverIds = $request->input('driver_id');
             $vehicleIds = $request->input('vehicle_id');
-    
-            // Check if driver_id and vehicle_id are arrays
-            if (is_array($driverIds) && is_array($vehicleIds)) {
-                foreach ($driverIds as $index => $driverId) {
-                    if (isset($vehicleIds[$index])) {
-                        $reservation->reservation_vehicles()->create([
-                            'driver_id' => $driverId,
-                            'vehicle_id' => $vehicleIds[$index],
-                        ]);
-                    }
+
+            // Ensure driver_id and vehicle_id are arrays
+            $driverIds = is_array($driverIds) ? $driverIds : [$driverIds];
+            $vehicleIds = is_array($vehicleIds) ? $vehicleIds : [$vehicleIds];
+
+            foreach ($driverIds as $index => $driverId) {
+                if (isset($vehicleIds[$index])) {
+                    $reservation->reservation_vehicles()->create([
+                        'driver_id' => $driverId,
+                        'vehicle_id' => $vehicleIds[$index],
+                    ]);
                 }
-            } else {
-                // If they're not arrays, create a single reservation vehicle
-                $reservation->reservation_vehicles()->create([
-                    'driver_id' => $driverIds,
-                    'vehicle_id' => $vehicleIds,
-                ]);
             }
-    
+
             DB::commit();
-    
-            \Log::info('Reservation updated successfully');
-    
+
+            \Log::info("Reservation updated successfully");
+
             return response()->json([
-                'message' => 'Reservation updated successfully',
-                'reservation' => $reservation->load('office', 'reservation_vehicles'),
+                'success' => 'Reservation updated successfully',
+                'reservation' => $reservation->load('events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'),
             ]);
-    
+
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error updating reservation: ' . $e->getMessage());
@@ -347,7 +369,7 @@ class ReservationsController extends Controller
 public function edit($id)
 {
     try {
-        $reservation = Reservations::with('reservation_vehicles')->findOrFail($id);
+        $reservation = Reservations::with(['events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'])->findOrFail($id);
         return response()->json(['result' => $reservation]);
     } catch (\Exception $e) {
         \Log::error('Error fetching reservation: ' . $e->getMessage());

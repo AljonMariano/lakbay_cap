@@ -35,14 +35,9 @@
                                         <input type="hidden" name="reservation_id" value="">
 
                                         <div class="mb-2">
-                                            <label for="event_id" class="form-label mb-0">Destination/ Activity</label>
-                                            <select class="form-select" name="event_id" id="event_id" required>
-                                                <option value="" disabled selected>Select Event</option>
-                                                @foreach ($events as $event)
-                                                <option value="{{ $event->event_id }}">{{ $event->ev_name }} - {{ $event->ev_venue }}</option>
-                                                @endforeach
-                                            </select>
-                                            <span id="event_id_error"></span>
+                                            <label for="event_name" class="form-label mb-0">Destination/ Activity</label>
+                                            <input type="text" class="form-control rounded-1" name="event_name" id="event_name" placeholder="Enter Destination/Activity" required>
+                                            <span id="event_name_error"></span>
                                         </div>
 
                                         <div class="mb-2">
@@ -99,6 +94,7 @@
                                             <label for="rs_travel_type" class="form-label mb-0">Travel Type</label>
                                             <select class="form-select" name="rs_travel_type" id="rs_travel_type">
                                                 <option value="" disabled selected>Select Travel Type</option>
+                                                <option value="Within Province Transport">Within Province Transport</option>
                                                 <option value="Outside Province Transport">Outside Province Transport</option>
                                                 <option value="Daily Transport">Daily Transport</option>
                                             </select>

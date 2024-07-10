@@ -36,13 +36,8 @@
 
                                         <div class="mb-2">
                                             <label for="event_id" class="form-label mb-0">Destination/ Activity</label>
-                                            <select class="form-select" name="event_id" id="event_id" required>
-                                                <option value="" disabled selected>Select Event</option>
-                                                @foreach ($events as $event)
-                                                <option value="{{ $event->event_id }}">{{ $event->ev_name }} - {{ $event->ev_venue }}</option>
-                                                @endforeach
-                                            </select>
-                                            <span id="event_id_error"></span>
+                                            <input type="text" class="form-control rounded-1" name="event_name" id="event_name" placeholder="Enter Destination/Activity" required>
+                                            <span id="event_name_error"></span>
                                         </div>
 
                                         <div class="mb-2">
@@ -192,8 +187,7 @@
 
                                 <div class="mb-2">
                                     <label for="event_edit" class="form-label mb-0">Destination/Activity</label>
-                                    <select class="form-select" name="event_id" id="event_edit" required>
-                                    </select>
+                                    <input type="text" class="form-control rounded-1" name="event_name" id="event_edit" placeholder="Enter Destination/Activity" required>
                                     <span id="event_edit_error"></span>
                                 </div>
 
@@ -327,7 +321,13 @@
         },
         columns: [
     { data: 'reservation_id', name: 'reservation_id' },
-    { data: 'ev_name', name: 'events.ev_name' },
+    {
+        data: 'ev_name',
+        name: 'ev_name',
+        render: function(data, type, row) {
+            return row.events ? row.events.ev_name : 'N/A';
+        }
+    },
     { 
         data: 'vehicles',
         name: 'vehicles',
@@ -375,7 +375,7 @@
         searchable: false,
         render: function(data, type, row) {
             return `
-                <button type="button" class="btn btn-sm btn-primary edit" edit-id="${row.reservation_id}">Edit</button>
+                <button type="button" class="btn btn-sm btn-primary edit" data-id="${row.reservation_id}">Edit</button>
                 <button type="button" class="btn btn-sm btn-danger delete" id="${row.reservation_id}">Delete</button>
             `;
         }
@@ -414,71 +414,45 @@
 // EDIT
 $(document).on('click', '.edit', function(e) {
     e.preventDefault();
-    $('#reservation_edit')[0].reset();
-    var reservation_id = $(this).attr('edit-id');
+    var reservation_id = $(this).data('id');
     var action_url = "{{ route('reservations.edit', ':id') }}".replace(':id', reservation_id);
     
-    // Fetch events, drivers, and vehicles
-    $.when(
-        $.ajax({
-            type: 'get',
-            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-            url: "{{ route('reservations.getEvents') }}",
-            dataType: 'json'
-        }),
-        $.ajax({
-            type: 'get',
-            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-            url: "{{ route('reservations.getDriversAndVehicles') }}",
-            dataType: 'json'
-        })
-    ).done(function(eventsData, driversAndVehiclesData) {
-        // Now fetch the reservation data
-        $.ajax({
-            type: 'get',
-            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-            url: action_url,
-            dataType: 'json',
-            success: function(data) {
-                console.log("Edit data received:", data);
+    console.log("Edit button clicked for reservation ID:", reservation_id);
 
-                var reservation = data.result;
-                var rowVehicles = reservation.reservation_vehicles;
-                var vehicle_ids = rowVehicles.map((item) => item.vehicle_id);
-                var driver_ids = rowVehicles.map((item) => item.driver_id).filter((item) => item != null);
-
-                // Use the fetched data
-                editEvents(eventsData[0], reservation.event_id);
-                editDrivers(driversAndVehiclesData[0].drivers, driver_ids);
-                editVehicles(driversAndVehiclesData[0].vehicles, vehicle_ids);
-
-                // Populate other fields
-                $('#edit_reservation_id').val(reservation.reservation_id); 
-                $('#event_edit').val(reservation.event_id);
-                $('#driver_edit').val(reservation.reservation_vehicles[0].driver_id);
-                $('#vehicle_edit').val(reservation.reservation_vehicles[0].vehicle_id);
-                $('#requestor_edit').val(reservation.requestor_id);
-                $('#office_edit').val(reservation.off_id);
-                $('#rs_passengers_edit').val(reservation.rs_passengers);
-                $('#rs_travel_type_edit').val(reservation.rs_travel_type);
-                $('#rs_voucher_edit').val(reservation.rs_voucher);
-                $('#rs_approval_status_edit').val(reservation.rs_approval_status);
-                $('#rs_status_edit').val(reservation.rs_status);
-
+    $.ajax({
+        url: action_url,
+        type: 'GET',
+        success: function(response) {
+            console.log("Edit data received:", response);
+            if (response.result) {
+                populateEditForm(response.result);
                 $('#edit_reservation_modal').modal('show');
-            },
-            error: function(xhr, status, error) {
-                console.error("Error fetching reservation data:", error);
-                console.error("Response:", xhr.responseText);
+            } else {
+                console.error("Unexpected response structure:", response);
+                showErrorMessage('Error: Unexpected response from server');
             }
-        });
-    }).fail(function(xhr, status, error) {
-        console.error("Error fetching data:", error);
-        console.error("Response:", xhr.responseText);
+        },
+        error: function(xhr, status, error) {
+            console.error("Error fetching reservation data:", error);
+            console.error("Response:", xhr.responseText);
+            showErrorMessage('Error fetching reservation data');
+        }
     });
-
-    $('#form_result').html('');
 });
+
+function populateEditForm(reservation) {
+    $('#edit_reservation_id').val(reservation.reservation_id);
+    $('#event_edit').val(reservation.events.ev_name);
+    $('#driver_edit').val(reservation.reservation_vehicles[0].driver_id);
+    $('#vehicle_edit').val(reservation.reservation_vehicles[0].vehicle_id);
+    $('#requestor_edit').val(reservation.requestor_id);
+    $('#office_edit').val(reservation.off_id);
+    $('#rs_passengers_edit').val(reservation.rs_passengers);
+    $('#rs_travel_type_edit').val(reservation.rs_travel_type);
+    $('#rs_voucher_edit').val(reservation.rs_voucher);
+    $('#rs_approval_status_edit').val(reservation.rs_approval_status);
+    $('#rs_status_edit').val(reservation.rs_status);
+}
 
 // UPDATE
 $('#reservation_edit').on('submit', function(e) {
@@ -487,24 +461,25 @@ $('#reservation_edit').on('submit', function(e) {
     console.log('Form data being sent:', formData);
 
     $.ajax({
-        url: '/admin/reservations/update',
+        url: "{{ route('reservations.update') }}",
         type: 'POST',
         data: formData,
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
         success: function(response) {
-            var html = '';
+            console.log('Update response:', response);
             if (response.success) {
-                html = "<div class='alert alert-info alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + response.success + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-                $('#reservations-table').DataTable().ajax.reload();
                 $('#edit_reservation_modal').modal('hide');
+                $('#reservations-table').DataTable().ajax.reload();
+                showSuccessMessage(response.success);
             } else {
-                html = "<div class='alert alert-danger alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;" + (response.error || 'Unknown error') + "</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
+                showErrorMessage(response.error || 'An error occurred while updating the reservation');
             }
-            $('#form_result').html(html);
         },
         error: function(xhr, status, error) {
             console.error('Update error:', xhr.responseText);
-            var html = "<div class='alert alert-danger alert-dismissible fade show py-1 px-4 d-flex justify-content-between align-items-center' role='alert'><span>&#8505; &nbsp;An error occurred while updating the reservation</span><button type='button' class='btn fs-4 py-0 px-0' data-bs-dismiss='alert' aria-label='Close'>&times;</button></div>";
-            $('#form_result').html(html);
+            showErrorMessage('An error occurred while updating the reservation');
         }
     });
 });
