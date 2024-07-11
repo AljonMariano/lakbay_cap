@@ -44,40 +44,55 @@ class ReservationsController extends Controller
                 \Log::info($reservations->getBindings());
     
                 $data = DataTables::of($reservations)
-    ->addColumn('ev_name', function ($reservation) {
-        return $reservation->events ? $reservation->events->ev_name : 'N/A';
-    })
-    ->addColumn('vehicles', function ($reservation) {
-        return $reservation->reservation_vehicles->map(function ($rv) {
-            $vehicle = $rv->vehicles;
-            return $vehicle
-                ? "{$vehicle->vh_brand} - {$vehicle->vh_type} - {$vehicle->vh_plate} - {$vehicle->vh_capacity}"
-                : 'N/A';
-        })->implode('<br>');
-    })
-    ->addColumn('drivers', function ($reservation) {
-        return $reservation->reservation_vehicles->map(function ($rv) {
-            $driver = $rv->drivers;
-            return $driver
-                ? "{$driver->dr_fname} {$driver->dr_mname} {$driver->dr_lname}"
-                : 'N/A';
-        })->implode('<br>');
-    })
-    ->addColumn('rq_full_name', function ($reservation) {
-        return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
-    })
-    ->addColumn('office', function ($reservation) {
-        return $reservation->office ? $reservation->office->off_acr . ' - ' . $reservation->office->off_name : 'N/A';
-    })
-    ->editColumn('created_at', function ($reservation) {
-        return $reservation->created_at->format('F d, Y');
-    })
-    ->addColumn('action', function ($reservation) {
-        return '<a href="'.route('reservations.edit', $reservation->reservation_id).'" class="btn btn-sm btn-primary">Edit</a>
-                <a href="'.route('reservations.delete', $reservation->reservation_id).'" class="btn btn-sm btn-danger">Delete</a>';
-    })
-                ->rawColumns(['action', 'vehicles', 'drivers'])
-                ->make(true);
+                    ->addColumn('ev_name', function ($reservation) {
+                        return $reservation->events ? $reservation->events->ev_name : 'N/A';
+                    })
+                    ->addColumn('rs_from', function ($reservation) {
+                        return $reservation->rs_from;
+                    })
+                    ->addColumn('rs_date_start', function ($reservation) {
+                        return $reservation->rs_date_start;
+                    })
+                    ->addColumn('rs_time_start', function ($reservation) {
+                        return $reservation->rs_time_start;
+                    })
+                    ->addColumn('rs_date_end', function ($reservation) {
+                        return $reservation->rs_date_end;
+                    })
+                    ->addColumn('rs_time_end', function ($reservation) {
+                        return $reservation->rs_time_end;
+                    })
+                    ->addColumn('vehicles', function ($reservation) {
+                        return $reservation->reservation_vehicles->map(function ($rv) {
+                            $vehicle = $rv->vehicles;
+                            return $vehicle
+                                ? "{$vehicle->vh_brand} - {$vehicle->vh_type} - {$vehicle->vh_plate} - {$vehicle->vh_capacity}"
+                                : 'N/A';
+                        })->implode('<br>');
+                    })
+                    ->addColumn('drivers', function ($reservation) {
+                        return $reservation->reservation_vehicles->map(function ($rv) {
+                            $driver = $rv->drivers;
+                            return $driver
+                                ? "{$driver->dr_fname} {$driver->dr_mname} {$driver->dr_lname}"
+                                : 'N/A';
+                        })->implode('<br>');
+                    })
+                    ->addColumn('rq_full_name', function ($reservation) {
+                        return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
+                    })
+                    ->addColumn('office', function ($reservation) {
+                        return $reservation->office ? $reservation->office->off_acr . ' - ' . $reservation->office->off_name : 'N/A';
+                    })
+                    ->editColumn('created_at', function ($reservation) {
+                        return $reservation->created_at->format('F d, Y');
+                    })
+                    ->addColumn('action', function ($reservation) {
+                        return '<a href="'.route('reservations.edit', $reservation->reservation_id).'" class="btn btn-sm btn-primary">Edit</a>
+                                <a href="'.route('reservations.delete', $reservation->reservation_id).'" class="btn btn-sm btn-danger">Delete</a>';
+                    })
+                    ->rawColumns(['action', 'vehicles', 'drivers'])
+                    ->make(true);
                 // Log the final data being returned
                 \Log::info('DataTables data:', $data->getData(true));
     
@@ -222,15 +237,18 @@ class ReservationsController extends Controller
         try {
             DB::beginTransaction();
     
-            // Create a new event
-            $event = Events::create([
-                'ev_name' => $request->input('event_name'),
-                'ev_venue' => '', // Set this to an empty string or null
-                'ev_date_start' => now(), // You might want to add date fields to your form
-                'ev_date_end' => now(),
-            ]);
-    
-            $reservation = Reservations::create($request->validate([
+            $request->validate([
+                'event_name' => 'required',
+                'rs_from' => 'required',
+                'rs_date_start' => 'required|date',
+                'rs_time_start' => 'required',
+                'rs_date_end' => 'required|date',
+                'rs_time_end' => 'required',
+                'rs_from' => 'required',
+                'rs_date_start' => 'required|date',
+                'rs_time_start' => 'required',
+                'rs_date_end' => 'required|date',
+                'rs_time_end' => 'required',
                 'requestor_id' => 'required|exists:requestors,requestor_id',
                 'off_id' => 'required|exists:offices,off_id',
                 'rs_passengers' => 'required|integer',
@@ -238,7 +256,37 @@ class ReservationsController extends Controller
                 'rs_voucher' => 'required|string',
                 'rs_approval_status' => 'required|string',
                 'rs_status' => 'required|string',
-            ]) + ['event_id' => $event->event_id]);
+            ]);
+    
+            $event = Events::create([
+                'ev_name' => $request->event_name,
+                'ev_venue' => $request->rs_from,
+                'ev_date_start' => $request->rs_date_start,
+                'ev_time_start' => $request->rs_time_start,
+                'ev_date_end' => $request->rs_date_end,
+                'ev_time_end' => $request->rs_time_end,
+            ]);
+    
+            $reservation = new Reservations;
+            $reservation->event_id = $event->event_id;
+            $reservation->rs_from = $request->rs_from;
+            $reservation->rs_date_start = $request->rs_date_start;
+            $reservation->rs_time_start = $request->rs_time_start;
+            $reservation->rs_date_end = $request->rs_date_end;
+            $reservation->rs_time_end = $request->rs_time_end;
+            $reservation->requestor_id = $request->requestor_id;
+            $reservation->off_id = $request->off_id;
+            $reservation->rs_passengers = $request->rs_passengers;
+            $reservation->rs_travel_type = $request->rs_travel_type;
+            $reservation->rs_voucher = $request->rs_voucher;
+            $reservation->rs_approval_status = $request->rs_approval_status;
+            $reservation->rs_status = $request->rs_status;
+            $reservation->rs_from = $request->rs_from;
+            $reservation->rs_date_start = $request->rs_date_start;
+            $reservation->rs_time_start = $request->rs_time_start;
+            $reservation->rs_date_end = $request->rs_date_end;
+            $reservation->rs_time_end = $request->rs_time_end;
+            $reservation->save();
     
             $driverIds = $request->input('driver_id');
             $vehicleIds = $request->input('vehicle_id');
@@ -276,13 +324,20 @@ class ReservationsController extends Controller
 
 
 
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
         try {
             DB::beginTransaction();
-    
-            $reservationId = $request->input('hidden_id');
+
+            \Log::info("Update request received:", $request->all());
+
+            $reservationId = $request->input('reservation_id') ?? $id;
             \Log::info("Attempting to update reservation with ID: " . $reservationId);
+
+            if (!$reservationId) {
+                \Log::error("Reservation ID is missing in the request");
+                return response()->json(['error' => 'Reservation ID is missing'], 400);
+            }
 
             $reservation = Reservations::with('events')->find($reservationId);
 
@@ -293,50 +348,38 @@ class ReservationsController extends Controller
 
             \Log::info("Reservation found:", $reservation->toArray());
 
-            // Update the event
-            if ($reservation->events) {
-                $reservation->events->update([
-                    'ev_name' => $request->input('event_name'),
-                    'ev_venue' => '', // Set this to an empty string or null
-                ]);
-            } else {
-                // If there's no associated event, create a new one
-                $event = new Events([
-                    'ev_name' => $request->input('event_name'),
-                    'ev_venue' => '',
-                    'ev_date_start' => now(),
-                    'ev_date_end' => now(),
-                ]);
-                $reservation->events()->save($event);
-            }
-
-            $reservation->update($request->validate([
-                'requestor_id' => 'required|exists:requestors,requestor_id',
-                'off_id' => 'required|exists:offices,off_id',
-                'rs_passengers' => 'required|integer',
-                'rs_travel_type' => 'required|string',
-                'rs_voucher' => 'required|string',
-                'rs_approval_status' => 'required|string',
-                'rs_status' => 'required|string',
+            // Update the reservation
+            $reservation->update($request->only([
+                'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
+                'rs_voucher', 'rs_approval_status', 'rs_status', 'rs_from',
+                'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end'
             ]));
+
+            // Update the associated event
+            $reservation->events()->update([
+                'ev_name' => $request->input('event_name')
+            ]);
 
             // Update reservation vehicles
             $reservation->reservation_vehicles()->delete();
 
-            $driverIds = $request->input('driver_id');
-            $vehicleIds = $request->input('vehicle_id');
+            $driverIds = $request->input('driver_id', []);
+            $vehicleIds = $request->input('vehicle_id', []);
 
-            // Ensure driver_id and vehicle_id are arrays
-            $driverIds = is_array($driverIds) ? $driverIds : [$driverIds];
-            $vehicleIds = is_array($vehicleIds) ? $vehicleIds : [$vehicleIds];
+            \Log::info("Driver IDs:", $driverIds);
+            \Log::info("Vehicle IDs:", $vehicleIds);
 
-            foreach ($driverIds as $index => $driverId) {
-                if (isset($vehicleIds[$index])) {
-                    $reservation->reservation_vehicles()->create([
-                        'driver_id' => $driverId,
-                        'vehicle_id' => $vehicleIds[$index],
-                    ]);
+            if (is_array($driverIds) && is_array($vehicleIds)) {
+                foreach ($driverIds as $index => $driverId) {
+                    if (isset($vehicleIds[$index])) {
+                        $reservation->reservation_vehicles()->create([
+                            'driver_id' => $driverId,
+                            'vehicle_id' => $vehicleIds[$index],
+                        ]);
+                    }
                 }
+            } else {
+                \Log::warning("Driver IDs or Vehicle IDs are not arrays");
             }
 
             DB::commit();
@@ -370,7 +413,7 @@ public function edit($id)
 {
     try {
         $reservation = Reservations::with(['events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'])->findOrFail($id);
-        return response()->json(['result' => $reservation]);
+        return response()->json(['reservation' => $reservation]);
     } catch (\Exception $e) {
         \Log::error('Error fetching reservation: ' . $e->getMessage());
         return response()->json(['error' => 'Failed to fetch reservation'], 500);
@@ -379,14 +422,19 @@ public function edit($id)
 
     public function delete($reservation_id)
 {
-    // Delete related records in reservation_vehicles
-    ReservationVehicle::where('reservation_id', $reservation_id)->delete();
+    try {
+        // Delete related records in reservation_vehicles
+        ReservationVehicle::where('reservation_id', $reservation_id)->delete();
 
-    // Delete the reservation
-    $reservation = Reservations::findOrFail($reservation_id);
-    $reservation->delete();
+        // Delete the reservation
+        $reservation = Reservations::findOrFail($reservation_id);
+        $reservation->delete();
 
-    return response()->json(['success' => 'Reservation deleted successfully.']);
+        return response()->json(['success' => 'Reservation deleted successfully.']);
+    } catch (\Exception $e) {
+        \Log::error('Error deleting reservation: ' . $e->getMessage());
+        return response()->json(['error' => 'Failed to delete reservation'], 500);
+    }
 }
     public function cancel($reservation_id)
     {

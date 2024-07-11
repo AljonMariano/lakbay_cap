@@ -122,7 +122,7 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
 
 
 // Reservation Section
-Route::get('/reservations', [ReservationsController::class, 'show'])->name('reservations.show');
+Route::get('/reservations', [ReservationsController::class, 'show'])->name('admin.reservations.show');
 Route::get('/event-calendar', [ReservationsController::class, 'event_calendar']);
 Route::get('/driver-schedules', [ReservationsController::class, 'drivers_schedules']);
 Route::get('/get-events', [ReservationsController::class, 'events'])->name('reservations.getEvents');
@@ -132,7 +132,7 @@ Route::get('/reservations-word', [ReservationsController::class, 'reservations_w
 Route::get('/reservations-excel', [ReservationsController::class, 'reservations_excel']);
 Route::get('/reservations-pdf', [ReservationsController::class, 'reservations_pdf']);
 Route::post('/insert-reservation', [ReservationsController::class, 'store'])->name('reservations.store');
-Route::put('/reservations/{reservation}', [ReservationsController::class, 'update'])->name('reservations.update');
+Route::put('/update-reservation/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
 Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit'])->name('reservations.edit');
 Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
 Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete'])->name('reservations.delete');
