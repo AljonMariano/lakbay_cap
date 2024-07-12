@@ -67,22 +67,16 @@
 
                                         <div class="mb-2">
                                             <label for="driver_id" class="form-label mb-0">Driver</label>
-                                            <select class="form-select driver-select" name="driver_id[]" id="driver_id">
-                                                <option value="" disabled selected>Select Driver</option>
-                                                @foreach ($drivers as $driver)
-                                                <option value="{{$driver->driver_id}}">{{ $driver->dr_fname }} {{ $driver->dr_mname }} {{ $driver->dr_lname }}</option>
-                                                @endforeach
+                                            <select class="form-select driver-select" name="driver_id[]" id="driver_id" multiple style="width: 100%;">
+                                                <option value="" disabled>Select Driver</option>
                                             </select>
                                             <span id="driver_id_error"></span>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
-                                            <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id">
-                                                <option value="" disabled selected>Select Vehicle</option>
-                                                @foreach ($vehicles as $vehicle)
-                                                <option value="{{ $vehicle->vehicle_id }}"> {{ $vehicle->vh_brand }} - {{ $vehicle->vh_type }} - {{ $vehicle->vh_plate }} - {{$vehicle->vh_capacity}}</option>
-                                                @endforeach
+                                            <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id" multiple style="width: 100%;">
+                                                <option value="" disabled>Select Vehicle</option>
                                             </select>
                                             <span id="vehicle_id_error"></span>
                                         </div>
@@ -253,6 +247,22 @@
                                 </div>
 
                                 <div class="mb-2">
+                                    <label for="driver_id_edit" class="form-label mb-0">Driver</label>
+                                    <select class="form-select driver-select" name="driver_id[]" id="driver_id_edit" multiple style="width: 100%;">
+                                        <option value="" disabled>Select Driver</option>
+                                    </select>
+                                    <span id="driver_id_edit_error"></span>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <label for="vehicle_id_edit" class="form-label mb-0">Vehicle</label>
+                                    <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id_edit" multiple style="width: 100%;">
+                                        <option value="" disabled>Select Vehicle</option>
+                                    </select>
+                                    <span id="vehicle_id_edit_error"></span>
+                                </div>
+                                
+                                <div class="mb-2">
                                     <label for="requestor_edit" class="form-label mb-0">Requestor</label>
                                     <select class="form-select" name="requestor_id" id="requestor_edit" required>
                                         @foreach ($requestors as $requestor)
@@ -343,6 +353,13 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
+            // Initialize Select2 for all select elements
+            $('.driver-select, .vehicle-select').select2({
+                placeholder: "Select option",
+                allowClear: true,
+                width: '100%'
+            });
+
             // Initialize DataTable
             var table = $('.reservations-table').DataTable({
                 processing: true,
@@ -430,6 +447,7 @@
             $('#insertBtn').on('click', function(e) {
                 e.preventDefault(); // Prevent default action
                 $('#insertModal').modal('show'); // Show the modal
+                loadDriversAndVehicles();
             });
 
             // Handle form submission
@@ -475,50 +493,7 @@
             // Handle edit button click
             $(document).on('click', '.edit', function() {
                 var reservationId = $(this).data('id');
-                $.ajax({
-                    url: `/edit-reservation/${reservationId}`,
-                    method: 'GET',
-                    success: function(response) {
-                        console.log('Edit response:', response);
-                        var reservation = response.reservation;
-                        
-                        $('#edit_reservation_id').val(reservation.reservation_id);
-                        $('#event_edit').val(reservation.events.ev_name);
-                        $('#rs_from_edit').val(reservation.rs_from);
-                        $('#rs_date_start_edit').val(reservation.rs_date_start);
-                        $('#rs_time_start_edit').val(reservation.rs_time_start);
-                        $('#rs_date_end_edit').val(reservation.rs_date_end);
-                        $('#rs_time_end_edit').val(reservation.rs_time_end);
-                        $('#requestor_edit').val(reservation.requestor_id);
-                        $('#office_edit').val(reservation.off_id);
-                        $('#rs_passengers_edit').val(reservation.rs_passengers);
-                        $('#rs_travel_type_edit').val(reservation.rs_travel_type);
-                        $('#rs_voucher_edit').val(reservation.rs_voucher);
-                        $('#rs_approval_status_edit').val(reservation.rs_approval_status);
-                        $('#rs_status_edit').val(reservation.rs_status);
-
-                        // Populate drivers and vehicles
-                        var driverSelect = $('#driver_id');
-                        var vehicleSelect = $('#vehicle_id');
-                        driverSelect.empty();
-                        vehicleSelect.empty();
-
-                        reservation.reservation_vehicles.forEach(function(rv, index) {
-                            driverSelect.append(new Option(rv.drivers.dr_fname + ' ' + rv.drivers.dr_lname, rv.drivers.driver_id, false, true));
-                            vehicleSelect.append(new Option(rv.vehicles.vh_brand + ' - ' + rv.vehicles.vh_plate, rv.vehicles.vehicle_id, false, true));
-                        });
-
-                        // If you're using Select2, you might need to trigger an update
-                        // $('#driver_id, #vehicle_id').trigger('change');
-
-                        // Show the edit modal
-                        $('#edit_reservation_modal').modal('show');
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error fetching reservation:', xhr.responseText);
-                        showErrorMessage('Error fetching reservation');
-                    }
-                });
+                loadReservationData(reservationId);
             });
 
             // Handle form submission for updating reservation
@@ -605,6 +580,95 @@
                            "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>" +
                            "</div>";
                 $('#form_result').html(html);
+            }
+
+            // Function to load drivers and vehicles
+            function loadDriversAndVehicles() {
+                $.ajax({
+                    url: "{{ route('get.drivers.vehicles') }}",
+                    method: 'GET',
+                    success: function(response) {
+                        populateSelect('.driver-select', response.drivers);
+                        populateSelect('.vehicle-select', response.vehicles);
+                    },
+                    error: function(xhr) {
+                        console.error('Error loading drivers and vehicles:', xhr.responseText);
+                    }
+                });
+            }
+
+            // Function to populate select elements
+            function populateSelect(selector, data) {
+                var select = $(selector);
+                select.empty().append('<option value="" disabled>Select option</option>');
+                $.each(data, function(index, item) {
+                    select.append($('<option></option>')
+                        .attr('value', item.id)
+                        .text(item.name));
+                });
+                select.trigger('change.select2');
+            }
+
+            function loadReservationData(reservationId) {
+                $.ajax({
+                    url: "/admin/reservations/" + reservationId + "/edit",
+                    method: 'GET',
+                    success: function(response) {
+                        var reservation = response.reservation;
+                        
+                        // Populate form fields with reservation data
+                        $('#edit_reservation_id').val(reservation.reservation_id);
+                        $('#event_edit').val(reservation.events.ev_name);
+                        $('#rs_from_edit').val(reservation.rs_from);
+                        $('#rs_date_start_edit').val(reservation.rs_date_start);
+                        $('#rs_time_start_edit').val(reservation.rs_time_start);
+                        $('#rs_date_end_edit').val(reservation.rs_date_end);
+                        $('#rs_time_end_edit').val(reservation.rs_time_end);
+                        $('#requestor_edit').val(reservation.requestor_id);
+                        $('#office_edit').val(reservation.off_id);
+                        $('#rs_passengers_edit').val(reservation.rs_passengers);
+                        $('#rs_travel_type_edit').val(reservation.rs_travel_type);
+                        $('#rs_voucher_edit').val(reservation.rs_voucher);
+                        $('#rs_approval_status_edit').val(reservation.rs_approval_status);
+                        $('#rs_status_edit').val(reservation.rs_status);
+
+                        // Clear existing options in driver and vehicle selects
+                        $('#driver_id_edit').empty();
+                        $('#vehicle_id_edit').empty();
+
+                        // Fetch and populate drivers and vehicles
+                        $.ajax({
+                            url: "{{ route('get.drivers.vehicles') }}",
+                            method: 'GET',
+                            success: function(driversVehiclesResponse) {
+                                // Populate drivers
+                                $.each(driversVehiclesResponse.drivers, function(index, driver) {
+                                    var isSelected = reservation.reservation_vehicles.some(rv => rv.driver_id == driver.id);
+                                    $('#driver_id_edit').append(new Option(driver.name, driver.id, false, isSelected));
+                                });
+
+                                // Populate vehicles
+                                $.each(driversVehiclesResponse.vehicles, function(index, vehicle) {
+                                    var isSelected = reservation.reservation_vehicles.some(rv => rv.vehicle_id == vehicle.id);
+                                    $('#vehicle_id_edit').append(new Option(vehicle.name, vehicle.id, false, isSelected));
+                                });
+
+                                // Trigger change event for Select2 to update
+                                $('#driver_id_edit, #vehicle_id_edit').trigger('change');
+                            },
+                            error: function(xhr) {
+                                console.error('Error loading drivers and vehicles:', xhr.responseText);
+                            }
+                        });
+
+                        // Show the edit modal
+                        $('#edit_reservation_modal').modal('show');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching reservation:', xhr.responseText);
+                        showErrorMessage('Error fetching reservation');
+                    }
+                });
             }
         });
     </script>

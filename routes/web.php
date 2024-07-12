@@ -142,6 +142,8 @@ Route::post('/reservations/update', [ReservationsController::class, 'update'])->
 Route::post('/reservations', [ReservationsController::class, 'store'])->name('reservations.store');
 Route::put('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
 Route::put('/reservations/update', [ReservationsController::class, 'update'])->name('reservations.update');
+Route::get('/get-drivers-vehicles', [ReservationsController::class, 'getDriversAndVehicles'])->name('get.drivers.vehicles');
+
 
 
 

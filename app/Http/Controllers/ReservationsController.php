@@ -412,7 +412,8 @@ class ReservationsController extends Controller
 public function edit($id)
 {
     try {
-        $reservation = Reservations::with(['events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'])->findOrFail($id);
+        $reservation = Reservations::with(['events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'])
+            ->findOrFail($id);
         return response()->json(['reservation' => $reservation]);
     } catch (\Exception $e) {
         \Log::error('Error fetching reservation: ' . $e->getMessage());
@@ -692,8 +693,12 @@ public function getDriversAndVehicles()
         ]);
 
         return response()->json([
-            'drivers' => $drivers,
-            'vehicles' => $vehicles
+            'drivers' => $drivers->map(function($driver) {
+                return ['id' => $driver->driver_id, 'name' => $driver->dr_fname . ' ' . $driver->dr_lname];
+            }),
+            'vehicles' => $vehicles->map(function($vehicle) {
+                return ['id' => $vehicle->vehicle_id, 'name' => $vehicle->vh_brand . ' - ' . $vehicle->vh_plate];
+            })
         ]);
     } catch (\Exception $e) {
         \Log::error('Error fetching drivers and vehicles: ' . $e->getMessage());
