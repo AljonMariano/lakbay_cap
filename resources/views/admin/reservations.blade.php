@@ -68,7 +68,7 @@
                                         <div class="mb-2">
                                             <label for="driver_id" class="form-label mb-0">Driver</label>
                                             <select class="form-select driver-select" name="driver_id[]" id="driver_id" multiple style="width: 100%;">
-                                                <option value="" disabled>Select Driver</option>
+                                                <option value="" disabled selected>Select Driver</option>
                                             </select>
                                             <span id="driver_id_error"></span>
                                         </div>
@@ -76,7 +76,7 @@
                                         <div class="mb-2">
                                             <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
                                             <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id" multiple style="width: 100%;">
-                                                <option value="" disabled>Select Vehicle</option>
+                                                <option value="" disabled selected>Select Vehicle</option>
                                             </select>
                                             <span id="vehicle_id_error"></span>
                                         </div>
@@ -355,9 +355,9 @@
         $(document).ready(function() {
             // Initialize Select2 for all select elements
             $('.driver-select, .vehicle-select').select2({
-                placeholder: "Select option",
-                allowClear: true,
-                width: '100%'
+                width: '100%',
+                multiple: true,
+                allowClear: true
             });
 
             // Initialize DataTable
@@ -641,16 +641,20 @@
                             url: "{{ route('get.drivers.vehicles') }}",
                             method: 'GET',
                             success: function(driversVehiclesResponse) {
+                                // Get the selected driver and vehicle IDs
+                                var selectedDriverIds = reservation.reservation_vehicles.map(rv => rv.driver_id);
+                                var selectedVehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id);
+
                                 // Populate drivers
                                 $.each(driversVehiclesResponse.drivers, function(index, driver) {
-                                    var isSelected = reservation.reservation_vehicles.some(rv => rv.driver_id == driver.id);
-                                    $('#driver_id_edit').append(new Option(driver.name, driver.id, false, isSelected));
+                                    var option = new Option(driver.name, driver.id, false, selectedDriverIds.includes(driver.id));
+                                    $('#driver_id_edit').append(option);
                                 });
 
                                 // Populate vehicles
                                 $.each(driversVehiclesResponse.vehicles, function(index, vehicle) {
-                                    var isSelected = reservation.reservation_vehicles.some(rv => rv.vehicle_id == vehicle.id);
-                                    $('#vehicle_id_edit').append(new Option(vehicle.name, vehicle.id, false, isSelected));
+                                    var option = new Option(vehicle.name, vehicle.id, false, selectedVehicleIds.includes(vehicle.id));
+                                    $('#vehicle_id_edit').append(option);
                                 });
 
                                 // Trigger change event for Select2 to update
