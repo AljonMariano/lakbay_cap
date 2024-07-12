@@ -322,6 +322,9 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
     Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit']);
     Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
     Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete']);
+    Route::get('/reservations', [UsersReservationsController::class, 'show'])->name('users.reservations.show');
+    Route::post('/reservations', [UsersReservationsController::class, 'store'])->name('users.reservations.store');
+    Route::get('/get-drivers-vehicles', [UsersReservationsController::class, 'getDriversAndVehicles'])->name('users.get.drivers.vehicles');
 
     // Test Section
     Route::get('/test-select', [ReservationsController::class, 'test_select'])->name('reservations.testSelect');
