@@ -8,7 +8,49 @@
     <?php $title_page = 'Reservations';?>
     @include('includes.admin_header')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        input[type="date"], input[type="time"] {
+            position: relative;
+            z-index: 1;
+        }
+        .select2-container--bootstrap-5 .select2-selection--multiple {
+            min-height: 38px;
+            height: auto;
+            overflow: hidden;
+            padding: 2px 6px;
+        }
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            padding: 2px 5px;
+            margin: 2px;
+            font-size: 0.875rem;
+            max-width: calc(100% - 4px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .select2-container--bootstrap-5 .select2-search--inline .select2-search__field {
+            margin: 0;
+            padding: 0;
+            min-height: 30px;
+        }
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+            margin-right: 3px;
+        }
+    </style>
 </head>
 <body>
     <div class="row">
@@ -47,36 +89,38 @@
 
                                         <div class="mb-2">
                                             <label for="rs_date_start" class="form-label mb-0">Start Date</label>
-                                            <input type="date" class="form-control rounded-1" name="rs_date_start" id="rs_date_start" required>
+                                            <input type="date" class="form-control rounded-1" name="rs_date_start" id="rs_date_start" placeholder="Select Start Date" required>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="rs_time_start" class="form-label mb-0">Start Time</label>
-                                            <input type="time" class="form-control rounded-1" name="rs_time_start" id="rs_time_start" required>
+                                            <input type="time" class="form-control rounded-1" name="rs_time_start" id="rs_time_start" placeholder="Select Start Time" required>
+                                            <span id="rs_time_start_display"></span>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="rs_date_end" class="form-label mb-0">End Date</label>
-                                            <input type="date" class="form-control rounded-1" name="rs_date_end" id="rs_date_end" required>
+                                            <input type="date" class="form-control rounded-1" name="rs_date_end" id="rs_date_end" placeholder="Select End Date" required>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="rs_time_end" class="form-label mb-0">End Time</label>
-                                            <input type="time" class="form-control rounded-1" name="rs_time_end" id="rs_time_end" required>
+                                            <input type="time" class="form-control rounded-1" name="rs_time_end" id="rs_time_end" placeholder="Select End Time" required>
+                                            <span id="rs_time_end_display"></span>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="driver_id" class="form-label mb-0">Driver</label>
-                                            <select class="form-select driver-select" name="driver_id[]" id="driver_id" multiple style="width: 100%;">
-                                                <option value="" disabled selected>Select Driver</option>
+                                            <select class="form-select driver-select" name="driver_id[]" id="driver_id" multiple>
+                                                <option value="" disabled>Select Driver</option>
                                             </select>
                                             <span id="driver_id_error"></span>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
-                                            <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id" multiple style="width: 100%;">
-                                                <option value="" disabled selected>Select Vehicle</option>
+                                            <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id" multiple>
+                                                <option value="" disabled>Select Vehicle</option>
                                             </select>
                                             <span id="vehicle_id_error"></span>
                                         </div>
@@ -224,31 +268,33 @@
 
                                 <div class="mb-2">
                                     <label for="rs_date_start_edit" class="form-label mb-0">Start Date</label>
-                                    <input type="date" class="form-control rounded-1" name="rs_date_start" id="rs_date_start_edit" required>
+                                    <input type="date" class="form-control rounded-1" name="rs_date_start" id="rs_date_start_edit" placeholder="Select Start Date" required>
                                     <span id="rs_date_start_edit_error"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="rs_time_start_edit" class="form-label mb-0">Start Time</label>
-                                    <input type="time" class="form-control rounded-1" name="rs_time_start" id="rs_time_start_edit" required>
+                                    <input type="time" class="form-control rounded-1" name="rs_time_start" id="rs_time_start_edit" placeholder="Select Start Time" required>
                                     <span id="rs_time_start_edit_error"></span>
+                                    <span id="rs_time_start_display_edit"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="rs_date_end_edit" class="form-label mb-0">End Date</label>
-                                    <input type="date" class="form-control rounded-1" name="rs_date_end" id="rs_date_end_edit" required>
+                                    <input type="date" class="form-control rounded-1" name="rs_date_end" id="rs_date_end_edit" placeholder="Select End Date" required>
                                     <span id="rs_date_end_edit_error"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="rs_time_end_edit" class="form-label mb-0">End Time</label>
-                                    <input type="time" class="form-control rounded-1" name="rs_time_end" id="rs_time_end_edit" required>
+                                    <input type="time" class="form-control rounded-1" name="rs_time_end" id="rs_time_end_edit" placeholder="Select End Time" required>
                                     <span id="rs_time_end_edit_error"></span>
+                                    <span id="rs_time_end_display_edit"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="driver_id_edit" class="form-label mb-0">Driver</label>
-                                    <select class="form-select driver-select" name="driver_id[]" id="driver_id_edit" multiple style="width: 100%;">
+                                    <select class="form-select driver-select" name="driver_id[]" id="driver_id_edit" multiple>
                                         <option value="" disabled>Select Driver</option>
                                     </select>
                                     <span id="driver_id_edit_error"></span>
@@ -256,7 +302,7 @@
                                 
                                 <div class="mb-2">
                                     <label for="vehicle_id_edit" class="form-label mb-0">Vehicle</label>
-                                    <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id_edit" multiple style="width: 100%;">
+                                    <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id_edit" multiple>
                                         <option value="" disabled>Select Vehicle</option>
                                     </select>
                                     <span id="vehicle_id_edit_error"></span>
@@ -353,12 +399,37 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
-            // Initialize Select2 for all select elements
-            $('.driver-select, .vehicle-select').select2({
-                width: '100%',
-                multiple: true,
-                allowClear: true
-            });
+            function initializeSelect2(selector) {
+                $(selector).select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: 'Select option(s)',
+                    allowClear: true,
+                    closeOnSelect: true,
+                    dropdownParent: $(selector).closest('.modal'),
+                    templateSelection: function(data, container) {
+                        $(container).css("max-width", "100%");
+                        return $('<span class="select2-selection__choice__text"></span>').text(data.text);
+                    }
+                }).on('select2:select', function (e) {
+                    $(this).select2('close');
+                }).on('change', function(e) {
+                    var $this = $(this);
+                    setTimeout(function() {
+                        $this.closest('.select2-container').find('.select2-selection--multiple')
+                             .css('height', 'auto')
+                             .css('height', $this.closest('.select2-container').find('.select2-selection--multiple')[0].scrollHeight + 'px');
+                    }, 0);
+                });
+            }
+
+            // Initialize Select2 for insert modal
+            initializeSelect2('#driver_id');
+            initializeSelect2('#vehicle_id');
+
+            // Initialize Select2 for edit modal
+            initializeSelect2('#driver_id_edit');
+            initializeSelect2('#vehicle_id_edit');
 
             // Initialize DataTable
             var table = $('.reservations-table').DataTable({
@@ -381,9 +452,21 @@
                     {data: 'ev_name', name: 'ev_name'},
                     {data: 'rs_from', name: 'rs_from'},
                     {data: 'rs_date_start', name: 'rs_date_start'},
-                    {data: 'rs_time_start', name: 'rs_time_start'},
+                    {
+                        data: 'rs_time_start',
+                        name: 'rs_time_start',
+                        render: function(data, type, row) {
+                            return type === 'display' ? formatTime(data) : data;
+                        }
+                    },
                     {data: 'rs_date_end', name: 'rs_date_end'},
-                    {data: 'rs_time_end', name: 'rs_time_end'},
+                    {
+                        data: 'rs_time_end',
+                        name: 'rs_time_end',
+                        render: function(data, type, row) {
+                            return type === 'display' ? formatTime(data) : data;
+                        }
+                    },
                     {
                         data: 'vehicles',
                         name: 'vehicles',
@@ -633,8 +716,8 @@
                         $('#rs_status_edit').val(reservation.rs_status);
 
                         // Clear existing options in driver and vehicle selects
-                        $('#driver_id_edit').empty();
-                        $('#vehicle_id_edit').empty();
+                        $('#driver_id_edit').empty().append('<option value="" disabled>Select Driver</option>');
+                        $('#vehicle_id_edit').empty().append('<option value="" disabled>Select Vehicle</option>');
 
                         // Fetch and populate drivers and vehicles
                         $.ajax({
@@ -659,6 +742,10 @@
 
                                 // Trigger change event for Select2 to update
                                 $('#driver_id_edit, #vehicle_id_edit').trigger('change');
+
+                                // Reinitialize Select2 for edit modal
+                                initializeSelect2('#driver_id_edit');
+                                initializeSelect2('#vehicle_id_edit');
                             },
                             error: function(xhr) {
                                 console.error('Error loading drivers and vehicles:', xhr.responseText);
@@ -674,6 +761,89 @@
                     }
                 });
             }
+
+            // Function to format time
+            function formatTime(time) {
+                if (!time) return '';
+                let [hours, minutes] = time.split(':');
+                hours = parseInt(hours);
+                let ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12; // the hour '0' should be '12'
+                minutes = minutes.padStart(2, '0');
+                return `${hours}:${minutes} ${ampm}`;
+            }
+
+            // Function to update time display
+            function updateTimeDisplay() {
+                let startTime = $('#rs_time_start').val();
+                let endTime = $('#rs_time_end').val();
+                let startTimeEdit = $('#rs_time_start_edit').val();
+                let endTimeEdit = $('#rs_time_end_edit').val();
+
+                $('#rs_time_start_display').text(startTime ? formatTime(startTime) : '');
+                $('#rs_time_end_display').text(endTime ? formatTime(endTime) : '');
+                $('#rs_time_start_display_edit').text(startTimeEdit ? formatTime(startTimeEdit) : '');
+                $('#rs_time_end_display_edit').text(endTimeEdit ? formatTime(endTimeEdit) : '');
+            }
+
+            // Event listeners to update the display when time changes
+            $('#rs_time_start, #rs_time_end, #rs_time_start_edit, #rs_time_end_edit').on('change', updateTimeDisplay);
+
+            // Initial update
+            updateTimeDisplay();
+
+            // Ensure date and time inputs are clickable
+            document.addEventListener('DOMContentLoaded', function() {
+                const dateInputs = document.querySelectorAll('input[type="date"]');
+                const timeInputs = document.querySelectorAll('input[type="time"]');
+
+                dateInputs.forEach(input => {
+                    input.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        this.showPicker();
+                    });
+                });
+
+                timeInputs.forEach(input => {
+                    input.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        this.showPicker();
+                    });
+                });
+            });
+
+            // Initialize flatpickr for date and time inputs
+            flatpickr('input[type="date"]', {
+                dateFormat: "Y-m-d",
+            });
+            flatpickr('input[type="time"]', {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+            });
+
+            // Initialize Select2 for edit modal
+            $('#driver_id_edit, #vehicle_id_edit').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select option(s)',
+                allowClear: true,
+                closeOnSelect: false,
+                dropdownParent: $('#edit_reservation_modal')
+            }).on('select2:select', function (e) {
+                $(this).select2('close');
+            });
+
+            // Initialize flatpickr for edit modal inputs
+            flatpickr('#rs_date_start_edit, #rs_date_end_edit', {
+                dateFormat: "Y-m-d",
+            });
+            flatpickr('#rs_time_start_edit, #rs_time_end_edit', {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+            });
         });
     </script>
 </body>
