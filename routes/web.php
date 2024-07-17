@@ -143,6 +143,7 @@ Route::post('/reservations', [ReservationsController::class, 'store'])->name('re
 Route::put('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
 Route::put('/reservations/update', [ReservationsController::class, 'update'])->name('reservations.update');
 Route::get('/get-drivers-vehicles', [ReservationsController::class, 'getDriversAndVehicles'])->name('get.drivers.vehicles');
+Route::post('/admin/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
 
 
 

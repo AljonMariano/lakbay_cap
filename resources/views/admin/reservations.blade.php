@@ -50,6 +50,84 @@
         .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
             margin-right: 3px;
         }
+        .table-responsive {
+            max-width: 95%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #reservations-table {
+            width: 100% !important;
+        }
+        .container, .container-fluid {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            max-width: 100% !important;
+        }
+        
+        #reservations-table_wrapper {
+            margin-left: -15px !important;
+            width: calc(100% + 30px) !important;
+        }
+        
+        #reservations-table {
+            width: 100% !important;
+        }
+        
+        .dataTables_wrapper .row {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
+        }
+        
+        #reservations-table th,
+        #reservations-table td {
+            padding-left: 15px !important;
+        }
+        
+        .dataTables_filter, .dataTables_length {
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+
+        /* New styles to adjust table positioning */
+        .cover-container {
+            max-width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .container, .container-fluid {
+            max-width: 100% !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+
+        #reservations-table_wrapper {
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        #reservations-table {
+            width: 100% !important;
+        }
+
+        .dataTables_wrapper .row {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
+        }
+
+        .dataTables_filter {
+            text-align: right !important;
+        }
+
+        @media (min-width: 768px) {
+            .container, .container-fluid {
+                padding-left: 30px !important;
+                padding-right: 30px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -66,7 +144,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Reservation Form</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <form action="{{ route('reservations.store') }}" method="POST" class="reservations-form" id="reservations-form" name="reservations-form">
@@ -137,7 +215,7 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <label for="office" class="form-label mb-0">Office</label>
+                                            <label for="off_id" class="form-label mb-0">Office</label>
                                             <select class="form-select" name="off_id" id="off_id" required>
                                                 <option value="">Select Office</option>
                                                 @foreach ($offices as $office)
@@ -247,7 +325,7 @@
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title" id="ModalLabel">Edit Reservation</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="card rounded-0">
@@ -438,6 +516,9 @@
                 ajax: {
                     url: "{{ route('admin.reservations.show') }}",
                     type: 'GET',
+                    data: function (d) {
+                        d.search = $('input[type="search"]').val()
+                    },
                     dataSrc: function(json) {
                         console.log('DataTables data:', json);
                         return json.data;
@@ -471,7 +552,12 @@
                         data: 'vehicles',
                         name: 'vehicles',
                         render: function(data, type, row) {
-                            return data ? data : 'N/A';
+                            if (data && Array.isArray(data) && data.length > 0) {
+                                return data.map(function(vehicle) {
+                                    return vehicle.vh_brand + ' ' + vehicle.vh_model + ' (' + vehicle.vh_type + ') - ' + vehicle.vh_plate;
+                                }).join(', ');
+                            }
+                            return 'N/A';
                         }
                     },
                     {
@@ -481,7 +567,7 @@
                             return data ? data : 'N/A';
                         }
                     },
-                    {data: 'rq_full_name', name: 'rq_full_name'},
+                    {data: 'requestor', name: 'requestor'},
                     {
                         data: 'office',
                         name: 'office',
@@ -516,6 +602,7 @@
                             return `
                                 <button type="button" class="btn btn-sm btn-primary edit" data-id="${row.reservation_id}">Edit</button>
                                 <button type="button" class="btn btn-sm btn-danger delete" data-id="${row.reservation_id}">Delete</button>
+                                <button type="button" class="btn btn-sm btn-success done" data-id="${row.reservation_id}">Done</button>
                             `;
                         }
                     }
@@ -523,7 +610,15 @@
                 order: [[0, 'asc']],
                 drawCallback: function(settings) {
                     console.log('DataTables draw callback', settings);
-                }
+                },
+                responsive: true,
+                autoWidth: false,
+                scrollX: true
+            });
+
+            // Add this to handle manual search
+            $('input[type="search"]').on('keyup', function () {
+                table.search(this.value).draw();
             });
 
             // Show the modal when the reserve button is clicked
@@ -628,6 +723,28 @@
                 });
             });
 
+            // Handle done button click
+            $('#reservations-table').on('click', '.done', function() {
+                var reservationId = $(this).data('id');
+                $.ajax({
+                    url: "{{ route('reservations.done', ['id' => ':id']) }}".replace(':id', reservationId),
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        showSuccessMessage('Reservation marked as done');
+                        table.ajax.reload(null, false);
+                        // Refresh the drivers and vehicles list
+                        loadDriversAndVehicles();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error marking reservation as done:', xhr.responseText);
+                        showErrorMessage('Error marking reservation as done');
+                    }
+                });
+            });
+
             // Function to clear the reservation form
             function clearReservationForm() {
                 $('#reservations-form')[0].reset();
@@ -666,10 +783,11 @@
             }
 
             // Function to load drivers and vehicles
-            function loadDriversAndVehicles() {
+            function loadDriversAndVehicles(reservationId = null) {
                 $.ajax({
                     url: "{{ route('get.drivers.vehicles') }}",
                     method: 'GET',
+                    data: { reservation_id: reservationId },
                     success: function(response) {
                         populateSelect('.driver-select', response.drivers);
                         populateSelect('.vehicle-select', response.vehicles);
@@ -685,9 +803,13 @@
                 var select = $(selector);
                 select.empty().append('<option value="" disabled>Select option</option>');
                 $.each(data, function(index, item) {
-                    select.append($('<option></option>')
+                    var option = $('<option></option>')
                         .attr('value', item.id)
-                        .text(item.name));
+                        .text(item.name);
+                    if (item.reserved) {
+                        option.attr('disabled', 'disabled');
+                    }
+                    select.append(option);
                 });
                 select.trigger('change.select2');
             }
@@ -720,37 +842,7 @@
                         $('#vehicle_id_edit').empty().append('<option value="" disabled>Select Vehicle</option>');
 
                         // Fetch and populate drivers and vehicles
-                        $.ajax({
-                            url: "{{ route('get.drivers.vehicles') }}",
-                            method: 'GET',
-                            success: function(driversVehiclesResponse) {
-                                // Get the selected driver and vehicle IDs
-                                var selectedDriverIds = reservation.reservation_vehicles.map(rv => rv.driver_id);
-                                var selectedVehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id);
-
-                                // Populate drivers
-                                $.each(driversVehiclesResponse.drivers, function(index, driver) {
-                                    var option = new Option(driver.name, driver.id, false, selectedDriverIds.includes(driver.id));
-                                    $('#driver_id_edit').append(option);
-                                });
-
-                                // Populate vehicles
-                                $.each(driversVehiclesResponse.vehicles, function(index, vehicle) {
-                                    var option = new Option(vehicle.name, vehicle.id, false, selectedVehicleIds.includes(vehicle.id));
-                                    $('#vehicle_id_edit').append(option);
-                                });
-
-                                // Trigger change event for Select2 to update
-                                $('#driver_id_edit, #vehicle_id_edit').trigger('change');
-
-                                // Reinitialize Select2 for edit modal
-                                initializeSelect2('#driver_id_edit');
-                                initializeSelect2('#vehicle_id_edit');
-                            },
-                            error: function(xhr) {
-                                console.error('Error loading drivers and vehicles:', xhr.responseText);
-                            }
-                        });
+                        loadDriversAndVehicles(reservationId);
 
                         // Show the edit modal
                         $('#edit_reservation_modal').modal('show');
@@ -843,6 +935,23 @@
                 enableTime: true,
                 noCalendar: true,
                 dateFormat: "H:i",
+            });
+
+            // Close modal when clicking the close button (X)
+            $('.modal .btn-close').on('click', function() {
+                var modalId = $(this).closest('.modal').attr('id');
+                $('#' + modalId).modal('hide');
+            });
+
+            // Close modal when clicking the Cancel button
+            $('.modal .btn-secondary[data-bs-dismiss="modal"]').on('click', function() {
+                var modalId = $(this).closest('.modal').attr('id');
+                $('#' + modalId).modal('hide');
+            });
+
+            // Ensure Bootstrap modal is properly initialized
+            $('#insertModal, #edit_reservation_modal').each(function() {
+                new bootstrap.Modal(this);
             });
         });
     </script>

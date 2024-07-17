@@ -50,6 +50,7 @@
 
         body {
             font-family: 'Khand', sans-serif !important;
+            padding-left: 20px; /* Add padding to the body */
         }
 
         .bd-placeholder-img {
@@ -107,6 +108,11 @@
             color: grey;
         }
 
+        #reservations-table_wrapper {
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
     </style>
     <link href="{{asset('css/main.css')}}" rel="stylesheet">
 
@@ -116,29 +122,28 @@
     <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
         <?php if(empty($_SESSION['loggedIn'])): ?>
         <header class="mb-auto">
-            <div>
-<!-- <h3 class="float-md-start mb-0">LAKBAY</h3> -->
-<a class="navbar-brand float-md-start mb-0 flex-row d-flex" href="{{ url('/index') }}">
-    <img src="/images/logo.png" alt="" width="150" height="50" class="d-inline-block align-text-top">
-</a>
-<nav class="nav nav-masthead justify-content-center float-md-end">
-    <a class="nav-link" aria-current="page" href="{{ url('/admin/dashboard') }}">Dashboard</a>
-    <a class="nav-link" href="{{ url('/admin/reservations') }}">Reservations</a>
-    <a class="nav-link" href="{{ url('/admin/events') }}">Events</a>
-    <a class="nav-link" href="{{ url('/admin/vehicles') }}">Vehicles</a>
-    <a class="nav-link" href="{{ url('/admin/drivers') }}">Drivers</a>
-    <a class="nav-link" href="{{ url('/admin/offices') }}">Offices</a>
-    <a class="nav-link" href="{{ url('/admin/requestors') }}">Requestors</a>
-    <a class="nav-link" href="{{ route('admin.profile.show') }}">Profile</a>
-    <a class="nav-link" href="{{ route('logout') }}"
-       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-        Logout
-    </a>
-    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-        @csrf
-    </form>
-</nav>
-</div>
-</header>
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <a class="navbar-brand" href="{{ url('/index') }}">
+                    <img src="/images/logo.png" alt="" width="150" height="50" class="d-inline-block align-text-top">
+                </a>
+                <nav class="nav nav-masthead">
+                    <a class="nav-link" aria-current="page" href="{{ url('/admin/dashboard') }}">Dashboard</a>
+                    <a class="nav-link" href="{{ url('/admin/reservations') }}">Reservations</a>
+                    <a class="nav-link" href="{{ url('/admin/events') }}">Events</a>
+                    <a class="nav-link" href="{{ url('/admin/vehicles') }}">Vehicles</a>
+                    <a class="nav-link" href="{{ url('/admin/drivers') }}">Drivers</a>
+                    <a class="nav-link" href="{{ url('/admin/offices') }}">Offices</a>
+                    <a class="nav-link" href="{{ url('/admin/requestors') }}">Requestors</a>
+                    <a class="nav-link" href="{{ route('admin.profile.show') }}">Profile</a>
+                    <a class="nav-link" href="{{ route('logout') }}"
+                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                        Logout
+                    </a>
+                </nav>
+            </div>
+        </header>
+        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+            @csrf
+        </form>
         <?php endif ?>
         <main class="container mt-4">

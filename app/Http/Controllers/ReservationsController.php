@@ -31,109 +31,103 @@ class ReservationsController extends Controller
     public function show(Request $request)
     {
         try {
+            \Log::info("AdminReservationsController@show called");
+
             if ($request->ajax()) {
+                \Log::info("Processing AJAX request");
                 $reservations = Reservations::with(['events', 'requestors', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'office'])
                     ->select('reservations.*');
-                // If the user is not an admin, filter the reservations
-                if (!auth()->user()->isAdmin()) {
-                    $reservations->where('requestor_id', auth()->id());
-                }
-    
-                // Log the SQL query
-                \Log::info($reservations->toSql());
-                \Log::info($reservations->getBindings());
-    
-                $data = DataTables::of($reservations)
+
+                return DataTables::of($reservations)
+                    ->filter(function ($query) use ($request) {
+                        if ($request->has('search') && $request->search['value'] != '') {
+                            $searchTerm = $request->search['value'];
+                            $query->where(function ($q) use ($searchTerm) {
+                                $q->where('reservations.rs_from', 'like', "%{$searchTerm}%")
+                                  ->orWhere('reservations.rs_date_start', 'like', "%{$searchTerm}%")
+                                  ->orWhere('reservations.rs_date_end', 'like', "%{$searchTerm}%")
+                                  ->orWhere('reservations.rs_time_start', 'like', "%{$searchTerm}%")
+                                  ->orWhere('reservations.rs_time_end', 'like', "%{$searchTerm}%")
+                                  ->orWhere('reservations.rs_voucher', 'like', "%{$searchTerm}%")
+                                  ->orWhere('reservations.rs_passengers', 'like', "%{$searchTerm}%")
+                                  ->orWhere('reservations.rs_travel_type', 'like', "%{$searchTerm}%")
+                                  ->orWhere('reservations.rs_approval_status', 'like', "%{$searchTerm}%")
+                                  ->orWhere('reservations.rs_status', 'like', "%{$searchTerm}%")
+                                  ->orWhereHas('events', function ($q) use ($searchTerm) {
+                                      $q->where('ev_name', 'like', "%{$searchTerm}%");
+                                  })
+                                  ->orWhereHas('requestors', function ($q) use ($searchTerm) {
+                                      $q->where('rq_full_name', 'like', "%{$searchTerm}%");
+                                  })
+                                  ->orWhereHas('office', function ($q) use ($searchTerm) {
+                                      $q->where('off_name', 'like', "%{$searchTerm}%");
+                                  })
+                                  ->orWhereHas('reservation_vehicles.vehicles', function ($q) use ($searchTerm) {
+                                      $q->where('vh_plate', 'like', "%{$searchTerm}%")
+                                        ->orWhere('vh_brand', 'like', "%{$searchTerm}%")
+                                        ->orWhere('vh_model', 'like', "%{$searchTerm}%")
+                                        ->orWhere('vh_type', 'like', "%{$searchTerm}%");
+                                  })
+                                  ->orWhereHas('reservation_vehicles.drivers', function ($q) use ($searchTerm) {
+                                      $q->where('dr_fname', 'like', "%{$searchTerm}%")
+                                        ->orWhere('dr_lname', 'like', "%{$searchTerm}%");
+                                  });
+                            });
+                        }
+                    })
                     ->addColumn('ev_name', function ($reservation) {
                         return $reservation->events ? $reservation->events->ev_name : 'N/A';
-                    })
-                    ->addColumn('rs_from', function ($reservation) {
-                        return $reservation->rs_from;
-                    })
-                    ->addColumn('rs_date_start', function ($reservation) {
-                        return $reservation->rs_date_start;
-                    })
-                    ->addColumn('rs_time_start', function ($reservation) {
-                        return $reservation->rs_time_start;
-                    })
-                    ->addColumn('rs_date_end', function ($reservation) {
-                        return $reservation->rs_date_end;
-                    })
-                    ->addColumn('rs_time_end', function ($reservation) {
-                        return $reservation->rs_time_end;
                     })
                     ->addColumn('vehicles', function ($reservation) {
                         return $reservation->reservation_vehicles->map(function ($rv) {
                             $vehicle = $rv->vehicles;
-                            return $vehicle
-                                ? "{$vehicle->vh_brand} - {$vehicle->vh_type} - {$vehicle->vh_plate} - {$vehicle->vh_capacity}"
-                                : 'N/A';
-                        })->implode('<br>');
+                            return [
+                                'vh_brand' => $vehicle->vh_brand,
+                                'vh_model' => $vehicle->vh_model,
+                                'vh_type' => $vehicle->vh_type,
+                                'vh_plate' => $vehicle->vh_plate
+                            ];
+                        })->toArray(); // Convert to array
                     })
                     ->addColumn('drivers', function ($reservation) {
                         return $reservation->reservation_vehicles->map(function ($rv) {
-                            $driver = $rv->drivers;
-                            return $driver
-                                ? "{$driver->dr_fname} {$driver->dr_mname} {$driver->dr_lname}"
-                                : 'N/A';
-                        })->implode('<br>');
+                            return $rv->drivers ? $rv->drivers->dr_fname . ' ' . $rv->drivers->dr_lname : 'N/A';
+                        })->implode(', ');
                     })
-                    ->addColumn('rq_full_name', function ($reservation) {
+                    ->addColumn('requestor', function ($reservation) {
                         return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
                     })
                     ->addColumn('office', function ($reservation) {
-                        return $reservation->office ? $reservation->office->off_acr . ' - ' . $reservation->office->off_name : 'N/A';
-                    })
-                    ->editColumn('created_at', function ($reservation) {
-                        return $reservation->created_at->format('F d, Y');
+                        return $reservation->office ? $reservation->office->off_name : 'N/A';
                     })
                     ->addColumn('action', function ($reservation) {
-                        return '<a href="'.route('reservations.edit', $reservation->reservation_id).'" class="btn btn-sm btn-primary">Edit</a>
-                                <a href="'.route('reservations.delete', $reservation->reservation_id).'" class="btn btn-sm btn-danger">Delete</a>';
+                        return '<button type="button" class="btn btn-sm btn-primary edit" data-id="'.$reservation->reservation_id.'">Edit</button>
+                                <button type="button" class="btn btn-sm btn-danger delete" data-id="'.$reservation->reservation_id.'">Delete</button>
+                                <button type="button" class="btn btn-sm btn-success done" data-id="'.$reservation->reservation_id.'">Done</button>';
                     })
-                    ->rawColumns(['action', 'vehicles', 'drivers'])
+                    ->rawColumns(['vehicles', 'drivers', 'action'])
                     ->make(true);
-                // Log the final data being returned
-                \Log::info('DataTables data:', $data->getData(true));
-    
-                return $data;
             }
+
+            $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
+                ->orderBy('dr_fname')
+                ->get();
+
+            $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
+                ->orderBy('vh_brand')
+                ->get();
+
+            $offices = Offices::select('off_id', 'off_acr', 'off_name')->get();
+            $requestors = Requestors::all();
+
+            return view('admin.reservations', compact('drivers', 'vehicles', 'offices', 'requestors'));
         } catch (\Exception $e) {
-            \Log::error('Error in ReservationsController@show: ' . $e->getMessage());
+            \Log::error('Error in AdminReservationsController@show: ' . $e->getMessage());
             \Log::error($e->getTraceAsString());
             return response()->json(['error' => 'An error occurred while processing your request.'], 500);
         }
-        
-        $existingDriverIds = ReservationVehicle::whereNotNull('driver_id')->distinct('driver_id')->pluck('driver_id')->toArray();
-        $existingVehicleIds = ReservationVehicle::pluck('vehicle_id')->toArray();
-    
-        $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
-            ->orderBy('dr_fname')
-            ->get();
-    
-        $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
-            ->orderBy('vh_brand')
-            ->get();
-    
-        $events = Events::select('event_id', 'ev_name', 'ev_venue')
-            ->orderBy('ev_name')
-            ->get();
-    
-        // Add this line to log the events
-        \Log::info('Events:', $events->toArray());
-    
-        $requestors = DB::table('requestors')->select('requestor_id', 'rq_full_name')->get();
-        
-        $offices = DB::table('offices')->select('off_id', 'off_acr', 'off_name')->get();
-        
-        if (auth()->user()->isAdmin()) {
-            return view('admin/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors', 'offices'));
-        } else {
-            return view('users/reservations')->with(compact('events', 'drivers', 'vehicles', 'requestors', 'offices'));
-        }
     }
-        
-    
+
     public function event_calendar()
     {
         $colors = ['#d5c94c', '#4522ea', '#45a240', '#7c655a', '#cf4c11'];
@@ -620,7 +614,7 @@ public function edit($id)
             $templateProcessor->setValue("reservation_id#" . ($index + 1), $reservation->reservation_id);
             $templateProcessor->setValue("event_id#" . ($index + 1), $reservation->ev_name);
             $templateProcessor->setValue("driver_id#" . ($index + 1), $reservation->dr_fname);
-            $templateProcessor->setValue("vehicle_id#" . ($index + 1), $reservation->vh_brand . '-' . $reservation->vh_plate);
+            $templateProcessor->setValue("vehicle_id#" . ($index + 1), $reservation->vh_brand . ' - ' . $reservation->vh_plate);
             $templateProcessor->setValue("requestor_id#" . ($index + 1), $reservation->rq_full_name);
             $templateProcessor->setValue("rs_voucher#" . ($index + 1), $reservation->rs_voucher);
             $templateProcessor->setValue("rs_travel_type#" . ($index + 1), $reservation->rs_travel_type);
@@ -676,33 +670,68 @@ public function edit($id)
     return view('users.reservations', ['offices' => $offices]);
 }
 
-public function getDriversAndVehicles()
+public function getDriversAndVehicles(Request $request)
 {
     try {
+        $reservationId = $request->input('reservation_id');
+
+        $reservedDriverIds = ReservationVehicle::whereHas('reservation', function ($query) {
+                $query->where('rs_status', '!=', 'Done');
+            })
+            ->where('reservation_id', '!=', $reservationId)
+            ->pluck('driver_id')
+            ->toArray();
+
+        $reservedVehicleIds = ReservationVehicle::whereHas('reservation', function ($query) {
+                $query->where('rs_status', '!=', 'Done');
+            })
+            ->where('reservation_id', '!=', $reservationId)
+            ->pluck('vehicle_id')
+            ->toArray();
+
         $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
             ->orderBy('dr_fname')
-            ->get();
+            ->get()
+            ->map(function ($driver) use ($reservedDriverIds) {
+                return [
+                    'id' => $driver->driver_id,
+                    'name' => $driver->dr_fname . ' ' . $driver->dr_lname,
+                    'reserved' => in_array($driver->driver_id, $reservedDriverIds)
+                ];
+            });
 
-        $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
+        $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_model', 'vh_type', 'vh_capacity')
             ->orderBy('vh_brand')
-            ->get();
-
-        \Log::info('Drivers and Vehicles fetched:', [
-            'drivers_count' => $drivers->count(),
-            'vehicles_count' => $vehicles->count()
-        ]);
+            ->get()
+            ->map(function ($vehicle) use ($reservedVehicleIds) {
+                return [
+                    'id' => $vehicle->vehicle_id,
+                    'name' => $vehicle->vh_brand . ' ' . $vehicle->vh_model . ' (' . $vehicle->vh_type . ') - ' . $vehicle->vh_plate,
+                    'reserved' => in_array($vehicle->vehicle_id, $reservedVehicleIds)
+                ];
+            });
 
         return response()->json([
-            'drivers' => $drivers->map(function($driver) {
-                return ['id' => $driver->driver_id, 'name' => $driver->dr_fname . ' ' . $driver->dr_lname];
-            }),
-            'vehicles' => $vehicles->map(function($vehicle) {
-                return ['id' => $vehicle->vehicle_id, 'name' => $vehicle->vh_brand . ' - ' . $vehicle->vh_plate];
-            })
+            'drivers' => $drivers,
+            'vehicles' => $vehicles
         ]);
     } catch (\Exception $e) {
         \Log::error('Error fetching drivers and vehicles: ' . $e->getMessage());
-        return response()->json(['error' => 'Failed to fetch drivers and vehicles'], 500);
+        return response()->json(['error' => 'Error fetching drivers and vehicles'], 500);
+    }
+}
+
+public function markAsDone($id)
+{
+    try {
+        $reservation = Reservations::findOrFail($id);
+        $reservation->rs_status = 'Done';
+        $reservation->save();
+
+        return response()->json(['success' => 'Reservation marked as done']);
+    } catch (\Exception $e) {
+        \Log::error('Error marking reservation as done: ' . $e->getMessage());
+        return response()->json(['error' => 'Error marking reservation as done'], 500);
     }
 }
 }
