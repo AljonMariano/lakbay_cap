@@ -323,8 +323,9 @@
     <div class="modal fade" tabindex="-1" id="edit_reservation_modal" aria-labelledby="reservationModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form id="reservation_edit" name="reservation_edit" class="form-horizontal">
+                <form id="edit_reservation_form" method="POST">
                     @csrf
+                    @method('PUT')
                     <div class="modal-header">
                         <h5 class="modal-title" id="ModalLabel">Edit Reservation</h5>
                         <button type="button" class="btn-close" aria-label="Close"></button>
@@ -681,14 +682,14 @@
             });
 
             // Handle form submission for updating reservation
-            $('#reservation_edit').on('submit', function(e) {
+            $('#edit_reservation_form').on('submit', function(e) {
                 e.preventDefault();
                 var formData = $(this).serialize();
                 var reservationId = $('#edit_reservation_id').val();
                 console.log('Form data being sent:', formData);
                 console.log('Reservation ID:', reservationId);
                 $.ajax({
-                    url: "/admin/reservations/" + reservationId,
+                    url: "{{ route('reservations.update', ':id') }}".replace(':id', reservationId),
                     method: 'PUT',
                     data: formData,
                     success: function(response) {
