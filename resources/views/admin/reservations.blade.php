@@ -189,16 +189,16 @@
 
                                         <div class="mb-2">
                                             <label for="driver_id" class="form-label mb-0">Driver</label>
-                                            <select class="form-select driver-select" name="driver_id[]" id="driver_id" multiple>
-                                                <option value="" disabled>Select Driver</option>
+                                            <select class="form-control" id="driver_id" name="driver_id[]" multiple required>
+                                                <option value="">Select Driver(s)</option>
                                             </select>
                                             <span id="driver_id_error"></span>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
-                                            <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id" multiple>
-                                                <option value="" disabled>Select Vehicle</option>
+                                            <select class="form-control" id="vehicle_id" name="vehicle_id[]" multiple required>
+                                                <option value="">Select Vehicle(s)</option>
                                             </select>
                                             <span id="vehicle_id_error"></span>
                                         </div>
@@ -262,10 +262,12 @@
                                         <div class="mb-2">
                                             <label for="rs_status" class="form-label mb-0">Reservation Status</label>
                                             <select class="form-select" name="rs_status" id="rs_status">
-                                                <option value="" disabled selected>Select Status</option>
-                                                <option value="On-going">On-going</option>
+                                                <option value="">Select Status</option>
                                                 <option value="Queued">Queued</option>
+                                                <option value="Ongoing">Ongoing</option>
                                                 <option value="Done">Done</option>
+                                                <option value="Cancelled">Cancelled</option>
+                                                <option value="Inactive">Inactive</option>
                                             </select>
                                             <span id="rs_status_error"></span>
                                         </div>
@@ -372,16 +374,16 @@
 
                                 <div class="mb-2">
                                     <label for="driver_id_edit" class="form-label mb-0">Driver</label>
-                                    <select class="form-select driver-select" name="driver_id[]" id="driver_id_edit" multiple>
-                                        <option value="" disabled>Select Driver</option>
+                                    <select id="driver_id_edit" name="driver_id[]" class="form-control" multiple>
+                                        <option value="">Select Driver</option>
                                     </select>
                                     <span id="driver_id_edit_error"></span>
                                 </div>
                                 
                                 <div class="mb-2">
                                     <label for="vehicle_id_edit" class="form-label mb-0">Vehicle</label>
-                                    <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id_edit" multiple>
-                                        <option value="" disabled>Select Vehicle</option>
+                                    <select id="vehicle_id_edit" name="vehicle_id[]" class="form-control" multiple>
+                                        <option value="">Select Vehicle</option>
                                     </select>
                                     <span id="vehicle_id_edit_error"></span>
                                 </div>
@@ -436,11 +438,13 @@
 
                                 <div class="mb-2">
                                     <label for="rs_status_edit" class="form-label mb-0">Reservation Status</label>
-                                    <select class="form-select" name="rs_status" id="rs_status_edit" required>
-                                        <option value="" disabled selected>Select Status</option>
-                                        <option value="On-going">On-going</option>
+                                    <select class="form-select" id="rs_status_edit" name="rs_status" required>
+                                        <option value="">Select Status</option>
                                         <option value="Queued">Queued</option>
+                                        <option value="Ongoing">Ongoing</option>
                                         <option value="Done">Done</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                        <option value="Inactive">Inactive</option>
                                     </select>
                                     <span id="rs_status_edit_error"></span>
                                 </div>
@@ -785,17 +789,30 @@
             }
 
             // Function to load drivers and vehicles
-            function loadDriversAndVehicles(reservationId = null) {
+            function loadDriversAndVehicles(reservationId = null, callback = null) {
+                var driversLoaded = false;
+                var vehiclesLoaded = false;
+
+                function checkAllLoaded() {
+                    if (driversLoaded && vehiclesLoaded && callback) {
+                        callback();
+                    }
+                }
+
                 $.ajax({
                     url: "{{ route('get.drivers') }}",
                     method: 'GET',
                     data: { reservation_id: reservationId },
                     success: function(response) {
                         console.log('Drivers response:', response);
-                        populateSelect('.driver-select', response.drivers);
+                        populateSelect('#driver_id, #driver_id_edit', response.drivers);
+                        driversLoaded = true;
+                        checkAllLoaded();
                     },
                     error: function(xhr) {
                         console.error('Error loading drivers:', xhr.responseText);
+                        driversLoaded = true;
+                        checkAllLoaded();
                     }
                 });
 
@@ -805,79 +822,103 @@
                     data: { reservation_id: reservationId },
                     success: function(response) {
                         console.log('Vehicles response:', response);
-                        if (response.vehicles && response.vehicles.length > 0) {
-                            populateSelect('.vehicle-select', response.vehicles);
-                        } else {
-                            console.warn('No vehicles data received');
-                            $('.vehicle-select').empty().append('<option value="">No vehicles available</option>');
-                        }
+                        populateSelect('#vehicle_id, #vehicle_id_edit', response.vehicles);
+                        vehiclesLoaded = true;
+                        checkAllLoaded();
                     },
-                    error: function(xhr, status, error) {
+                    error: function(xhr) {
                         console.error('Error loading vehicles:', xhr.responseText);
-                        console.error('Status:', status);
-                        console.error('Error:', error);
+                        vehiclesLoaded = true;
+                        checkAllLoaded();
                     }
                 });
             }
 
             // Function to populate select elements
-            function populateSelect(selector, data) {
-                console.log('Populating select:', selector, 'with data:', data);
-                var select = $(selector);
-                select.empty().append('<option value="">Select option</option>');
-                if (Array.isArray(data) && data.length > 0) {
-                    $.each(data, function(index, item) {
-                        var option = $('<option></option>')
-                            .attr('value', item.id)
-                            .text(item.name);
-                        if (item.reserved) {
-                            option.attr('disabled', 'disabled');
-                        }
-                        select.append(option);
-                    });
-                    select.trigger('change.select2');
-                } else {
-                    console.warn('No data available for', selector);
-                    select.append('<option value="">No options available</option>');
-                }
+            function populateSelect(selectors, data) {
+                console.log('Populating selects:', selectors, 'with data:', data);
+                $(selectors).each(function() {
+                    var select = $(this);
+                    select.empty().append('<option value="">Select option</option>');
+                    if (Array.isArray(data) && data.length > 0) {
+                        $.each(data, function(index, item) {
+                            var option = $('<option></option>')
+                                .attr('value', item.id)
+                                .text(item.name);
+                            if (item.reserved) {
+                                option.attr('disabled', 'disabled');
+                            }
+                            select.append(option);
+                        });
+                    } else {
+                        console.warn('No data available for', selectors);
+                        select.append('<option value="">No options available</option>');
+                    }
+                });
+                $(selectors).trigger('change');
             }
 
             function loadReservationData(reservationId) {
                 $.ajax({
-                    url: "/admin/reservations/" + reservationId + "/edit",
+                    url: "{{ route('reservations.edit', ':id') }}".replace(':id', reservationId),
                     method: 'GET',
                     success: function(response) {
                         var reservation = response.reservation;
+                        console.log('Reservation data:', reservation);
                         
                         // Populate form fields with reservation data
                         $('#edit_reservation_id').val(reservation.reservation_id);
-                        $('#event_edit').val(reservation.events.ev_name);
-                        $('#rs_from_edit').val(reservation.rs_from);
-                        $('#rs_date_start_edit').val(reservation.rs_date_start);
-                        $('#rs_time_start_edit').val(reservation.rs_time_start);
-                        $('#rs_date_end_edit').val(reservation.rs_date_end);
-                        $('#rs_time_end_edit').val(reservation.rs_time_end);
-                        $('#requestor_edit').val(reservation.requestor_id);
-                        $('#office_edit').val(reservation.off_id);
-                        $('#rs_passengers_edit').val(reservation.rs_passengers);
-                        $('#rs_travel_type_edit').val(reservation.rs_travel_type);
-                        $('#rs_voucher_edit').val(reservation.rs_voucher);
-                        $('#rs_approval_status_edit').val(reservation.rs_approval_status);
-                        $('#rs_status_edit').val(reservation.rs_status);
+                        $('#event_edit').val(reservation.events ? reservation.events.ev_name : '');
+                        $('#rs_from_edit').val(reservation.rs_from || '');
+                        $('#rs_date_start_edit').val(reservation.rs_date_start || '');
+                        $('#rs_time_start_edit').val(reservation.rs_time_start || '');
+                        $('#rs_date_end_edit').val(reservation.rs_date_end || '');
+                        $('#rs_time_end_edit').val(reservation.rs_time_end || '');
+                        $('#requestor_edit').val(reservation.requestor_id || '');
+                        $('#office_edit').val(reservation.off_id || '');
+                        $('#rs_passengers_edit').val(reservation.rs_passengers || '');
+                        $('#rs_travel_type_edit').val(reservation.rs_travel_type || '');
+                        $('#rs_voucher_edit').val(reservation.rs_voucher || '');
+                        $('#rs_approval_status_edit').val(reservation.rs_approval_status || '');
+                        $('#rs_status_edit').val(reservation.rs_status || '');
 
-                        // Clear existing options in driver and vehicle selects
-                        $('#driver_id_edit').empty().append('<option value="" disabled>Select Driver</option>');
-                        $('#vehicle_id_edit').empty().append('<option value="" disabled>Select Vehicle</option>');
-
-                        // Fetch and populate drivers and vehicles
-                        loadDriversAndVehicles(reservationId);
+                        console.log('Populated fields:', {
+                            from: $('#rs_from_edit').val(),
+                            start_date: $('#rs_date_start_edit').val(),
+                            start_time: $('#rs_time_start_edit').val(),
+                            end_date: $('#rs_date_end_edit').val(),
+                            end_time: $('#rs_time_end_edit').val(),
+                            status: $('#rs_status_edit').val()
+                        });
 
                         // Show the edit modal
                         $('#edit_reservation_modal').modal('show');
+
+                        // Initialize Select2 after modal is shown
+                        $('#edit_reservation_modal').on('shown.bs.modal', function () {
+                            initializeSelect2();
+                            loadDriversAndVehicles(reservationId, function() {
+                                // Set selected driver(s) and vehicle(s)
+                                if (reservation.reservation_vehicles && reservation.reservation_vehicles.length > 0) {
+                                    var driverIds = reservation.reservation_vehicles.map(rv => rv.driver_id).filter(id => id);
+                                    var vehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id).filter(id => id);
+                                    
+                                    if (driverIds.length > 0) {
+                                        $('#driver_id_edit').val(driverIds).trigger('change');
+                                    }
+                                    if (vehicleIds.length > 0) {
+                                        $('#vehicle_id_edit').val(vehicleIds).trigger('change');
+                                    }
+
+                                    console.log('Selected drivers:', driverIds);
+                                    console.log('Selected vehicles:', vehicleIds);
+                                }
+                            });
+                        });
                     },
                     error: function(xhr, status, error) {
                         console.error('Error fetching reservation:', xhr.responseText);
-                        showErrorMessage('Error fetching reservation');
+                        showErrorMessage('Error fetching reservation details');
                     }
                 });
             }

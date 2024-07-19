@@ -242,6 +242,8 @@ class ReservationsController extends Controller
             $reservation->rs_time_start = $request->rs_time_start;
             $reservation->rs_date_end = $request->rs_date_end;
             $reservation->rs_time_end = $request->rs_time_end;
+            $reservation->rs_status = 'Queued';  // Set default status to Queued
+            $reservation->rs_approval_status = 'Pending';  // Set default approval status to Pending
             $reservation->save();
     
             $driverIds = $request->input('driver_id');
@@ -370,6 +372,9 @@ public function edit($id)
     try {
         $reservation = Reservations::with(['events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'])
             ->findOrFail($id);
+        
+        \Log::info('Reservation data:', $reservation->toArray());
+        
         return response()->json(['reservation' => $reservation]);
     } catch (\Exception $e) {
         \Log::error('Error fetching reservation: ' . $e->getMessage());
@@ -654,6 +659,8 @@ public function getDrivers(Request $request)
                     'reserved' => in_array($driver->driver_id, $reservedDriverIds)
                 ];
             });
+
+        \Log::info('Drivers data:', ['drivers' => $drivers->toArray()]);
 
         return response()->json(['drivers' => $drivers]);
     } catch (\Exception $e) {

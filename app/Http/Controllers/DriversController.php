@@ -234,4 +234,10 @@ class DriversController extends Controller
         // Download the PDF file
         return response()->download($pdfFilePath, "DriversList.pdf")->deleteFileAfterSend(true);
     }
+    
+    public function getDrivers(Request $request)
+    {
+        $drivers = Driver::all();
+        return response()->json(['drivers' => $drivers]);
+    }
 }

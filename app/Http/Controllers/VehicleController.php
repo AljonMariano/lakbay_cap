@@ -127,4 +127,10 @@ public function edit($vehicle_id)
             return response()->json(['error' => 'Vehicle not found.'], 404);
         }
     }
+
+    public function getVehicles(Request $request)
+    {
+        $vehicles = Vehicle::all();
+        return response()->json(['vehicles' => $vehicles]);
+    }
 }

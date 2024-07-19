@@ -139,7 +139,7 @@ Route::get('/delete-reservation/{reservation_id}', [ReservationsController::clas
 Route::get('/get-drivers', [ReservationsController::class, 'getDrivers'])->name('get.drivers');
 Route::get('/get-vehicles', [ReservationsController::class, 'getVehicles'])->name('get.vehicles');
 Route::post('/admin/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
-
+Route::get('/admin/reservations/{reservation}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
 
 
 
