@@ -136,13 +136,8 @@ Route::put('/update-reservation/{id}', [ReservationsController::class, 'update']
 Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit'])->name('reservations.edit');
 Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
 Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete'])->name('reservations.delete');
-Route::get('/get-drivers-and-vehicles', [ReservationsController::class, 'getDriversAndVehicles'])->name('reservations.getDriversAndVehicles');
-Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
-Route::post('/reservations/update', [ReservationsController::class, 'update'])->name('reservations.update');
-Route::post('/reservations', [ReservationsController::class, 'store'])->name('reservations.store');
-Route::put('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
-Route::put('/reservations/update', [ReservationsController::class, 'update'])->name('reservations.update');
-Route::get('/get-drivers-vehicles', [ReservationsController::class, 'getDriversAndVehicles'])->name('get.drivers.vehicles');
+Route::get('/get-drivers', [ReservationsController::class, 'getDrivers'])->name('get.drivers');
+Route::get('/get-vehicles', [ReservationsController::class, 'getVehicles'])->name('get.vehicles');
 Route::post('/admin/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
 
 

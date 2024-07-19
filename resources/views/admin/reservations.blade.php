@@ -530,7 +530,7 @@
                 },
                 columns: [
                     {data: 'reservation_id', name: 'reservation_id'},
-                    {data: 'ev_name', name: 'ev_name'},
+                    {data: 'events.ev_name', name: 'events.ev_name'},
                     {data: 'rs_from', name: 'rs_from'},
                     {data: 'rs_date_start', name: 'rs_date_start'},
                     {
@@ -556,21 +556,23 @@
                                 return data.map(function(vehicle) {
                                     return vehicle.vh_brand + ' ' + vehicle.vh_model + ' (' + vehicle.vh_type + ') - ' + vehicle.vh_plate;
                                 }).join(', ');
+                            } else if (typeof data === 'string') {
+                                return data; // If it's already a formatted string
                             }
-                            return 'N/A';
+                            return 'N/A'; // Default value if data is not as expected
                         }
                     },
                     {
                         data: 'drivers',
                         name: 'drivers',
                         render: function(data, type, row) {
-                            return data ? data : 'N/A';
+                            return data || 'N/A';
                         }
                     },
-                    {data: 'requestor', name: 'requestor'},
+                    {data: 'requestors.rq_full_name', name: 'requestors.rq_full_name'},
                     {
-                        data: 'office',
-                        name: 'office',
+                        data: 'office.off_name',
+                        name: 'office.off_name',
                         render: function(data, type, row) {
                             return data ? data : 'N/A';
                         }
@@ -785,33 +787,59 @@
             // Function to load drivers and vehicles
             function loadDriversAndVehicles(reservationId = null) {
                 $.ajax({
-                    url: "{{ route('get.drivers.vehicles') }}",
+                    url: "{{ route('get.drivers') }}",
                     method: 'GET',
                     data: { reservation_id: reservationId },
                     success: function(response) {
+                        console.log('Drivers response:', response);
                         populateSelect('.driver-select', response.drivers);
-                        populateSelect('.vehicle-select', response.vehicles);
                     },
                     error: function(xhr) {
-                        console.error('Error loading drivers and vehicles:', xhr.responseText);
+                        console.error('Error loading drivers:', xhr.responseText);
+                    }
+                });
+
+                $.ajax({
+                    url: "{{ route('get.vehicles') }}",
+                    method: 'GET',
+                    data: { reservation_id: reservationId },
+                    success: function(response) {
+                        console.log('Vehicles response:', response);
+                        if (response.vehicles && response.vehicles.length > 0) {
+                            populateSelect('.vehicle-select', response.vehicles);
+                        } else {
+                            console.warn('No vehicles data received');
+                            $('.vehicle-select').empty().append('<option value="">No vehicles available</option>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading vehicles:', xhr.responseText);
+                        console.error('Status:', status);
+                        console.error('Error:', error);
                     }
                 });
             }
 
             // Function to populate select elements
             function populateSelect(selector, data) {
+                console.log('Populating select:', selector, 'with data:', data);
                 var select = $(selector);
-                select.empty().append('<option value="" disabled>Select option</option>');
-                $.each(data, function(index, item) {
-                    var option = $('<option></option>')
-                        .attr('value', item.id)
-                        .text(item.name);
-                    if (item.reserved) {
-                        option.attr('disabled', 'disabled');
-                    }
-                    select.append(option);
-                });
-                select.trigger('change.select2');
+                select.empty().append('<option value="">Select option</option>');
+                if (Array.isArray(data) && data.length > 0) {
+                    $.each(data, function(index, item) {
+                        var option = $('<option></option>')
+                            .attr('value', item.id)
+                            .text(item.name);
+                        if (item.reserved) {
+                            option.attr('disabled', 'disabled');
+                        }
+                        select.append(option);
+                    });
+                    select.trigger('change.select2');
+                } else {
+                    console.warn('No data available for', selector);
+                    select.append('<option value="">No options available</option>');
+                }
             }
 
             function loadReservationData(reservationId) {
