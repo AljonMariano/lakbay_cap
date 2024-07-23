@@ -93,6 +93,7 @@ class ReservationsController extends Controller
         }
     }
 
+
     public function event_calendar()
     {
         $colors = ['#d5c94c', '#4522ea', '#45a240', '#7c655a', '#cf4c11'];
@@ -272,93 +273,6 @@ class ReservationsController extends Controller
             return response()->json(['error' => 'Error creating reservation: ' . $e->getMessage()], 500);
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public function updateReservation(Request $request, $id)
-    {
-        try {
-            DB::beginTransaction();
-
-            \Log::info("Update request received:", $request->all());
-
-            $reservation = Reservations::with('events')->findOrFail($id);
-
-            \Log::info("Reservation found:", $reservation->toArray());
-
-            // Update the reservation
-            $reservation->fill($request->only([
-                'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
-                'rs_purpose', 'rs_approval_status', 'rs_status', 'rs_from',
-                'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end'
-            ]));
-
-            // Update the associated event
-            if ($request->has('event_name')) {
-                $reservation->events()->update([
-                    'ev_name' => $request->input('event_name')
-                ]);
-            }
-
-            // Update reservation vehicles
-            if ($request->has('driver_id') && $request->has('vehicle_id')) {
-                $reservation->reservation_vehicles()->delete();
-
-                $driverIds = $request->input('driver_id', []);
-                $vehicleIds = $request->input('vehicle_id', []);
-
-                \Log::info("Driver IDs:", $driverIds);
-                \Log::info("Vehicle IDs:", $vehicleIds);
-
-                if (is_array($driverIds) && is_array($vehicleIds)) {
-                    foreach ($driverIds as $index => $driverId) {
-                        if (isset($vehicleIds[$index])) {
-                            $reservation->reservation_vehicles()->create([
-                                'driver_id' => $driverId,
-                                'vehicle_id' => $vehicleIds[$index],
-                            ]);
-                        }
-                    }
-                } else {
-                    \Log::warning("Driver IDs or Vehicle IDs are not arrays");
-                }
-            }
-
-            $reservation->save();
-
-            DB::commit();
-
-            \Log::info("Reservation updated successfully");
-
-            return response()->json([
-                'success' => 'Reservation updated successfully',
-                'reservation' => $reservation->load('events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'),
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error updating reservation: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            return response()->json(['error' => 'Error updating reservation: ' . $e->getMessage()], 500);
-        }
-    }
-
-
-
-
-
-
-
 
 
 
@@ -748,6 +662,8 @@ private function updateStatus($id, $approvalStatus, $reservationStatus)
     return response()->json(['success' => 'Reservation status updated successfully']);
 }
 
+
+
 public function update(Request $request, $id)
 {
     try {
@@ -763,7 +679,8 @@ public function update(Request $request, $id)
         $reservation->fill($request->only([
             'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
             'rs_purpose', 'rs_approval_status', 'rs_status', 'rs_from',
-            'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end'
+            'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end',
+            'reason'
         ]));
 
         // Update the associated event
@@ -773,27 +690,29 @@ public function update(Request $request, $id)
             ]);
         }
 
-        // Update reservation vehicles
-        if ($request->has('driver_id') && $request->has('vehicle_id')) {
+        // If the reservation is cancelled or rejected, delete the reservation_vehicles
+        if (in_array($request->rs_status, ['Cancelled', 'Rejected'])) {
             $reservation->reservation_vehicles()->delete();
+        } else {
+            // Update reservation vehicles
+            if ($request->has('driver_id') && $request->has('vehicle_id')) {
+                $reservation->reservation_vehicles()->delete();
 
-            $driverIds = $request->input('driver_id', []);
-            $vehicleIds = $request->input('vehicle_id', []);
+                $driverIds = $request->input('driver_id', []);
+                $vehicleIds = $request->input('vehicle_id', []);
 
-            \Log::info("Driver IDs:", $driverIds);
-            \Log::info("Vehicle IDs:", $vehicleIds);
-
-            if (is_array($driverIds) && is_array($vehicleIds)) {
-                foreach ($driverIds as $index => $driverId) {
-                    if (isset($vehicleIds[$index])) {
-                        $reservation->reservation_vehicles()->create([
-                            'driver_id' => $driverId,
-                            'vehicle_id' => $vehicleIds[$index],
-                        ]);
+                if (is_array($driverIds) && is_array($vehicleIds)) {
+                    foreach ($driverIds as $index => $driverId) {
+                        if (isset($vehicleIds[$index])) {
+                            $reservation->reservation_vehicles()->create([
+                                'driver_id' => $driverId,
+                                'vehicle_id' => $vehicleIds[$index],
+                            ]);
+                        }
                     }
+                } else {
+                    \Log::warning("Driver IDs or Vehicle IDs are not arrays");
                 }
-            } else {
-                \Log::warning("Driver IDs or Vehicle IDs are not arrays");
             }
         }
 

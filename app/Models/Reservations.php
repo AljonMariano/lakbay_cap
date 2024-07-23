@@ -18,7 +18,7 @@ class Reservations extends Model
     protected $fillable=[
         'event_id', 'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
         'rs_voucher', 'rs_approval_status', 'rs_status', 'rs_from', 'rs_date_start',
-        'rs_time_start', 'rs_date_end', 'rs_time_end'
+        'rs_time_start', 'rs_date_end', 'rs_time_end', 'reason'
     ];
     public function events(): BelongsTo
     {

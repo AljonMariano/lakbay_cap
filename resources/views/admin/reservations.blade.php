@@ -320,6 +320,7 @@
                             <th>Created At</th>
                             <th>Approval Status</th>
                             <th>Status</th>
+                            <th>Reason</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -491,6 +492,53 @@
         </div>
     </div>
 
+    <!-- Add these modals at the end of your body tag -->
+    <div class="modal fade" id="cancellationModal" tabindex="-1" aria-labelledby="cancellationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancellationModalLabel">Reason for Cancellation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="cancellationForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="cancellationReason" class="form-label">Reason</label>
+                            <textarea class="form-control" id="cancellationReason" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="rejectionModal" tabindex="-1" aria-labelledby="rejectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectionModalLabel">Reason for Rejection</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="rejectionForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="rejectionReason" class="form-label">Reason</label>
+                            <textarea class="form-control" id="rejectionReason" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script type="text/javascript">
         $(document).ready(function() {
             function initializeSelect2(selector) {
@@ -527,115 +575,62 @@
 
             // Initialize DataTable
             var table = $('.reservations-table').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: "{{ route('admin.reservations.show') }}",
-                    type: 'GET',
-                    data: function (d) {
-                        d.search = $('input[type="search"]').val()
-                    },
-                    dataSrc: function(json) {
-                        console.log('DataTables data:', json);
-                        return json.data;
-                    },
-                    error: function (xhr, error, thrown) {
-                        console.error('DataTables AJAX error:', error, thrown);
-                        console.error('Response:', xhr.responseText);
-                    }
-                },
-                columns: [
-                    {data: 'reservation_id', name: 'reservation_id'},
-                    {data: 'events.ev_name', name: 'events.ev_name'},
-                    {data: 'rs_from', name: 'rs_from'},
-                    {data: 'rs_date_start', name: 'rs_date_start'},
-                    {
-                        data: 'rs_time_start',
-                        name: 'rs_time_start',
-                        render: function(data, type, row) {
-                            return type === 'display' ? formatTime(data) : data;
-                        }
-                    },
-                    {data: 'rs_date_end', name: 'rs_date_end'},
-                    {
-                        data: 'rs_time_end',
-                        name: 'rs_time_end',
-                        render: function(data, type, row) {
-                            return type === 'display' ? formatTime(data) : data;
-                        }
-                    },
-                    {
-                        data: 'vehicles',
-                        name: 'vehicles',
-                        render: function(data, type, row) {
-                            if (data && Array.isArray(data) && data.length > 0) {
-                                return data.map(function(vehicle) {
-                                    return vehicle.vh_brand +   ' (' + vehicle.vh_type + ') - ' + vehicle.vh_plate;
-                                }).join(', ');
-                            } else if (typeof data === 'string') {
-                                return data; 
-                            }
-                            return 'N/A'; 
-                        }
-                    },
-                    {
-                        data: 'drivers',
-                        name: 'drivers',
-                        render: function(data, type, row) {
-                            return data || 'N/A';
-                        }
-                    },
-                    {data: 'requestors.rq_full_name', name: 'requestors.rq_full_name'},
-                    {
-                        data: 'office.off_name',
-                        name: 'office.off_name',
-                        render: function(data, type, row) {
-                            return data ? data : 'N/A';
-                        }
-                    },
-                    {data: 'rs_purpose', name: 'rs_purpose'},
-                    {data: 'rs_passengers', name: 'rs_passengers'},
-                    {data: 'rs_travel_type', name: 'rs_travel_type'},
-                    {
-                        data: 'created_at',
-                        name: 'created_at',
-                        render: function(data, type, row) {
-                            var date = new Date(data);
-                            var formattedDate = date.toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            });
-                            return formattedDate;
-                        }
-                    },
-                    {data: 'rs_approval_status', name: 'rs_approval_status'},
-                    {data: 'rs_status', name: 'rs_status'},
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        render: function(data, type, row) {
-                            return `
-                                <button type="button" class="btn btn-sm btn-primary edit" data-id="${row.reservation_id}">Edit</button>
-                                <button type="button" class="btn btn-sm btn-success approve" data-id="${row.reservation_id}">Approve</button>
-                                <button type="button" class="btn btn-sm btn-warning cancel" data-id="${row.reservation_id}">Cancel</button>
-                                <button type="button" class="btn btn-sm btn-danger reject" data-id="${row.reservation_id}">Reject</button>
-                                <button type="button" class="btn btn-sm btn-info done" data-id="${row.reservation_id}">Done</button>
-                                <button type="button" class="btn btn-sm btn-danger delete" data-id="${row.reservation_id}">Delete</button>
-                            `;
-                        }
-                    }
-                ],
-                order: [[0, 'asc']],
-                drawCallback: function(settings) {
-                    console.log('DataTables draw callback', settings);
-                },
-                responsive: true,
-                autoWidth: false,
-                scrollX: true
-            });
+    processing: true,
+    serverSide: true,
+    ajax: {
+        url: "{{ route('admin.reservations.show') }}",
+        type: 'GET',
+        data: function (d) {
+            d.search = $('input[type="search"]').val()
+        },
+    },
+    columns: [
+        {data: 'reservation_id', name: 'reservation_id'},
+        {data: 'events.ev_name', name: 'events.ev_name'},
+        {data: 'rs_from', name: 'rs_from'},
+        {data: 'rs_date_start', name: 'rs_date_start'},
+        {data: 'rs_time_start', name: 'rs_time_start',
+            render: function(data, type, row) {
+                return type === 'display' ? formatTime(data) : data;
+            }
+        },
+        {data: 'rs_date_end', name: 'rs_date_end'},
+        {data: 'rs_time_end', name: 'rs_time_end',
+            render: function(data, type, row) {
+                return type === 'display' ? formatTime(data) : data;
+            }
+        },
+        {data: 'vehicles', name: 'vehicles',
+            render: function(data, type, row) {
+                if (data && Array.isArray(data) && data.length > 0) {
+                    return data.map(function(vehicle) {
+                        return vehicle.vh_brand + ' ' + vehicle.vh_type + ' (' + vehicle.vh_plate + ')';
+                    }).join(', ');
+                }
+                return 'N/A';
+            }
+        },
+        {data: 'drivers', name: 'drivers'},
+        {data: 'requestors.rq_full_name', name: 'requestors.rq_full_name'},
+        {data: 'office.off_name', name: 'office.off_name'},
+        {data: 'rs_purpose', name: 'rs_purpose'},
+        {data: 'rs_passengers', name: 'rs_passengers'},
+        {data: 'rs_travel_type', name: 'rs_travel_type'},
+        {data: 'created_at', name: 'created_at'},
+        {data: 'rs_approval_status', name: 'rs_approval_status'},
+        {data: 'rs_status', name: 'rs_status'},
+        {data: 'reason', name: 'reason'},
+        {data: 'action', name: 'action', orderable: false, searchable: false}
+    ],
+    order: [[0, 'asc']],
+    drawCallback: function(settings) {
+        console.log('DataTables draw callback', settings);
+    },
+    responsive: true,
+    autoWidth: false,
+    scrollX: true,
+    fixedHeader: true
+});
 
             // Add this to handle manual search
             $('input[type="search"]').on('keyup', function () {
@@ -1057,7 +1052,7 @@
             // Handle new action buttons
             $(document).on('click', '.approve', function() {
                 var reservationId = $(this).data('id');
-                updateReservationStatus(reservationId, 'Approved', 'Ongoing');
+                updateReservationStatus(reservationId, 'Approved', 'Processing');
             });
 
             $(document).on('click', '.cancel', function() {
