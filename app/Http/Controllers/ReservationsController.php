@@ -42,8 +42,11 @@ class ReservationsController extends Controller
                     ->addColumn('action', function ($reservation) {
                         return '
                             <button type="button" class="btn btn-sm btn-primary edit" data-id="'.$reservation->reservation_id.'">Edit</button>
+                            <button type="button" class="btn btn-sm btn-success approve" data-id="'.$reservation->reservation_id.'">Approve</button>
+                            <button type="button" class="btn btn-sm btn-warning cancel" data-id="'.$reservation->reservation_id.'">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-danger reject" data-id="'.$reservation->reservation_id.'">Reject</button>
+                            <button type="button" class="btn btn-sm btn-info done" data-id="'.$reservation->reservation_id.'">Done</button>
                             <button type="button" class="btn btn-sm btn-danger delete" data-id="'.$reservation->reservation_id.'">Delete</button>
-                            <button type="button" class="btn btn-sm btn-success done" data-id="'.$reservation->reservation_id.'">Done</button>
                         ';
                     })
                     ->addColumn('vehicles', function ($reservation) {
@@ -209,7 +212,7 @@ class ReservationsController extends Controller
                 'off_id' => 'required|exists:offices,off_id',
                 'rs_passengers' => 'required|integer',
                 'rs_travel_type' => 'required|string',
-                'rs_voucher' => 'required|string',
+                'rs_purpose' => 'required|string',
                 'rs_approval_status' => 'required|string',
                 'rs_status' => 'required|string',
             ]);
@@ -234,7 +237,7 @@ class ReservationsController extends Controller
             $reservation->off_id = $request->off_id;
             $reservation->rs_passengers = $request->rs_passengers;
             $reservation->rs_travel_type = $request->rs_travel_type;
-            $reservation->rs_voucher = $request->rs_voucher;
+            $reservation->rs_purpose = $request->rs_purpose;
             $reservation->rs_approval_status = $request->rs_approval_status;
             $reservation->rs_status = $request->rs_status;
             $reservation->rs_from = $request->rs_from;
@@ -282,63 +285,56 @@ class ReservationsController extends Controller
 
 
 
-    public function update(Request $request, $id)
+    public function updateReservation(Request $request, $id)
     {
         try {
             DB::beginTransaction();
 
             \Log::info("Update request received:", $request->all());
 
-            $reservationId = $request->input('reservation_id') ?? $id;
-            \Log::info("Attempting to update reservation with ID: " . $reservationId);
-
-            if (!$reservationId) {
-                \Log::error("Reservation ID is missing in the request");
-                return response()->json(['error' => 'Reservation ID is missing'], 400);
-            }
-
-            $reservation = Reservations::with('events')->find($reservationId);
-
-            if (!$reservation) {
-                \Log::error("Reservation not found with ID: " . $reservationId);
-                return response()->json(['error' => 'Reservation not found'], 404);
-            }
+            $reservation = Reservations::with('events')->findOrFail($id);
 
             \Log::info("Reservation found:", $reservation->toArray());
 
             // Update the reservation
-            $reservation->update($request->only([
+            $reservation->fill($request->only([
                 'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
-                'rs_voucher', 'rs_approval_status', 'rs_status', 'rs_from',
+                'rs_purpose', 'rs_approval_status', 'rs_status', 'rs_from',
                 'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end'
             ]));
 
             // Update the associated event
-            $reservation->events()->update([
-                'ev_name' => $request->input('event_name')
-            ]);
+            if ($request->has('event_name')) {
+                $reservation->events()->update([
+                    'ev_name' => $request->input('event_name')
+                ]);
+            }
 
             // Update reservation vehicles
-            $reservation->reservation_vehicles()->delete();
+            if ($request->has('driver_id') && $request->has('vehicle_id')) {
+                $reservation->reservation_vehicles()->delete();
 
-            $driverIds = $request->input('driver_id', []);
-            $vehicleIds = $request->input('vehicle_id', []);
+                $driverIds = $request->input('driver_id', []);
+                $vehicleIds = $request->input('vehicle_id', []);
 
-            \Log::info("Driver IDs:", $driverIds);
-            \Log::info("Vehicle IDs:", $vehicleIds);
+                \Log::info("Driver IDs:", $driverIds);
+                \Log::info("Vehicle IDs:", $vehicleIds);
 
-            if (is_array($driverIds) && is_array($vehicleIds)) {
-                foreach ($driverIds as $index => $driverId) {
-                    if (isset($vehicleIds[$index])) {
-                        $reservation->reservation_vehicles()->create([
-                            'driver_id' => $driverId,
-                            'vehicle_id' => $vehicleIds[$index],
-                        ]);
+                if (is_array($driverIds) && is_array($vehicleIds)) {
+                    foreach ($driverIds as $index => $driverId) {
+                        if (isset($vehicleIds[$index])) {
+                            $reservation->reservation_vehicles()->create([
+                                'driver_id' => $driverId,
+                                'vehicle_id' => $vehicleIds[$index],
+                            ]);
+                        }
                     }
+                } else {
+                    \Log::warning("Driver IDs or Vehicle IDs are not arrays");
                 }
-            } else {
-                \Log::warning("Driver IDs or Vehicle IDs are not arrays");
             }
+
+            $reservation->save();
 
             DB::commit();
 
@@ -398,13 +394,23 @@ public function edit($id)
         return response()->json(['error' => 'Failed to delete reservation'], 500);
     }
 }
-    public function cancel($reservation_id)
-    {
-        $reservation = Reservations::findOrFail($reservation_id);
+    public function cancel($id)
+{
+    try {
+        $reservation = Reservations::findOrFail($id);
+        $reservation->rs_approval_status = 'Cancelled';
         $reservation->rs_status = 'Cancelled';
         $reservation->save();
-        return response()->json(['success' => 'Reservation successfully Cancelled']);
+
+        // Free up the reserved driver and vehicle
+        $reservation->reservation_vehicles()->update(['driver_id' => null, 'vehicle_id' => null]);
+
+        return response()->json(['success' => 'Reservation successfully cancelled']);
+    } catch (\Exception $e) {
+        \Log::error('Error cancelling reservation: ' . $e->getMessage());
+        return response()->json(['error' => 'Failed to cancel reservation'], 500);
     }
+}
 
     public function reservations_word(Request $request)
     {
@@ -431,7 +437,7 @@ public function edit($id)
                     ->orWhereHas('reservation_vehicles.drivers', function ($query) use ($searchValue) {
                         $query->where('dr_fname', 'like', '%' . $searchValue . '%');
                     })
-                    ->orWhere('reservations.rs_voucher', 'like', '%' . $searchValue . '%')
+                    ->orWhere('reservations.rs_purpose', 'like', '%' . $searchValue . '%')
                     ->orWhere('reservations.rs_approval_status', 'like', '%' . $searchValue . '%')
                     ->orWhere('reservations.created_at', 'like', '%' . $searchValue . '%')
                     ->orWhere('reservations.rs_status', 'like', '%' . $searchValue . '%')
@@ -453,7 +459,7 @@ public function edit($id)
             $templateProcessor->setValue("driver_id#" . ($i + 1), $reservation->dr_fname . " " . $reservation->dr_lname);
             $templateProcessor->setValue("vehicle_id#" . ($i + 1), $reservation->vh_brand);
             $templateProcessor->setValue("requestor_id#" . ($i + 1),  $reservation->rq_full_name);
-            $templateProcessor->setValue("rs_voucher#" . ($i + 1), $reservation->rs_voucher);
+            $templateProcessor->setValue("rs_purpose#" . ($i + 1), $reservation->rs_purpose);
             $templateProcessor->setValue("rs_travel_type#" . ($i + 1), $reservation->rs_travel_type);
             $templateProcessor->setValue("created_at#" . ($i + 1), $formattedDate);
             $templateProcessor->setValue("rs_approval_status#" . ($i + 1), $reservation->rs_approval_status);
@@ -506,7 +512,7 @@ public function edit($id)
                     ->orWhere('vh_brand', 'like', '%' . $searchValue . '%')
                     ->orWhere('rq_full_name', 'like', '%' . $searchValue . '%')
                     ->orWhere('reservations.created_at', 'like', '%' . $searchValue . '%')
-                    ->orWhere('rs_voucher', 'like', '%' . $searchValue . '%')
+                    ->orWhere('rs_purpose', 'like', '%' . $searchValue . '%')
                     ->orWhere('rs_approval_status', 'like', '%' . $searchValue . '%')
                     ->orWhere('rs_status', 'like', '%' . $searchValue . '%')
                     ->orWhere('rs_travel_type', 'like', '%' . $searchValue . '%');
@@ -528,7 +534,7 @@ public function edit($id)
             $sheet->setCellValue('C' . $rowIndex, $reservation->dr_fname);
             $sheet->setCellValue('D' . $rowIndex, $reservation->vh_brand);
             $sheet->setCellValue('E' . $rowIndex, $reservation->rq_full_name);
-            $sheet->setCellValue('F' . $rowIndex, $reservation->rs_voucher);
+            $sheet->setCellValue('F' . $rowIndex, $reservation->rs_purpose);
             $sheet->setCellValue('G' . $rowIndex, $reservation->rs_travel_type);
             $sheet->setCellValue('H' . $rowIndex, $formattedDate);
             $sheet->setCellValue('I' . $rowIndex, $reservation->rs_approval_status);
@@ -560,7 +566,7 @@ public function edit($id)
                     ->orWhere('vh_brand', 'like', '%' . $searchValue . '%')
                     ->orWhere('rq_full_name', 'like', '%' . $searchValue . '%')
                     ->orWhere('reservations.created_at', 'like', '%' . $searchValue . '%')
-                    ->orWhere('rs_voucher', 'like', '%' . $searchValue . '%')
+                    ->orWhere('rs_purpose', 'like', '%' . $searchValue . '%')
                     ->orWhere('rs_approval_status', 'like', '%' . $searchValue . '%')
                     ->orWhere('rs_status', 'like', '%' . $searchValue . '%')
                     ->orWhere('rs_travel_type', 'like', '%' . $searchValue . '%');
@@ -583,7 +589,7 @@ public function edit($id)
             $templateProcessor->setValue("driver_id#" . ($index + 1), $reservation->dr_fname);
             $templateProcessor->setValue("vehicle_id#" . ($index + 1), $reservation->vh_brand . ' - ' . $reservation->vh_plate);
             $templateProcessor->setValue("requestor_id#" . ($index + 1), $reservation->rq_full_name);
-            $templateProcessor->setValue("rs_voucher#" . ($index + 1), $reservation->rs_voucher);
+            $templateProcessor->setValue("rs_purpose#" . ($index + 1), $reservation->rs_purpose);
             $templateProcessor->setValue("rs_travel_type#" . ($index + 1), $reservation->rs_travel_type);
             $templateProcessor->setValue("created_at#" . ($index + 1), $formattedDate);
             $templateProcessor->setValue("rs_approval_status#" . ($index + 1), $reservation->rs_approval_status);
@@ -639,66 +645,74 @@ public function edit($id)
 
 public function getDrivers(Request $request)
 {
-    try {
-        $reservationId = $request->input('reservation_id');
+    $startDateTime = $request->input('start_datetime');
+    $endDateTime = $request->input('end_datetime');
+    $reservationId = $request->input('reservation_id');
 
-        $reservedDriverIds = ReservationVehicle::whereHas('reservation', function ($query) {
-            $query->where('rs_status', '!=', 'Done');
-        })
-        ->where('reservation_id', '!=', $reservationId)
-        ->pluck('driver_id')
-        ->toArray();
-
-        $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
-            ->orderBy('dr_fname')
-            ->get()
-            ->map(function ($driver) use ($reservedDriverIds) {
-                return [
-                    'id' => $driver->driver_id,
-                    'name' => $driver->dr_fname . ' ' . $driver->dr_lname,
-                    'reserved' => in_array($driver->driver_id, $reservedDriverIds)
-                ];
+    $unavailableDriverIds = ReservationVehicle::whereHas('reservation', function ($query) use ($startDateTime, $endDateTime, $reservationId) {
+        $query->where('rs_status', '!=', 'Done')
+              ->where('reservation_id', '!=', $reservationId);
+        
+        if ($startDateTime && $endDateTime) {
+            $query->where(function ($q) use ($startDateTime, $endDateTime) {
+                $q->whereBetween('rs_date_start', [$startDateTime, $endDateTime])
+                  ->orWhereBetween('rs_date_end', [$startDateTime, $endDateTime])
+                  ->orWhere(function ($q2) use ($startDateTime, $endDateTime) {
+                      $q2->where('rs_date_start', '<=', $startDateTime)
+                         ->where('rs_date_end', '>=', $endDateTime);
+                  });
             });
+        }
+    })->pluck('driver_id')->toArray();
 
-        \Log::info('Drivers data:', ['drivers' => $drivers->toArray()]);
+    $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
+        ->orderBy('dr_fname')
+        ->get()
+        ->map(function ($driver) use ($unavailableDriverIds) {
+            return [
+                'id' => $driver->driver_id,
+                'name' => $driver->dr_fname . ' ' . $driver->dr_lname,
+                'reserved' => in_array($driver->driver_id, $unavailableDriverIds)
+            ];
+        });
 
-        return response()->json(['drivers' => $drivers]);
-    } catch (\Exception $e) {
-        \Log::error('Error fetching drivers: ' . $e->getMessage());
-        return response()->json(['error' => 'Error fetching drivers'], 500);
-    }
+    return response()->json(['drivers' => $drivers]);
 }
 
 public function getVehicles(Request $request)
 {
-    try {
-        $reservationId = $request->input('reservation_id');
+    $startDateTime = $request->input('start_datetime');
+    $endDateTime = $request->input('end_datetime');
+    $reservationId = $request->input('reservation_id');
 
-        $reservedVehicleIds = ReservationVehicle::whereHas('reservation', function ($query) {
-            $query->where('rs_status', '!=', 'Done');
-        })
-        ->where('reservation_id', '!=', $reservationId)
-        ->pluck('vehicle_id')
-        ->toArray();
-
-        $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
-            ->orderBy('vh_brand')
-            ->get()
-            ->map(function ($vehicle) use ($reservedVehicleIds) {
-                return [
-                    'id' => $vehicle->vehicle_id,
-                    'name' => $vehicle->vh_brand . ' (' . $vehicle->vh_type . ') - ' . $vehicle->vh_plate,
-                    'reserved' => in_array($vehicle->vehicle_id, $reservedVehicleIds)
-                ];
+    $unavailableVehicleIds = ReservationVehicle::whereHas('reservation', function ($query) use ($startDateTime, $endDateTime, $reservationId) {
+        $query->where('rs_status', '!=', 'Done')
+              ->where('reservation_id', '!=', $reservationId);
+        
+        if ($startDateTime && $endDateTime) {
+            $query->where(function ($q) use ($startDateTime, $endDateTime) {
+                $q->whereBetween('rs_date_start', [$startDateTime, $endDateTime])
+                  ->orWhereBetween('rs_date_end', [$startDateTime, $endDateTime])
+                  ->orWhere(function ($q2) use ($startDateTime, $endDateTime) {
+                      $q2->where('rs_date_start', '<=', $startDateTime)
+                         ->where('rs_date_end', '>=', $endDateTime);
+                  });
             });
+        }
+    })->pluck('vehicle_id')->toArray();
 
-        \Log::info('Vehicles data:', ['vehicles' => $vehicles->toArray()]);
+    $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
+        ->orderBy('vh_brand')
+        ->get()
+        ->map(function ($vehicle) use ($unavailableVehicleIds) {
+            return [
+                'id' => $vehicle->vehicle_id,
+                'name' => $vehicle->vh_brand . ' (' . $vehicle->vh_type . ') - ' . $vehicle->vh_plate,
+                'reserved' => in_array($vehicle->vehicle_id, $unavailableVehicleIds)
+            ];
+        });
 
-        return response()->json(['vehicles' => $vehicles]);
-    } catch (\Exception $e) {
-        \Log::error('Error fetching vehicles: ' . $e->getMessage());
-        return response()->json(['error' => 'Error fetching vehicles'], 500);
-    }
+    return response()->json(['vehicles' => $vehicles]);
 }
 
 public function markAsDone($id)
@@ -714,5 +728,92 @@ public function markAsDone($id)
         return response()->json(['error' => 'Error marking reservation as done'], 500);
     }
 }
+
+public function approve($id)
+{
+    return $this->updateStatus($id, 'Approved', 'Ongoing');
 }
 
+public function reject($id)
+{
+    return $this->updateStatus($id, 'Rejected', 'Rejected');
+}
+
+private function updateStatus($id, $approvalStatus, $reservationStatus)
+{
+    $reservation = Reservations::findOrFail($id);
+    $reservation->rs_approval_status = $approvalStatus;
+    $reservation->rs_status = $reservationStatus;
+    $reservation->save();
+
+    return response()->json(['success' => 'Reservation status updated successfully']);
+}
+
+public function update(Request $request, $id)
+{
+    try {
+        DB::beginTransaction();
+
+        \Log::info("Update request received:", $request->all());
+
+        $reservation = Reservations::with('events')->findOrFail($id);
+
+        \Log::info("Reservation found:", $reservation->toArray());
+
+        // Update the reservation
+        $reservation->fill($request->only([
+            'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
+            'rs_purpose', 'rs_approval_status', 'rs_status', 'rs_from',
+            'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end'
+        ]));
+
+        // Update the associated event
+        if ($request->has('event_name')) {
+            $reservation->events()->update([
+                'ev_name' => $request->input('event_name')
+            ]);
+        }
+
+        // Update reservation vehicles
+        if ($request->has('driver_id') && $request->has('vehicle_id')) {
+            $reservation->reservation_vehicles()->delete();
+
+            $driverIds = $request->input('driver_id', []);
+            $vehicleIds = $request->input('vehicle_id', []);
+
+            \Log::info("Driver IDs:", $driverIds);
+            \Log::info("Vehicle IDs:", $vehicleIds);
+
+            if (is_array($driverIds) && is_array($vehicleIds)) {
+                foreach ($driverIds as $index => $driverId) {
+                    if (isset($vehicleIds[$index])) {
+                        $reservation->reservation_vehicles()->create([
+                            'driver_id' => $driverId,
+                            'vehicle_id' => $vehicleIds[$index],
+                        ]);
+                    }
+                }
+            } else {
+                \Log::warning("Driver IDs or Vehicle IDs are not arrays");
+            }
+        }
+
+        $reservation->save();
+
+        DB::commit();
+
+        \Log::info("Reservation updated successfully");
+
+        return response()->json([
+            'success' => 'Reservation updated successfully',
+            'reservation' => $reservation->load('events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'),
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error updating reservation: ' . $e->getMessage());
+        \Log::error('Stack trace: ' . $e->getTraceAsString());
+        return response()->json(['error' => 'Error updating reservation: ' . $e->getMessage()], 500);
+    }
+}
+}

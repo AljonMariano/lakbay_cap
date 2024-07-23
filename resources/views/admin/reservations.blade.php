@@ -204,14 +204,12 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <label for="requestor_id" class="form-label mb-0">Requestor</label>
-                                            <select class="form-select" name="requestor_id" id="requestor_id" required>
-                                                <option value="" disabled selected>Select Requestor</option>
-                                                @foreach ($requestors as $requestor)
-                                                <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <span id="requestor_id_error"></span>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="is_outsider" name="is_outsider">
+                                                <label class="form-check-label" for="is_outsider">
+                                                    Outside of Provincial Capitol?
+                                                </label>
+                                            </div>
                                         </div>
 
                                         <div class="mb-2">
@@ -222,7 +220,20 @@
                                                 <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
                                                 @endforeach
                                             </select>
+                                            <input type="text" class="form-control rounded-1 d-none" name="outside_office" id="outside_office" placeholder="Enter Outside Office">
                                             <span id="office_error"></span>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="requestor_id" class="form-label mb-0">Requestor</label>
+                                            <select class="form-select" name="requestor_id" id="requestor_id" required>
+                                                <option value="" disabled selected>Select Requestor</option>
+                                                @foreach ($requestors as $requestor)
+                                                <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="text" class="form-control rounded-1 d-none" name="outside_requestor" id="outside_requestor" placeholder="Enter Outside Requestor">
+                                            <span id="requestor_id_error"></span>
                                         </div>
 
                                         <div class="mb-2">
@@ -243,9 +254,9 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <label for="rs_voucher" class="form-label mb-0">Trip Ticket No.</label>
-                                            <input type="text" class="form-control rounded-1" name="rs_voucher" placeholder="Enter Voucher code" id="rs_voucher" value="">
-                                            <span id="rs_voucher_error"></span>
+                                            <label for="rs_purpose" class="form-label mb-0">Purpose</label>
+                                            <input type="text" class="form-control rounded-1" name="rs_purpose" placeholder="Enter Purpose" id="rs_purpose" value="">
+                                            <span id="rs_purpose_error"></span>
                                         </div>
 
                                         <div class="mb-2">
@@ -303,7 +314,7 @@
                             <th>Drivers</th>
                             <th>Requestor</th>
                             <th>Office</th>
-                            <th>Trip Ticket No.</th>
+                            <th>Purpose</th>
                             <th>Passengers</th>
                             <th>Travel Type</th>
                             <th>Created At</th>
@@ -422,9 +433,9 @@
                                 </div>
 
                                 <div class="mb-2">
-                                    <label for="rs_voucher_edit" class="form-label mb-0">Voucher</label>
-                                    <input type="text" class="form-control rounded-1" name="rs_voucher" id="rs_voucher_edit" required>
-                                    <span id="rs_voucher_edit_error"></span>
+                                    <label for="rs_purpose_edit" class="form-label mb-0">Purpose</label>
+                                    <input type="text" class="form-control rounded-1" name="rs_purpose" id="rs_purpose_edit" required>
+                                    <span id="rs_purpose_edit_error"></span>
                                 </div>
 
                                 <div class="mb-2">
@@ -559,12 +570,12 @@
                         render: function(data, type, row) {
                             if (data && Array.isArray(data) && data.length > 0) {
                                 return data.map(function(vehicle) {
-                                    return vehicle.vh_brand + ' ' + vehicle.vh_model + ' (' + vehicle.vh_type + ') - ' + vehicle.vh_plate;
+                                    return vehicle.vh_brand +   ' (' + vehicle.vh_type + ') - ' + vehicle.vh_plate;
                                 }).join(', ');
                             } else if (typeof data === 'string') {
-                                return data; // If it's already a formatted string
+                                return data; 
                             }
-                            return 'N/A'; // Default value if data is not as expected
+                            return 'N/A'; 
                         }
                     },
                     {
@@ -582,7 +593,7 @@
                             return data ? data : 'N/A';
                         }
                     },
-                    {data: 'rs_voucher', name: 'rs_voucher'},
+                    {data: 'rs_purpose', name: 'rs_purpose'},
                     {data: 'rs_passengers', name: 'rs_passengers'},
                     {data: 'rs_travel_type', name: 'rs_travel_type'},
                     {
@@ -608,8 +619,11 @@
                         render: function(data, type, row) {
                             return `
                                 <button type="button" class="btn btn-sm btn-primary edit" data-id="${row.reservation_id}">Edit</button>
+                                <button type="button" class="btn btn-sm btn-success approve" data-id="${row.reservation_id}">Approve</button>
+                                <button type="button" class="btn btn-sm btn-warning cancel" data-id="${row.reservation_id}">Cancel</button>
+                                <button type="button" class="btn btn-sm btn-danger reject" data-id="${row.reservation_id}">Reject</button>
+                                <button type="button" class="btn btn-sm btn-info done" data-id="${row.reservation_id}">Done</button>
                                 <button type="button" class="btn btn-sm btn-danger delete" data-id="${row.reservation_id}">Delete</button>
-                                <button type="button" class="btn btn-sm btn-success done" data-id="${row.reservation_id}">Done</button>
                             `;
                         }
                     }
@@ -713,6 +727,7 @@
             $(document).on('click', '.delete', function() {
                 var reservationId = $(this).data('id');
                 $('#confirmModal').modal('show');
+                $('#confirm_message').text('Are you sure you want to delete this reservation?');
                 $('#ok_button').off('click').on('click', function() {
                     $.ajax({
                         url: `/delete-reservation/${reservationId}`,
@@ -731,25 +746,27 @@
             });
 
             // Handle done button click
-            $('#reservations-table').on('click', '.done', function() {
+            $(document).on('click', '.done', function() {
                 var reservationId = $(this).data('id');
-                $.ajax({
-                    url: "{{ route('reservations.done', ['id' => ':id']) }}".replace(':id', reservationId),
-                    method: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
-                    success: function(response) {
-                        showSuccessMessage('Reservation marked as done');
-                        table.ajax.reload(null, false);
-                        // Refresh the drivers and vehicles list
-                        loadDriversAndVehicles();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error marking reservation as done:', xhr.responseText);
-                        showErrorMessage('Error marking reservation as done');
-                    }
-                });
+                if (confirm('Are you sure you want to mark this reservation as done?')) {
+                    $.ajax({
+                        url: "{{ route('reservations.done', ['id' => ':id']) }}".replace(':id', reservationId),
+                        method: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            showSuccessMessage('Reservation marked as done');
+                            table.ajax.reload(null, false);
+                            // Refresh the drivers and vehicles list
+                            loadDriversAndVehicles();
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error marking reservation as done:', xhr.responseText);
+                            showErrorMessage('Error marking reservation as done');
+                        }
+                    });
+                }
             });
 
             // Function to clear the reservation form
@@ -879,7 +896,7 @@
                         $('#office_edit').val(reservation.off_id || '');
                         $('#rs_passengers_edit').val(reservation.rs_passengers || '');
                         $('#rs_travel_type_edit').val(reservation.rs_travel_type || '');
-                        $('#rs_voucher_edit').val(reservation.rs_voucher || '');
+                        $('#rs_purpose_edit').val(reservation.rs_purpose || '');
                         $('#rs_approval_status_edit').val(reservation.rs_approval_status || '');
                         $('#rs_status_edit').val(reservation.rs_status || '');
 
@@ -1023,6 +1040,77 @@
             $('#insertModal, #edit_reservation_modal').each(function() {
                 new bootstrap.Modal(this);
             });
+
+            // Handle outsider toggle
+            $('#is_outsider').change(function() {
+                if ($(this).is(':checked')) {
+                    $('#off_id, #requestor_id').addClass('d-none').prop('disabled', true);
+                    $('#outside_office, #outside_requestor').removeClass('d-none').prop('disabled', false);
+                } else {
+                    $('#off_id, #requestor_id').removeClass('d-none').prop('disabled', false);
+                    $('#outside_office, #outside_requestor').addClass('d-none').prop('disabled', true);
+                }
+            });
+
+            // Handle new action buttons
+            $(document).on('click', '.approve', function() {
+                var reservationId = $(this).data('id');
+                updateReservationStatus(reservationId, 'Approved', 'Ongoing');
+            });
+
+            $(document).on('click', '.cancel', function() {
+                var reservationId = $(this).data('id');
+                showCancellationModal(reservationId);
+            });
+
+            $(document).on('click', '.reject', function() {
+                var reservationId = $(this).data('id');
+                showRejectionModal(reservationId);
+            });
+
+            function updateReservationStatus(reservationId, approvalStatus, reservationStatus) {
+                $.ajax({
+                    url: "{{ route('reservations.update', ':id') }}".replace(':id', reservationId),
+                    method: 'PUT',
+                    data: {
+                        rs_approval_status: approvalStatus,
+                        rs_status: reservationStatus,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            table.ajax.reload(null, false);
+                            showSuccessMessage(response.success);
+                        } else {
+                            showErrorMessage(response.error || 'Error updating reservation');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error updating reservation:', xhr.responseText);
+                        showErrorMessage('Error updating reservation: ' + xhr.responseText);
+                    }
+                });
+            }
+
+            function showCancellationModal(reservationId) {
+                $('#cancellationModal').modal('show');
+                $('#cancellationForm').off('submit').on('submit', function(e) {
+                    e.preventDefault();
+                    var reason = $('#cancellationReason').val();
+                    updateReservationStatus(reservationId, 'Cancelled', 'Cancelled', reason);
+                    $('#cancellationModal').modal('hide');
+                });
+            }
+
+            function showRejectionModal(reservationId) {
+                $('#rejectionModal').modal('show');
+                $('#rejectionForm').off('submit').on('submit', function(e) {
+                    e.preventDefault();
+                    var reason = $('#rejectionReason').val();
+                    updateReservationStatus(reservationId, 'Rejected', 'Rejected', reason);
+                    $('#rejectionModal').modal('hide');
+                });
+            }
         });
     </script>
 </body>
