@@ -748,25 +748,27 @@
             // Handle done button click
             $(document).on('click', '.done', function() {
                 var reservationId = $(this).data('id');
-                if (confirm('Are you sure you want to mark this reservation as done?')) {
+                $('#confirmModal').modal('show');
+                $('#confirm_message').text('Are you sure you want to mark this reservation as done?');
+                $('#ok_button').off('click').on('click', function() {
                     $.ajax({
-                        url: "{{ route('reservations.done', ['id' => ':id']) }}".replace(':id', reservationId),
+                        url: "{{ route('reservations.done', ':id') }}".replace(':id', reservationId),
                         method: 'POST',
                         data: {
                             _token: '{{ csrf_token() }}'
                         },
                         success: function(response) {
-                            showSuccessMessage('Reservation marked as done');
+                            $('#confirmModal').modal('hide');
                             table.ajax.reload(null, false);
-                            // Refresh the drivers and vehicles list
-                            loadDriversAndVehicles();
+                            showSuccessMessage('Reservation marked as done successfully');
                         },
                         error: function(xhr, status, error) {
+                            $('#confirmModal').modal('hide');
                             console.error('Error marking reservation as done:', xhr.responseText);
                             showErrorMessage('Error marking reservation as done');
                         }
                     });
-                }
+                });
             });
 
             // Function to clear the reservation form

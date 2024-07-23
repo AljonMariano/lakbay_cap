@@ -722,10 +722,9 @@ public function markAsDone($id)
         $reservation->rs_status = 'Done';
         $reservation->save();
 
-        return response()->json(['success' => 'Reservation marked as done']);
+        return response()->json(['success' => 'Reservation marked as done successfully']);
     } catch (\Exception $e) {
-        \Log::error('Error marking reservation as done: ' . $e->getMessage());
-        return response()->json(['error' => 'Error marking reservation as done'], 500);
+        return response()->json(['error' => 'Error marking reservation as done: ' . $e->getMessage()], 500);
     }
 }
 
