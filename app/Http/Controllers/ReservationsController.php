@@ -260,78 +260,46 @@ class ReservationsController extends Controller
     public function store(Request $request)
     {
         try {
-            DB::beginTransaction();
-    
-            $request->validate([
-                'event_name' => 'required',
-                'rs_from' => 'required',
-                'rs_date_start' => 'required|date',
-                'rs_time_start' => 'required',
-                'rs_date_end' => 'required|date',
-                'rs_time_end' => 'required',
-                'rs_from' => 'required',
-                'rs_date_start' => 'required|date',
-                'rs_time_start' => 'required',
-                'rs_date_end' => 'required|date',
-                'rs_time_end' => 'required',
+            $validatedData = $request->validate([
                 'requestor_id' => 'required|exists:requestors,requestor_id',
                 'off_id' => 'required|exists:offices,off_id',
+                'event_name' => 'required|string',
+                'rs_from' => 'required|string',
+                'rs_date_start' => 'required|date',
+                'rs_time_start' => 'required',
+                'rs_date_end' => 'required|date',
+                'rs_time_end' => 'required',
+                'driver_id' => 'required|array',
+                'vehicle_id' => 'required|array',
                 'rs_passengers' => 'required|integer',
                 'rs_travel_type' => 'required|string',
                 'rs_purpose' => 'required|string',
                 'rs_approval_status' => 'required|string',
                 'rs_status' => 'required|string',
             ]);
-    
-            $event = Events::create([
-                'ev_name' => $request->event_name,
-                'ev_venue' => $request->rs_from,
-                'ev_date_start' => $request->rs_date_start,
-                'ev_time_start' => $request->rs_time_start,
-                'ev_date_end' => $request->rs_date_end,
-                'ev_time_end' => $request->rs_time_end,
-            ]);
-    
-            $reservation = new Reservations;
-            $reservation->event_id = $event->event_id;
-            $reservation->rs_from = $request->rs_from;
-            $reservation->rs_date_start = $request->rs_date_start;
-            $reservation->rs_time_start = $request->rs_time_start;
-            $reservation->rs_date_end = $request->rs_date_end;
-            $reservation->rs_time_end = $request->rs_time_end;
-            $reservation->requestor_id = $request->requestor_id;
-            $reservation->off_id = $request->off_id;
-            $reservation->rs_passengers = $request->rs_passengers;
-            $reservation->rs_travel_type = $request->rs_travel_type;
-            $reservation->rs_purpose = $request->rs_purpose;
-            $reservation->rs_approval_status = $request->rs_approval_status;
-            $reservation->rs_status = $request->rs_status;
-            $reservation->rs_from = $request->rs_from;
-            $reservation->rs_date_start = $request->rs_date_start;
-            $reservation->rs_time_start = $request->rs_time_start;
-            $reservation->rs_date_end = $request->rs_date_end;
-            $reservation->rs_time_end = $request->rs_time_end;
-            $reservation->rs_status = 'Queued';  // Set default status to Queued
-            $reservation->rs_approval_status = 'Pending';  // Set default approval status to Pending
-            $reservation->save();
-    
-            $driverIds = $request->input('driver_id');
-            $vehicleIds = $request->input('vehicle_id');
-    
-            foreach ($driverIds as $index => $driverId) {
+
+            DB::beginTransaction();
+
+            $reservation = Reservations::create($validatedData);
+
+            // Create associated event
+            $event = new Events(['ev_name' => $validatedData['event_name']]);
+            $reservation->events()->save($event);
+
+            // Create reservation vehicles
+            foreach ($validatedData['driver_id'] as $index => $driverId) {
                 $reservation->reservation_vehicles()->create([
                     'driver_id' => $driverId,
-                    'vehicle_id' => $vehicleIds[$index],
+                    'vehicle_id' => $validatedData['vehicle_id'][$index],
                 ]);
             }
-    
+
             DB::commit();
-    
-            return response()->json([
-                'message' => 'Reservation created successfully',
-                'reservation' => $reservation->load('office', 'reservation_vehicles'),
-            ]);
-    
+
+            return response()->json(['success' => 'Reservation created successfully']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->errors()], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error creating reservation: ' . $e->getMessage());

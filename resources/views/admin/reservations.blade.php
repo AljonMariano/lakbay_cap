@@ -190,7 +190,6 @@
                                         <div class="mb-2">
                                             <label for="driver_id" class="form-label mb-0">Driver</label>
                                             <select class="form-control" id="driver_id" name="driver_id[]" multiple required>
-                                                <option value="">Select Driver(s)</option>
                                             </select>
                                             <span id="driver_id_error"></span>
                                         </div>
@@ -198,7 +197,6 @@
                                         <div class="mb-2">
                                             <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
                                             <select class="form-control" id="vehicle_id" name="vehicle_id[]" multiple required>
-                                                <option value="">Select Vehicle(s)</option>
                                             </select>
                                             <span id="vehicle_id_error"></span>
                                         </div>
@@ -394,7 +392,6 @@
                                 <div class="mb-2">
                                     <label for="driver_id_edit" class="form-label mb-0">Driver</label>
                                     <select id="driver_id_edit" name="driver_id[]" class="form-control" multiple>
-                                        <option value="">Select Driver</option>
                                     </select>
                                     <span id="driver_id_edit_error"></span>
                                 </div>
@@ -402,7 +399,6 @@
                                 <div class="mb-2">
                                     <label for="vehicle_id_edit" class="form-label mb-0">Vehicle</label>
                                     <select id="vehicle_id_edit" name="vehicle_id[]" class="form-control" multiple>
-                                        <option value="">Select Vehicle</option>
                                     </select>
                                     <span id="vehicle_id_edit_error"></span>
                                 </div>
@@ -410,6 +406,7 @@
                                 <div class="mb-2">
                                     <label for="requestor_edit" class="form-label mb-0">Requestor</label>
                                     <select class="form-select" name="requestor_id" id="requestor_edit" required>
+                                        <option value="" disabled selected>Select Requestor</option>
                                         @if(isset($requestors) && $requestors->count() > 0)
                                             @foreach ($requestors as $requestor)
                                                 <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
@@ -564,7 +561,8 @@
             update: "{{ route('reservations.update', ':id') }}",
             done: "{{ route('reservations.done', ':id') }}",
             getDrivers: "{{ route('get.drivers') }}",
-            getVehicles: "{{ route('get.vehicles') }}"
+            getVehicles: "{{ route('get.vehicles') }}",
+            store: "{{ route('reservations.store') }}"
         };
     </script>
     <script src="{{ asset('js/admin/reservations.js') }}"></script>

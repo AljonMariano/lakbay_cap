@@ -123,6 +123,7 @@ Route::get('/reservations-excel', [ReservationsController::class, 'exportExcel']
 Route::get('/reservations-pdf', [ReservationsController::class, 'exportPdf'])->name('reservations.pdf');
 Route::get('/get-drivers', [ReservationsController::class, 'getDrivers'])->name('get.drivers');
 Route::get('/get-vehicles', [ReservationsController::class, 'getVehicles'])->name('get.vehicles');
+Route::post('/reservations', [ReservationsController::class, 'store'])->name('reservations.store');
 
 
 
