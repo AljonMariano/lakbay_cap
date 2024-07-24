@@ -28,6 +28,71 @@ use Dompdf\Options;
 
 class ReservationsController extends Controller
 {
+    public function index()
+    {
+        $offices = Offices::all();
+        $requestors = Requestors::all();
+        return view('admin.reservations', compact('offices', 'requestors'));
+    }
+
+    public function getData()
+    {
+        try {
+            $reservations = Reservations::with(['events', 'requestors', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'office'])
+                ->select('reservations.*')
+                ->get();
+
+            \Log::info('Reservations data:', $reservations->toArray());
+
+            $datatablesData = DataTables::of($reservations)
+                ->addColumn('event_name', function ($reservation) {
+                    \Log::info('Event data:', ['event' => $reservation->events]);
+                    return $reservation->events ? $reservation->events->ev_name : 'N/A';
+                })
+                ->addColumn('action', function ($reservation) {
+                    return '
+                        <button type="button" class="btn btn-sm btn-primary edit-btn" data-id="'.$reservation->reservation_id.'">Edit</button>
+                        <button type="button" class="btn btn-sm btn-success approve-btn" data-id="'.$reservation->reservation_id.'">Approve</button>
+                        <button type="button" class="btn btn-sm btn-warning cancel-btn" data-id="'.$reservation->reservation_id.'">Cancel</button>
+                        <button type="button" class="btn btn-sm btn-danger reject-btn" data-id="'.$reservation->reservation_id.'">Reject</button>
+                        <button type="button" class="btn btn-sm btn-info done-btn" data-id="'.$reservation->reservation_id.'">Done</button>
+                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="'.$reservation->reservation_id.'">Delete</button>
+                    ';
+                })
+                ->addColumn('vehicles', function ($reservation) {
+                    return $reservation->reservation_vehicles->map(function ($rv) {
+                        $vehicle = $rv->vehicles;
+                        return [
+                            'vh_brand' => $vehicle->vh_brand,
+                            'vh_model' => $vehicle->vh_model,
+                            'vh_type' => $vehicle->vh_type,
+                            'vh_plate' => $vehicle->vh_plate
+                        ];
+                    })->toArray();
+                })
+                ->addColumn('drivers', function ($reservation) {
+                    $drivers = $reservation->reservation_vehicles->map(function ($rv) {
+                        return $rv->drivers ? $rv->drivers->dr_fname . ' ' . $rv->drivers->dr_lname : 'N/A';
+                    })->filter()->implode(', ');
+                    \Log::info("Drivers for reservation {$reservation->reservation_id}: " . $drivers);
+                    return $drivers;
+                })
+                ->addColumn('requestor', function ($reservation) {
+                    return $reservation->requestors->rq_full_name ?? 'N/A';
+                })
+                ->rawColumns(['vehicles', 'drivers', 'action'])
+                ->toJson();
+
+            \Log::info('DataTables response:', ['response' => $datatablesData]);
+
+            return $datatablesData;
+        } catch (\Exception $e) {
+            \Log::error('Error in ReservationsController@getData: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json(['error' => 'An error occurred while processing your request.'], 500);
+        }
+    }
+
     public function show(Request $request)
     {
         try {
@@ -41,12 +106,12 @@ class ReservationsController extends Controller
                 return DataTables::of($reservations)
                     ->addColumn('action', function ($reservation) {
                         return '
-                            <button type="button" class="btn btn-sm btn-primary edit" data-id="'.$reservation->reservation_id.'">Edit</button>
-                            <button type="button" class="btn btn-sm btn-success approve" data-id="'.$reservation->reservation_id.'">Approve</button>
-                            <button type="button" class="btn btn-sm btn-warning cancel" data-id="'.$reservation->reservation_id.'">Cancel</button>
-                            <button type="button" class="btn btn-sm btn-danger reject" data-id="'.$reservation->reservation_id.'">Reject</button>
-                            <button type="button" class="btn btn-sm btn-info done" data-id="'.$reservation->reservation_id.'">Done</button>
-                            <button type="button" class="btn btn-sm btn-danger delete" data-id="'.$reservation->reservation_id.'">Delete</button>
+                            <button type="button" class="btn btn-sm btn-primary edit-btn" data-id="'.$reservation->reservation_id.'">Edit</button>
+                            <button type="button" class="btn btn-sm btn-success approve-btn" data-id="'.$reservation->reservation_id.'">Approve</button>
+                            <button type="button" class="btn btn-sm btn-warning cancel-btn" data-id="'.$reservation->reservation_id.'">Cancel</button>
+                            <button type="button" class="btn btn-sm btn-danger reject-btn" data-id="'.$reservation->reservation_id.'">Reject</button>
+                            <button type="button" class="btn btn-sm btn-info done-btn" data-id="'.$reservation->reservation_id.'">Done</button>
+                            <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="'.$reservation->reservation_id.'">Delete</button>
                         ';
                     })
                     ->addColumn('vehicles', function ($reservation) {
@@ -669,11 +734,11 @@ public function update(Request $request, $id)
     try {
         DB::beginTransaction();
 
-        \Log::info("Update request received:", $request->all());
+        \Log::info('Update request received', $request->all());
 
         $reservation = Reservations::with('events')->findOrFail($id);
 
-        \Log::info("Reservation found:", $reservation->toArray());
+        \Log::info('Reservation found', $reservation->toArray());
 
         // Update the reservation
         $reservation->fill($request->only([
@@ -711,7 +776,7 @@ public function update(Request $request, $id)
                         }
                     }
                 } else {
-                    \Log::warning("Driver IDs or Vehicle IDs are not arrays");
+                    \Log::warning('Driver IDs or Vehicle IDs are not arrays');
                 }
             }
         }
@@ -720,7 +785,7 @@ public function update(Request $request, $id)
 
         DB::commit();
 
-        \Log::info("Reservation updated successfully");
+        \Log::info('Reservation updated successfully');
 
         return response()->json([
             'success' => 'Reservation updated successfully',
@@ -729,8 +794,10 @@ public function update(Request $request, $id)
 
     } catch (\Exception $e) {
         DB::rollBack();
-        \Log::error('Error updating reservation: ' . $e->getMessage());
-        \Log::error('Stack trace: ' . $e->getTraceAsString());
+        \Log::error('Error updating reservation', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
         return response()->json(['error' => 'Error updating reservation: ' . $e->getMessage()], 500);
     }
 }

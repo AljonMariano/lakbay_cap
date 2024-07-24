@@ -43,26 +43,9 @@ Route::get('/', [Controller::class, 'redirect']);
 
 // AUTH route
 Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
-    // Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('admin.dashboard');
-    // Route::get('/admin/compute', [AdminPageController::class, 'compute'])->name('admin.compute');    
-    // Route::get('/admin/drivers_schedule', [AdminPageController::class, 'drivers_schedule'])->name('admin.drivers_schedule');
-     Route::get('/admin/drivers', [AdminPageController::class, 'drivers'])->name('admin.drivers');
-    // Route::get('/admin/event_calendar', [AdminPageController::class, 'event_calendar'])->name('admin.event_calendar');
-    // Route::get('/admin/events', [AdminPageController::class, 'events'])->name('admin.events');    
-    // Route::get('/admin/navigation-menu', [AdminPageController::class, 'navigation_menu'])->name('admin.navigation-menu');
-    // Route::get('/admin/offices', [AdminPageController::class, 'offices'])->name('admin.offices');
-    // Route::get('/admin/policy', [AdminPageController::class, 'policy'])->name('admin.policy');
-    // Route::get('/admin/vehicles', [AdminPageController::class, 'vehicles'])->name('admin.vehicles'); 
-    // Route::get('/reservations', [ReservationsController::class, 'show'])->name('admin.reservations');
-    // Route::get('/admin/statistics', [AdminPageController::class, 'statistics'])->name('admin.statistics');
-    // Route::get('/admin/terms', [AdminPageController::class, 'terms'])->name('admin.terms');
-    // Route::get('/admin/test_select', [AdminPageController::class, 'test_select'])->name('admin.test_select');
-    // Route::get('/admin/test_word', [AdminPageController::class, 'test_word'])->name('admin.test_word');
-    // Route::get('/admin/welcome', [AdminPageController::class, 'welcome'])->name('admin.welcome');
-    // Route::get('/admin/worker', [AdminPageController::class, 'worker'])->name('admin.worker');
-    // Route::get('/admin/requestor/requestors', [AdminPageController::class, 'requestors'])->name('admin.requestor.requestors');
-    // Route::get('/admin/navigation-menu', [AdminPageController::class, 'navigation_menu'])->name('admin.navigation-menu');
-
+    Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
+    Route::put('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
+    Route::post('/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
     Route::get('/profile', function () {
@@ -122,24 +105,24 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
 
 
 // Reservation Section
-Route::get('/reservations', [ReservationsController::class, 'show'])->name('admin.reservations.show');
-Route::get('/event-calendar', [ReservationsController::class, 'event_calendar']);
-Route::get('/driver-schedules', [ReservationsController::class, 'drivers_schedules']);
-Route::get('/get-events', [ReservationsController::class, 'events'])->name('reservations.getEvents');
-Route::get('/get-edit-events', [ReservationsController::class, 'events_edit'])->name('reservations.getEditEvents');
-Route::get('/reservations-archive', [ReservationsController::class, 'reservations_archive']);
-Route::get('/reservations-word', [ReservationsController::class, 'reservations_word']);
-Route::get('/reservations-excel', [ReservationsController::class, 'reservations_excel']);
-Route::get('/reservations-pdf', [ReservationsController::class, 'reservations_pdf']);
-Route::post('/insert-reservation', [ReservationsController::class, 'store'])->name('reservations.store');
-Route::put('/update-reservation/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
-Route::get('/edit-reservation/{reservation_id}', [ReservationsController::class, 'edit'])->name('reservations.edit');
-Route::get('/cancel-reservation/{reservation_id}', [ReservationsController::class, 'cancel']);
-Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete'])->name('reservations.delete');
+Route::get('/reservations', [ReservationsController::class, 'index'])->name('reservations.index');
+Route::get('/reservations/data', [ReservationsController::class, 'getData'])->name('reservations.data');
+Route::get('/reservations/{id}', [ReservationsController::class, 'show'])->name('reservations.show');
+Route::post('/reservations', [ReservationsController::class, 'store'])->name('reservations.store');
+Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
+Route::put('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
+Route::delete('/reservations/{id}', [ReservationsController::class, 'destroy'])->name('reservations.destroy');
+Route::post('/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
+Route::get('/event-calendar', [ReservationsController::class, 'eventCalendar'])->name('reservations.calendar');
+Route::get('/driver-schedules', [ReservationsController::class, 'driverSchedules'])->name('reservations.driver-schedules');
+Route::get('/get-events', [ReservationsController::class, 'getEvents'])->name('reservations.getEvents');
+Route::get('/get-edit-events', [ReservationsController::class, 'getEditEvents'])->name('reservations.getEditEvents');
+Route::get('/reservations-archive', [ReservationsController::class, 'archive'])->name('reservations.archive');
+Route::get('/reservations-word', [ReservationsController::class, 'exportWord'])->name('reservations.word');
+Route::get('/reservations-excel', [ReservationsController::class, 'exportExcel'])->name('reservations.excel');
+Route::get('/reservations-pdf', [ReservationsController::class, 'exportPdf'])->name('reservations.pdf');
 Route::get('/get-drivers', [ReservationsController::class, 'getDrivers'])->name('get.drivers');
 Route::get('/get-vehicles', [ReservationsController::class, 'getVehicles'])->name('get.vehicles');
-Route::post('/admin/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
-Route::get('/admin/reservations/{reservation}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
 
 
 
@@ -363,3 +346,7 @@ Route::get('/check-all-reservations', function() {
         'sample_reservation' => $reservations->first()->toArray()
     ]);
 });
+
+Route::get('/js/admin/reservations.js', function () {
+    return response()->file(resource_path('views/admin/reservations.js'));
+})->name('admin.reservations.js');
