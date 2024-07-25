@@ -80,6 +80,9 @@ class ReservationsController extends Controller
                 ->addColumn('requestor', function ($reservation) {
                     return $reservation->requestors->rq_full_name ?? 'N/A';
                 })
+                ->addColumn('rs_purpose', function ($reservation) {
+                    return $reservation->rs_purpose ?? 'N/A';
+                })
                 ->rawColumns(['vehicles', 'drivers', 'action'])
                 ->toJson();
 
@@ -261,8 +264,10 @@ class ReservationsController extends Controller
     {
         try {
             $validatedData = $request->validate([
-                'requestor_id' => 'required|exists:requestors,requestor_id',
-                'off_id' => 'required|exists:offices,off_id',
+                'requestor_id' => 'required_without:outside_requestor',
+                'off_id' => 'required_without:outside_office',
+                'outside_requestor' => 'required_without:requestor_id',
+                'outside_office' => 'required_without:off_id',
                 'event_name' => 'required|string',
                 'rs_from' => 'required|string',
                 'rs_date_start' => 'required|date',
@@ -280,11 +285,33 @@ class ReservationsController extends Controller
 
             DB::beginTransaction();
 
-            $reservation = Reservations::create($validatedData);
-
             // Create associated event
-            $event = new Events(['ev_name' => $validatedData['event_name']]);
-            $reservation->events()->save($event);
+            $event = Events::create(['ev_name' => $validatedData['event_name']]);
+
+            // Determine requestor and office
+            $requestorId = $request->input('requestor_id') ?: null;
+            $offId = $request->input('off_id') ?: null;
+
+            // Debugging: Log requestorId and offId
+            \Log::info('Requestor ID: ' . $requestorId);
+            \Log::info('Office ID: ' . $offId);
+
+            // Create the reservation
+            $reservation = Reservations::create([
+                'event_id' => $event->event_id,
+                'requestor_id' => $requestorId,
+                'off_id' => $offId,
+                'rs_from' => $validatedData['rs_from'],
+                'rs_date_start' => $validatedData['rs_date_start'],
+                'rs_time_start' => $validatedData['rs_time_start'],
+                'rs_date_end' => $validatedData['rs_date_end'],
+                'rs_time_end' => $validatedData['rs_time_end'],
+                'rs_passengers' => $validatedData['rs_passengers'],
+                'rs_travel_type' => $validatedData['rs_travel_type'],
+                'rs_purpose' => $validatedData['rs_purpose'],
+                'rs_approval_status' => $validatedData['rs_approval_status'],
+                'rs_status' => $validatedData['rs_status'],
+            ]);
 
             // Create reservation vehicles
             foreach ($validatedData['driver_id'] as $index => $driverId) {

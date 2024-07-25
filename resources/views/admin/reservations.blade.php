@@ -259,7 +259,7 @@
 
                                         <div class="mb-2">
                                             <label for="rs_purpose" class="form-label mb-0">Purpose</label>
-                                            <input type="text" class="form-control rounded-1" name="rs_purpose" placeholder="Enter Purpose" id="rs_purpose" value="">
+                                            <input type="text" class="form-control rounded-1" name="rs_purpose" placeholder="Enter Purpose" id="rs_purpose" required>
                                             <span id="rs_purpose_error"></span>
                                         </div>
 
@@ -415,6 +415,7 @@
                                             <option value="">No requestors available</option>
                                         @endif
                                     </select>
+                                    <input type="text" class="form-control rounded-1 d-none" name="outside_requestor" id="outside_requestor_edit" placeholder="Enter Outside Requestor">
                                     <span id="requestor_edit_error"></span>
                                 </div>
 
@@ -425,7 +426,17 @@
                                         <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
                                         @endforeach
                                     </select>
+                                    <input type="text" class="form-control rounded-1 d-none" name="outside_office" id="outside_office_edit" placeholder="Enter Outside Office">
                                     <span id="office_edit_error"></span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_outsider_edit" name="is_outsider">
+                                        <label class="form-check-label" for="is_outsider_edit">
+                                            Outside of Provincial Capitol?
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div class="mb-2">
@@ -444,6 +455,12 @@
                                     <label for="rs_purpose_edit" class="form-label mb-0">Purpose</label>
                                     <input type="text" class="form-control rounded-1" name="rs_purpose" id="rs_purpose_edit" required>
                                     <span id="rs_purpose_edit_error"></span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="reason_edit" class="form-label mb-0">Reason</label>
+                                    <input type="text" class="form-control rounded-1" name="reason" id="reason_edit" readonly>
+                                    <span id="reason_edit_error"></span>
                                 </div>
 
                                 <div class="mb-2">
@@ -467,12 +484,6 @@
                                         <option value="Inactive">Inactive</option>
                                     </select>
                                     <span id="rs_status_edit_error"></span>
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="reason_edit" class="form-label mb-0">Reason</label>
-                                    <input type="text" class="form-control rounded-1" name="reason" id="reason_edit">
-                                    <span id="reason_edit_error"></span>
                                 </div>
                             </div>
                         </div>
