@@ -262,71 +262,55 @@ class ReservationsController extends Controller
 
     public function store(Request $request)
     {
+        DB::beginTransaction();
         try {
-            $validatedData = $request->validate([
-                'requestor_id' => 'required_without:outside_requestor',
-                'off_id' => 'required_without:outside_office',
-                'outside_requestor' => 'required_without:requestor_id',
-                'outside_office' => 'required_without:off_id',
-                'event_name' => 'required|string',
-                'rs_from' => 'required|string',
-                'rs_date_start' => 'required|date',
-                'rs_time_start' => 'required',
-                'rs_date_end' => 'required|date',
-                'rs_time_end' => 'required',
-                'driver_id' => 'required|array',
-                'vehicle_id' => 'required|array',
-                'rs_passengers' => 'required|integer',
-                'rs_travel_type' => 'required|string',
-                'rs_purpose' => 'required|string',
-                'rs_approval_status' => 'required|string',
-                'rs_status' => 'required|string',
-            ]);
-
-            DB::beginTransaction();
-
-            // Create associated event
-            $event = Events::create(['ev_name' => $validatedData['event_name']]);
-
-            // Determine requestor and office
-            $requestorId = $request->input('requestor_id') ?: null;
-            $offId = $request->input('off_id') ?: null;
-
-            // Debugging: Log requestorId and offId
-            \Log::info('Requestor ID: ' . $requestorId);
-            \Log::info('Office ID: ' . $offId);
-
-            // Create the reservation
-            $reservation = Reservations::create([
-                'event_id' => $event->event_id,
-                'requestor_id' => $requestorId,
-                'off_id' => $offId,
-                'rs_from' => $validatedData['rs_from'],
-                'rs_date_start' => $validatedData['rs_date_start'],
-                'rs_time_start' => $validatedData['rs_time_start'],
-                'rs_date_end' => $validatedData['rs_date_end'],
-                'rs_time_end' => $validatedData['rs_time_end'],
-                'rs_passengers' => $validatedData['rs_passengers'],
-                'rs_travel_type' => $validatedData['rs_travel_type'],
-                'rs_purpose' => $validatedData['rs_purpose'],
-                'rs_approval_status' => $validatedData['rs_approval_status'],
-                'rs_status' => $validatedData['rs_status'],
-            ]);
-
-            // Create reservation vehicles
-            foreach ($validatedData['driver_id'] as $index => $driverId) {
-                $reservation->reservation_vehicles()->create([
-                    'driver_id' => $driverId,
-                    'vehicle_id' => $validatedData['vehicle_id'][$index],
+            $data = $request->all();
+            
+            if ($request->has('is_outsider') && $request->is_outsider == 'on') {
+                // If it's an outsider, create a new Office
+                $office = Offices::create([
+                    'off_name' => $request->outside_office,
+                    'off_acr' => substr($request->outside_office, 0, 5), // Generate an acronym
+                    'off_head' => 'Unknown', // Set a default value for off_head
                 ]);
+                $data['off_id'] = $office->off_id;
+
+                // Create a new Requestor
+                $requestor = Requestors::create([
+                    'rq_full_name' => $request->outside_requestor,
+                    // Add any other necessary fields for Requestor
+                ]);
+                $data['requestor_id'] = $requestor->requestor_id;
+            }
+
+            // Create the event
+            $event = Events::create(['ev_name' => $data['event_name']]);
+            $data['event_id'] = $event->event_id;
+
+            // Remove these fields as they're not in the reservations table
+            unset($data['is_outsider']);
+            unset($data['outside_requestor']);
+            unset($data['outside_office']);
+            unset($data['event_name']);
+
+            $reservation = Reservations::create($data);
+
+            // Handle drivers and vehicles
+            if ($request->has('driver_id') && $request->has('vehicle_id')) {
+                $driverIds = $request->input('driver_id');
+                $vehicleIds = $request->input('vehicle_id');
+                foreach ($driverIds as $index => $driverId) {
+                    if (isset($vehicleIds[$index])) {
+                        $reservation->reservation_vehicles()->create([
+                            'driver_id' => $driverId,
+                            'vehicle_id' => $vehicleIds[$index],
+                        ]);
+                    }
+                }
             }
 
             DB::commit();
-
             return response()->json(['success' => 'Reservation created successfully']);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
-            return response()->json(['error' => $e->errors()], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error creating reservation: ' . $e->getMessage());

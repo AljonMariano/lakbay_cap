@@ -177,8 +177,7 @@ $(document).ready(function() {
         $('#cancellationForm').off('submit').on('submit', function(e) {
             e.preventDefault();
             var reason = $('#cancellationReason').val();
-            updateReservationStatus(reservationId, 'Cancelled', 'Cancelled', reason);
-            $('#cancellationModal').modal('hide');
+            updateReservationStatus(reservationId, 'Cancelled', reason);
         });
     }
 
@@ -187,28 +186,25 @@ $(document).ready(function() {
         $('#rejectionForm').off('submit').on('submit', function(e) {
             e.preventDefault();
             var reason = $('#rejectionReason').val();
-            updateReservationStatus(reservationId, 'Rejected', 'Rejected', reason);
-            $('#rejectionModal').modal('hide');
+            updateReservationStatus(reservationId, 'Rejected', reason);
         });
     }
 
-    function updateReservationStatus(reservationId, approvalStatus, reservationStatus, reason) {
-        var data = {
-            rs_approval_status: approvalStatus,
-            rs_status: reservationStatus,
-            reason: reason,
-            _token: $('meta[name="csrf-token"]').attr('content')
-        };
-        console.log('Sending update request:', data);
-
+    function updateReservationStatus(reservationId, status, reason) {
         $.ajax({
             url: routes.update.replace(':id', reservationId),
             method: 'PUT',
-            data: data,
+            data: {
+                rs_approval_status: status,
+                rs_status: status,
+                reason: reason,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
             success: function(response) {
-                console.log('Update response:', response);
                 if (response.success) {
-                    table.ajax.reload(null, false);
+                    $('#cancellationModal').modal('hide');
+                    $('#rejectionModal').modal('hide');
+                    table.ajax.reload();
                     showSuccessMessage(response.success);
                 } else {
                     showErrorMessage(response.error || 'Error updating reservation');
@@ -216,7 +212,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error('Error updating reservation:', xhr.responseText);
-                showErrorMessage('Error updating reservation: ' + xhr.responseText);
+                showErrorMessage('Error updating reservation: ' + error);
             }
         });
     }
