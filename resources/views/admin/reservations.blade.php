@@ -204,8 +204,17 @@
                                         
 
                                         <div class="mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="is_outsider" name="is_outsider">
+                                                <label class="form-check-label" for="is_outsider">
+                                                    Outside of Provincial Capitol?
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-2">
                                             <label for="off_id" class="form-label mb-0">Office</label>
-                                            <select class="form-select" name="off_id" id="off_id" required>
+                                            <select class="form-select" name="off_id" id="off_id">
                                                 <option value="">Select Office</option>
                                                 @foreach ($offices as $office)
                                                 <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
@@ -216,25 +225,11 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="is_outsider" name="is_outsider">
-                                                <label class="form-check-label" for="is_outsider">
-                                                    Outside of Provincial Capitol?
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <div class="mb-2">
                                             <label for="requestor_id" class="form-label mb-0">Requestor</label>
-                                            <select class="form-select" name="requestor_id" id="requestor_id" required>
-                                                <option value="" disabled selected>Select Requestor</option>
-                                                @if(isset($requestors) && $requestors->count() > 0)
-                                                    @foreach ($requestors as $requestor)
-                                                        <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
-                                                    @endforeach
-                                                @else
-                                                    <option value="">No requestors available</option>
-                                                @endif
+                                            <select name="requestor_id" id="requestor_id" class="form-control">
+                                                @foreach($requestors as $requestor)
+                                                    <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
+                                                @endforeach
                                             </select>
                                             <input type="text" class="form-control rounded-1 d-none" name="outside_requestor" id="outside_requestor" placeholder="Enter Outside Requestor">
                                             <span id="requestor_id_error"></span>
@@ -402,33 +397,6 @@
                                     </select>
                                     <span id="vehicle_id_edit_error"></span>
                                 </div>
-                                
-                                <div class="mb-2">
-                                    <label for="requestor_edit" class="form-label mb-0">Requestor</label>
-                                    <select class="form-select" name="requestor_id" id="requestor_edit" required>
-                                        <option value="" disabled selected>Select Requestor</option>
-                                        @if(isset($requestors) && $requestors->count() > 0)
-                                            @foreach ($requestors as $requestor)
-                                                <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
-                                            @endforeach
-                                        @else
-                                            <option value="">No requestors available</option>
-                                        @endif
-                                    </select>
-                                    <input type="text" class="form-control rounded-1 d-none" name="outside_requestor" id="outside_requestor_edit" placeholder="Enter Outside Requestor">
-                                    <span id="requestor_edit_error"></span>
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="office_edit" class="form-label mb-0">Office</label>
-                                    <select class="form-select" name="off_id" id="office_edit" required>
-                                        @foreach ($offices as $office)
-                                        <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="text" class="form-control rounded-1 d-none" name="outside_office" id="outside_office_edit" placeholder="Enter Outside Office">
-                                    <span id="office_edit_error"></span>
-                                </div>
 
                                 <div class="mb-2">
                                     <div class="form-check">
@@ -438,6 +406,30 @@
                                         </label>
                                     </div>
                                 </div>
+
+                                <div class="mb-2">
+                                    <label for="office_edit" class="form-label mb-0">Office</label>
+                                    <select class="form-select" name="off_id" id="office_edit">
+                                        @foreach ($offices as $office)
+                                        <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" class="form-control d-none" name="outside_office" id="outside_office_edit" placeholder="Enter Outside Office">
+                                    <span id="office_edit_error"></span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="requestor_edit" class="form-label mb-0">Requestor</label>
+                                    <select name="requestor_id" id="requestor_id_edit" class="form-control">
+                                        @foreach($requestors as $requestor)
+                                            <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" class="form-control d-none" name="outside_requestor" id="outside_requestor_edit" placeholder="Enter Outside Requestor">
+                                    <span id="requestor_edit_error"></span>
+                                </div>
+
+                                
 
                                 <div class="mb-2">
                                     <label for="rs_passengers_edit" class="form-label mb-0">Passengers</label>
@@ -459,7 +451,7 @@
 
                                 <div class="mb-2">
                                     <label for="reason_edit" class="form-label mb-0">Reason</label>
-                                    <input type="text" class="form-control rounded-1" name="reason" id="reason_edit" readonly>
+                                    <textarea class="form-control" id="reason_edit" name="reason" rows="3"></textarea>
                                     <span id="reason_edit_error"></span>
                                 </div>
 

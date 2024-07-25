@@ -44,7 +44,7 @@ Route::get('/', [Controller::class, 'redirect']);
 // AUTH route
 Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
     Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
-    Route::put('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
+    Route::match(['put', 'patch'], '/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
     Route::post('/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
@@ -110,7 +110,7 @@ Route::get('/reservations/data', [ReservationsController::class, 'getData'])->na
 Route::get('/reservations/{id}', [ReservationsController::class, 'show'])->name('reservations.show');
 Route::post('/reservations', [ReservationsController::class, 'store'])->name('reservations.store');
 Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
-Route::put('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
+Route::match(['put', 'patch'], '/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
 Route::delete('/reservations/{id}', [ReservationsController::class, 'destroy'])->name('reservations.destroy');
 Route::post('/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
 Route::get('/event-calendar', [ReservationsController::class, 'eventCalendar'])->name('reservations.calendar');
@@ -183,7 +183,7 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
         // // Requestors
         Route::get('/requestors', [RequestorsController::class, 'index'])->name('requestor.requestors');
        // Route::post('/store-requestor', [RequestorsController::class, 'store']->name('vehicles.index'));
-        //Route::post('/edit-requestor', [RequestorsController::class, 'edit'])->name('requestor.edit');
+        //Route::post('/edit-requestor', [RequestorsController::class, 'edit'])->name('requestor.requestors');
         //Route::post('/delete-requestor', [RequestorsController::class, 'destroy']->name('requestor.index'));
     
         // Driver Section

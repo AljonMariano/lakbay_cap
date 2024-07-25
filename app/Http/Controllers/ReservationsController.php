@@ -721,11 +721,40 @@ public function update(Request $request, $id)
 
         // Update the reservation
         $reservation->fill($request->only([
-            'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
+            'rs_passengers', 'rs_travel_type',
             'rs_purpose', 'rs_approval_status', 'rs_status', 'rs_from',
             'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end',
             'reason'
         ]));
+
+        // Handle outsider data
+        if ($request->input('is_outsider') === 'true') {
+            // Create a new Office
+            $office = Offices::create([
+                'off_name' => $request->input('outside_office'),
+                'off_acr' => substr($request->input('outside_office'), 0, 5), // Generate an acronym
+                'off_head' => 'Unknown', // Set a default value for off_head
+            ]);
+            $reservation->off_id = $office->off_id;
+
+            // Create a new Requestor
+            $requestor = Requestors::create([
+                'rq_full_name' => $request->input('outside_requestor'),
+                // Add any other necessary fields for Requestor
+            ]);
+            $reservation->requestor_id = $requestor->requestor_id;
+        } else {
+            $reservation->off_id = $request->input('off_id');
+            $reservation->requestor_id = $request->input('requestor_id');
+        }
+
+        // Ensure requestor_id and off_id are not null
+        if (!$reservation->requestor_id) {
+            throw new \Exception('Requestor ID cannot be null');
+        }
+        if (!$reservation->off_id) {
+            throw new \Exception('Office ID cannot be null');
+        }
 
         // Update the associated event
         if ($request->has('event_name')) {
