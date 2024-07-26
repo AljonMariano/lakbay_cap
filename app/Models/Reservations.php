@@ -21,6 +21,11 @@ class Reservations extends Model
         'rs_time_start', 'rs_date_end', 'rs_time_end', 'reason', 'rs_purpose',
         'destination_activity', 'is_outsider', 'outside_office', 'outside_requestor'
     ];
+    protected $casts = [
+        'is_outsider' => 'boolean',
+        'requestor_id' => 'integer',
+        'off_id' => 'integer',
+    ];
     public function requestors(): BelongsTo
     {
         return $this->belongsTo(Requestors::class, 'requestor_id', 'requestor_id');

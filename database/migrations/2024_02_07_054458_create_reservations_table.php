@@ -24,6 +24,7 @@ return new class extends Migration
             $table->foreign('event_id')->references('event_id')->on('events');
             $table->foreign('requestor_id')->references('requestor_id')->on('requestors');
             $table->timestamps();
+            $table->unsignedBigInteger('requestor_id')->nullable();
         });
     }
 

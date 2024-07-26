@@ -78,7 +78,18 @@ class ReservationsController extends Controller
                     return $drivers;
                 })
                 ->addColumn('requestor', function ($reservation) {
-                    return $reservation->requestors->rq_full_name ?? 'N/A';
+                    if ($reservation->is_outsider) {
+                        return $reservation->outside_requestor ?? 'N/A';
+                    } else {
+                        return $reservation->requestors->rq_full_name ?? 'N/A';
+                    }
+                })
+                ->addColumn('office', function ($reservation) {
+                    if ($reservation->is_outsider) {
+                        return $reservation->outside_office ?? 'N/A';
+                    } else {
+                        return $reservation->office ? $reservation->office->off_name : 'N/A';
+                    }
                 })
                 ->addColumn('rs_purpose', function ($reservation) {
                     return $reservation->rs_purpose ?? 'N/A';
@@ -88,9 +99,6 @@ class ReservationsController extends Controller
                 })
                 ->addColumn('rs_status', function ($reservation) {
                     return $reservation->rs_status;
-                })
-                ->addColumn('office', function ($reservation) {
-                    return $reservation->office ? $reservation->office->off_name : 'N/A';
                 })
                 ->rawColumns(['vehicles', 'drivers', 'action'])
                 ->toJson();
@@ -303,6 +311,13 @@ class ReservationsController extends Controller
 
             $validatedData['rs_approval_status'] = 'Pending';
             $validatedData['rs_status'] = 'Pending';
+
+            // Remove null values from the array
+            $validatedData = array_filter($validatedData, function ($value) {
+                return $value !== null;
+            });
+
+            \Log::info('Validated data before creating reservation:', $validatedData);
 
             $reservation = Reservations::create($validatedData);
 

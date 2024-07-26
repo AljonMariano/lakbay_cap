@@ -71,7 +71,7 @@ $(document).ready(function() {
                 }
             },
             {data: 'drivers', name: 'drivers'},
-            {data: 'requestors.rq_full_name', name: 'requestors.rq_full_name'},
+            {data: 'requestor', name: 'requestor'},
             {data: 'office', name: 'office', orderable: false, searchable: false},
             {data: 'rs_purpose', name: 'rs_purpose'},
             {data: 'rs_passengers', name: 'rs_passengers'},
