@@ -1,5 +1,6 @@
 
 
+
 $(document).ready(function() {
     const routes = window.appRoutes || {};
 
@@ -158,34 +159,34 @@ $(document).ready(function() {
     // Call this function when the page loads
     loadDriversAndVehicles();
 
-    // Add this function to toggle fields visibility
-    function toggleOutsiderFieldsEdit(isOutsider) {
+    // Function to toggle outsider fields
+    function toggleOutsiderFields(isOutsider, prefix) {
         if (isOutsider) {
-            $('#office_edit, #requestor_edit').addClass('d-none').prop('disabled', true);
-            $('#outside_office_edit, #outside_requestor_edit').removeClass('d-none').prop('disabled', false);
+            $(`#office_requestor_fields_${prefix}`).hide();
+            $(`#outside_fields_${prefix}`).show();
+            $(`#office_${prefix}, #requestor_${prefix}`).prop('required', false);
+            $(`#outside_office_${prefix}, #outside_requestor_${prefix}`).prop('required', true);
         } else {
-            $('#office_edit, #requestor_edit').removeClass('d-none').prop('disabled', false);
-            $('#outside_office_edit, #outside_requestor_edit').addClass('d-none').prop('disabled', true);
+            $(`#office_requestor_fields_${prefix}`).show();
+            $(`#outside_fields_${prefix}`).hide();
+            $(`#office_${prefix}, #requestor_${prefix}`).prop('required', true);
+            $(`#outside_office_${prefix}, #outside_requestor_${prefix}`).prop('required', false);
         }
     }
 
     // Handle outsider toggle for edit modal
     $('#is_outsider_edit').change(function() {
-        toggleOutsiderFieldsEdit($(this).is(':checked'));
+        toggleOutsiderFields($(this).is(':checked'), 'edit');
     });
 
-    // Modify the loadReservationData function
     function loadReservationData(reservationId) {
-        // First, ensure drivers and vehicles are loaded
-        loadDriversAndVehicles();
-
         $.ajax({
             url: routes.edit.replace(':id', reservationId),
             method: 'GET',
             success: function(response) {
                 var reservation = response.reservation;
                 console.log('Reservation data:', reservation);
-                
+
                 // Populate form fields with reservation data
                 $('#edit_reservation_id').val(reservation.reservation_id);
                 $('#event_edit').val(reservation.events ? reservation.events.ev_name : '');
@@ -198,36 +199,34 @@ $(document).ready(function() {
                 $('#rs_travel_type_edit').val(reservation.rs_travel_type || '');
                 $('#rs_purpose_edit').val(reservation.rs_purpose || '');
                 $('#reason_edit').val(reservation.reason || '');
-                $('#rs_approval_status_edit').val(reservation.rs_approval_status || '');
-                $('#rs_status_edit').val(reservation.rs_status || '');
+                
 
                 // Handle outsider status
-                var isOutsider = reservation.requestor_id === null && reservation.off_id === null;
-                $('#is_outsider_edit').prop('checked', isOutsider);
-                toggleOutsiderFieldsEdit(isOutsider);
+                var isOutsider = !reservation.requestor_id && !reservation.off_id;
+                $('#is_outsider_edit').prop('checked', isOutsider).trigger('change');
 
                 if (isOutsider) {
-                    $('#outside_office_edit').val(reservation.outside_office);
-                    $('#outside_requestor_edit').val(reservation.outside_requestor);
+                    $('#outside_office_edit').val(reservation.outside_office || '');
+                    $('#outside_requestor_edit').val(reservation.outside_requestor || '');
                 } else {
-                    $('#office_edit').val(reservation.off_id);
-                    $('#requestor_edit').val(reservation.requestor_id);
+                    $('#office_edit').val(reservation.off_id || '').trigger('change');
+                    $('#requestor_edit').val(reservation.requestor_id || '').trigger('change');
                 }
 
                 // Populate drivers and vehicles
-                var driverIds = [];
-                var vehicleIds = [];
                 if (reservation.reservation_vehicles && reservation.reservation_vehicles.length > 0) {
+                    var driverIds = [];
+                    var vehicleIds = [];
                     reservation.reservation_vehicles.forEach(function(rv) {
                         if (rv.driver_id) driverIds.push(rv.driver_id);
                         if (rv.vehicle_id) vehicleIds.push(rv.vehicle_id);
                     });
+                    $('#driver_id_edit').val(driverIds).trigger('change');
+                    $('#vehicle_id_edit').val(vehicleIds).trigger('change');
                 }
-                $('#driver_id_edit').val(driverIds).trigger('change');
-                $('#vehicle_id_edit').val(vehicleIds).trigger('change');
 
-                // Ensure the reason field is editable
-                $('#reason_edit').prop('readonly', false);
+                // Update time displays
+                updateTimeDisplay();
 
                 $('#edit_reservation_modal').modal('show');
             },
@@ -795,79 +794,50 @@ $(document).ready(function() {
     submitReservationForm('#insert_reservation_form', routes.store, 'POST');
     submitReservationForm('#edit_reservation_form', routes.update.replace(':id', ''), 'PUT');
 
-    // Function to load reservation data for editing
-    function loadReservationData(reservationId) {
+    // Event handler for update reservation button
+    $(document).on('click', '#update_reservation_btn', function(e) {
+        e.preventDefault();
+        console.log('Update button clicked');
+
+        var form = $('#edit_reservation_form');
+        var formData = new FormData(form[0]);
+        var reservationId = $('#edit_reservation_id').val();
+        console.log('Reservation ID:', reservationId);
+
         $.ajax({
-            url: routes.edit.replace(':id', reservationId),
-            method: 'GET',
+            url: routes.update.replace(':id', reservationId),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: function(response) {
-                var reservation = response.reservation;
-                $('#edit_reservation_id').val(reservation.reservation_id);
-                $('#event_name_edit').val(reservation.events.ev_name);
-                $('#rs_from_edit').val(reservation.rs_from);
-                $('#rs_date_start_edit').val(reservation.rs_date_start);
-                $('#rs_time_start_edit').val(reservation.rs_time_start);
-                $('#rs_date_end_edit').val(reservation.rs_date_end);
-                $('#rs_time_end_edit').val(reservation.rs_time_end);
-                $('#rs_passengers_edit').val(reservation.rs_passengers);
-                $('#rs_travel_type_edit').val(reservation.rs_travel_type);
-                $('#rs_purpose_edit').val(reservation.rs_purpose);
-                $('#rs_approval_status_edit').val(reservation.rs_approval_status);
-                $('#rs_status_edit').val(reservation.rs_status);
-                $('#reason_edit').val(reservation.reason);
-
-                // Handle outsider status
-                var isOutsider = !reservation.requestor_id && !reservation.off_id;
-                $('#is_outsider_edit').prop('checked', isOutsider).trigger('change');
-
-                if (isOutsider) {
-                  $('#outside_office_edit').val(reservation.outside_office);
-                  $('#outside_requestor_edit').val(reservation.outside_requestor);
-                } else {
-                  $('#off_id_edit').val(reservation.off_id);
-                  $('#requestor_id_edit').val(reservation.requestor_id);
-                }
-
-                // Clear and repopulate driver and vehicle selects
-                $('#driver_id_edit').val(null).trigger('change');
-                $('#vehicle_id_edit').val(null).trigger('change');
-
-                if (reservation.reservation_vehicles && reservation.reservation_vehicles.length > 0) {
-                  var driverIds = reservation.reservation_vehicles.map(rv => rv.driver_id);
-                  var vehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id);
-                  $('#driver_id_edit').val(driverIds).trigger('change');
-                  $('#vehicle_id_edit').val(vehicleIds).trigger('change');
-                }
-
-                $('#edit_reservation_modal').modal('show');
+                console.log('Update success:', response);
+                $('#edit_reservation_modal').modal('hide');
+                table.ajax.reload();
+                showSuccessMessage('Reservation updated successfully');
             },
             error: function(xhr, status, error) {
-                console.error('Error loading reservation data:', error);
-                showErrorMessage('Error loading reservation data: ' + error);
+                console.error('Update error:', xhr.responseText);
+                var errorMessage = xhr.responseJSON ? xhr.responseJSON.message : 'An error occurred while updating the reservation';
+                showErrorMessage(errorMessage);
             }
         });
-    }
-
-    // Function to toggle outsider fields
-    function toggleOutsiderFields(isOutsider, formPrefix) {
-        if (isOutsider) {
-            $(`#${formPrefix}off_id, #${formPrefix}requestor_id`).addClass('d-none').prop('disabled', true);
-            $(`#${formPrefix}outside_office, #${formPrefix}outside_requestor`).removeClass('d-none').prop('disabled', false);
-        } else {
-            $(`#${formPrefix}off_id, #${formPrefix}requestor_id`).removeClass('d-none').prop('disabled', false);
-            $(`#${formPrefix}outside_office, #${formPrefix}outside_requestor`).addClass('d-none').prop('disabled', true);
-        }
-    }
-
-    // Handle outsider toggle for insert modal
-    $('#is_outsider').change(function() {
-        toggleOutsiderFields($(this).is(':checked'), '');
-    });
-
-    // Handle outsider toggle for edit modal
-    $('#is_outsider_edit').change(function() {
-        toggleOutsiderFields($(this).is(':checked'), 'edit_');
     });
 });
+
+
+// Make sure these functions are defined
+function showSuccessMessage(message) {
+    // Implementation of showing success message
+    console.log('Success:', message);
+}
+
+function showErrorMessage(message) {
+    // Implementation of showing error message
+    console.error('Error:', message);
+}
 
 

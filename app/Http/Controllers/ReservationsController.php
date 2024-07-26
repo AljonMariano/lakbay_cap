@@ -83,6 +83,12 @@ class ReservationsController extends Controller
                 ->addColumn('rs_purpose', function ($reservation) {
                     return $reservation->rs_purpose ?? 'N/A';
                 })
+                ->addColumn('rs_approval_status', function ($reservation) {
+                    return $reservation->rs_approval_status;
+                })
+                ->addColumn('rs_status', function ($reservation) {
+                    return $reservation->rs_status;
+                })
                 ->rawColumns(['vehicles', 'drivers', 'action'])
                 ->toJson();
 
@@ -729,7 +735,7 @@ public function update(Request $request, $id)
         // Update the reservation
         $reservation->fill($request->only([
             'rs_passengers', 'rs_travel_type',
-            'rs_purpose', 'rs_approval_status', 'rs_status', 'rs_from',
+            'rs_purpose', 'rs_from',
             'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end',
             'reason'
         ]));

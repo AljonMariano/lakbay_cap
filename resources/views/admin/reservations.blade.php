@@ -128,6 +128,14 @@
                 padding-right: 30px !important;
             }
         }
+
+        .select2-container {
+            width: 100% !important;
+        }
+        .select2-selection--multiple {
+            overflow: hidden !important;
+            height: auto !important;
+        }
     </style>
 </head>
 <body>
@@ -212,27 +220,39 @@
                                             </div>
                                         </div>
 
-                                        <div class="mb-2">
-                                            <label for="off_id" class="form-label mb-0">Office</label>
-                                            <select class="form-select" name="off_id" id="off_id">
-                                                <option value="">Select Office</option>
-                                                @foreach ($offices as $office)
-                                                <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <input type="text" class="form-control rounded-1 d-none" name="outside_office" id="outside_office" placeholder="Enter Outside Office">
-                                            <span id="office_error"></span>
+                                        <div id="office_requestor_fields">
+                                            <div class="mb-2">
+                                                <label for="off_id" class="form-label mb-0">Office</label>
+                                                <select class="form-select" name="off_id" id="off_id">
+                                                    <option value="">Select Office</option>
+                                                    @foreach ($offices as $office)
+                                                    <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <span id="office_error"></span>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <label for="requestor_id" class="form-label mb-0">Requestor</label>
+                                                <select name="requestor_id" id="requestor_id" class="form-control">
+                                                    @foreach($requestors as $requestor)
+                                                        <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <span id="requestor_id_error"></span>
+                                            </div>
                                         </div>
 
-                                        <div class="mb-2">
-                                            <label for="requestor_id" class="form-label mb-0">Requestor</label>
-                                            <select name="requestor_id" id="requestor_id" class="form-control">
-                                                @foreach($requestors as $requestor)
-                                                    <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <input type="text" class="form-control rounded-1 d-none" name="outside_requestor" id="outside_requestor" placeholder="Enter Outside Requestor">
-                                            <span id="requestor_id_error"></span>
+                                        <div id="outside_fields" style="display: none;">
+                                            <div class="mb-2">
+                                                <label for="outside_office" class="form-label mb-0">Outside Office</label>
+                                                <input type="text" class="form-control rounded-1" name="outside_office" id="outside_office" placeholder="Enter Outside Office">
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <label for="outside_requestor" class="form-label mb-0">Outside Requestor</label>
+                                                <input type="text" class="form-control rounded-1" name="outside_requestor" id="outside_requestor" placeholder="Enter Outside Requestor">
+                                            </div>
                                         </div>
 
                                         <div class="mb-2">
@@ -258,29 +278,7 @@
                                             <span id="rs_purpose_error"></span>
                                         </div>
 
-                                        <div class="mb-2">
-                                            <label for="rs_approval_status" class="form-label mb-0">Approval Status</label>
-                                            <select class="form-select" name="rs_approval_status" id="rs_approval_status">
-                                                <option value="" disabled selected>Select Approval Status</option>
-                                                <option value="Approved">Approved</option>
-                                                <option value="Rejected">Rejected</option>
-                                                <option value="Pending">Pending</option>
-                                            </select>
-                                            <span id="rs_approval_status_error"></span>
-                                        </div>
-
-                                        <div class="mb-2">
-                                            <label for="rs_status" class="form-label mb-0">Reservation Status</label>
-                                            <select class="form-select" name="rs_status" id="rs_status">
-                                                <option value="">Select Status</option>
-                                                <option value="Queued">Queued</option>
-                                                <option value="Ongoing">Ongoing</option>
-                                                <option value="Done">Done</option>
-                                                <option value="Cancelled">Cancelled</option>
-                                                <option value="Inactive">Inactive</option>
-                                            </select>
-                                            <span id="rs_status_error"></span>
-                                        </div>
+                                       
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -318,7 +316,7 @@
                             <th>Travel Type</th>
                             <th>Created At</th>
                             <th>Approval Status</th>
-                            <th>Status</th>
+                            <th>Reservation Status</th>
                             <th>Reason</th>
                             <th>Action</th>
                         </tr>
@@ -331,24 +329,23 @@
     </div>
 
     <!-------------EDIT MODAL --------------->
-    <div class="modal fade" tabindex="-1" id="edit_reservation_modal" aria-labelledby="reservationModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+    <div id="edit_reservation_modal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <form id="edit_reservation_form" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="ModalLabel">Edit Reservation</h5>
-                        <button type="button" class="btn-close" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Reservation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit_reservation_form">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" id="edit_reservation_id" name="reservation_id">
                         <div class="card rounded-0">
                             <div class="card-body">
-                                <input type="hidden" name="reservation_id" id="edit_reservation_id">
-
                                 <div class="mb-2">
-                                    <label for="event_edit" class="form-label mb-0">Destination/ Activity</label>
-                                    <input type="text" class="form-control rounded-1" name="event_name" id="event_edit" placeholder="Enter Destination/Activity" required>
+                                    <label for="event_edit" class="form-label mb-0">Event Name</label>
+                                    <input type="text" class="form-control rounded-1" name="event_name" id="event_edit" placeholder="Enter Event Name" required>
                                     <span id="event_edit_error"></span>
                                 </div>
 
@@ -361,130 +358,118 @@
                                 <div class="mb-2">
                                     <label for="rs_date_start_edit" class="form-label mb-0">Start Date</label>
                                     <input type="date" class="form-control rounded-1" name="rs_date_start" id="rs_date_start_edit" placeholder="Select Start Date" required>
-                                    <span id="rs_date_start_edit_error"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="rs_time_start_edit" class="form-label mb-0">Start Time</label>
                                     <input type="time" class="form-control rounded-1" name="rs_time_start" id="rs_time_start_edit" placeholder="Select Start Time" required>
-                                    <span id="rs_time_start_edit_error"></span>
-                                    <span id="rs_time_start_display_edit"></span>
+                                    <span id="rs_time_start_edit_display"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="rs_date_end_edit" class="form-label mb-0">End Date</label>
                                     <input type="date" class="form-control rounded-1" name="rs_date_end" id="rs_date_end_edit" placeholder="Select End Date" required>
-                                    <span id="rs_date_end_edit_error"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="rs_time_end_edit" class="form-label mb-0">End Time</label>
                                     <input type="time" class="form-control rounded-1" name="rs_time_end" id="rs_time_end_edit" placeholder="Select End Time" required>
-                                    <span id="rs_time_end_edit_error"></span>
-                                    <span id="rs_time_end_display_edit"></span>
+                                    <span id="rs_time_end_edit_display"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="driver_id_edit" class="form-label mb-0">Driver</label>
-                                    <select id="driver_id_edit" name="driver_id[]" class="form-control" multiple>
+                                    <select name="driver_id[]" id="driver_id_edit" class="form-control" multiple required>
+                                        <!-- Populate with drivers -->
                                     </select>
                                     <span id="driver_id_edit_error"></span>
                                 </div>
-                                
+
                                 <div class="mb-2">
                                     <label for="vehicle_id_edit" class="form-label mb-0">Vehicle</label>
-                                    <select id="vehicle_id_edit" name="vehicle_id[]" class="form-control" multiple>
+                                    <select name="vehicle_id[]" id="vehicle_id_edit" class="form-control" multiple required>
+                                        <!-- Populate with vehicles -->
                                     </select>
                                     <span id="vehicle_id_edit_error"></span>
                                 </div>
 
-                                <div class="mb-2">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="is_outsider_edit" name="is_outsider">
-                                        <label class="form-check-label" for="is_outsider_edit">
-                                            Outside of Provincial Capitol?
-                                        </label>
+                                <div class="mb-2 form-check">
+                                    <input type="checkbox" class="form-check-input" id="is_outsider_edit" name="is_outsider">
+                                    <label class="form-check-label" for="is_outsider_edit">Outside of Provincial Capitol?</label>
+                                </div>
+
+                                <div id="office_requestor_fields_edit">
+                                    <div class="mb-2">
+                                        <label for="office_edit" class="form-label mb-0">Office</label>
+                                        <select name="off_id" id="office_edit" class="form-control">
+                                            <option value="">Select Office</option>
+                                            @foreach ($offices as $office)
+                                                <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <span id="office_edit_error"></span>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label for="requestor_edit" class="form-label mb-0">Requestor</label>
+                                        <select name="requestor_id" id="requestor_edit" class="form-control">
+                                            <option value="">Select Requestor</option>
+                                            @foreach($requestors as $requestor)
+                                                <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <span id="requestor_edit_error"></span>
+                                    </div>
+                                </div>
+
+                                <div id="outside_fields_edit" style="display: none;">
+                                    <div class="mb-2">
+                                        <label for="outside_office_edit" class="form-label mb-0">Outside Office</label>
+                                        <input type="text" class="form-control rounded-1" name="outside_office" id="outside_office_edit" placeholder="Enter Outside Office">
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label for="outside_requestor_edit" class="form-label mb-0">Outside Requestor</label>
+                                        <input type="text" class="form-control rounded-1" name="outside_requestor" id="outside_requestor_edit" placeholder="Enter Outside Requestor">
                                     </div>
                                 </div>
 
                                 <div class="mb-2">
-                                    <label for="office_edit" class="form-label mb-0">Office</label>
-                                    <select class="form-select" name="off_id" id="office_edit">
-                                        @foreach ($offices as $office)
-                                        <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="text" class="form-control d-none" name="outside_office" id="outside_office_edit" placeholder="Enter Outside Office">
-                                    <span id="office_edit_error"></span>
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="requestor_edit" class="form-label mb-0">Requestor</label>
-                                    <select name="requestor_id" id="requestor_id_edit" class="form-control">
-                                        @foreach($requestors as $requestor)
-                                            <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="text" class="form-control d-none" name="outside_requestor" id="outside_requestor_edit" placeholder="Enter Outside Requestor">
-                                    <span id="requestor_edit_error"></span>
-                                </div>
-
-                                
-
-                                <div class="mb-2">
                                     <label for="rs_passengers_edit" class="form-label mb-0">Passengers</label>
-                                    <input type="number" class="form-control rounded-1" name="rs_passengers" id="rs_passengers_edit" required>
+                                    <input type="text" class="form-control rounded-1" name="rs_passengers" placeholder="Enter Number of Passengers" id="rs_passengers_edit" value="">
                                     <span id="rs_passengers_edit_error"></span>
                                 </div>
-
+                                
                                 <div class="mb-2">
                                     <label for="rs_travel_type_edit" class="form-label mb-0">Travel Type</label>
-                                    <input type="text" class="form-control rounded-1" name="rs_travel_type" id="rs_travel_type_edit" required>
+                                    <select class="form-select" name="rs_travel_type" id="rs_travel_type_edit">
+                                        <option value="" disabled selected>Select Travel Type</option>
+                                        <option value="Within Province Transport">Within Province Transport</option>
+                                        <option value="Outside Province Transport">Outside Province Transport</option>
+                                        <option value="Daily Transport">Daily Transport</option>
+                                    </select>
                                     <span id="rs_travel_type_edit_error"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="rs_purpose_edit" class="form-label mb-0">Purpose</label>
-                                    <input type="text" class="form-control rounded-1" name="rs_purpose" id="rs_purpose_edit" required>
+                                    <input type="text" class="form-control rounded-1" name="rs_purpose" placeholder="Enter Purpose" id="rs_purpose_edit" required>
                                     <span id="rs_purpose_edit_error"></span>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="reason_edit" class="form-label mb-0">Reason</label>
-                                    <textarea class="form-control" id="reason_edit" name="reason" rows="3"></textarea>
+                                    <textarea class="form-control rounded-1" name="reason" id="reason_edit" rows="3"></textarea>
                                     <span id="reason_edit_error"></span>
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="rs_approval_status_edit" class="form-label mb-0">Approval Status</label>
-                                    <select class="form-select" name="rs_approval_status" id="rs_approval_status_edit" required>
-                                        <option value="Pending">Pending</option>
-                                        <option value="Approved">Approved</option>
-                                        <option value="Rejected">Rejected</option>
-                                    </select>
-                                    <span id="rs_approval_status_edit_error"></span>
-                                </div>
-
-                                <div class="mb-2">
-                                    <label for="rs_status_edit" class="form-label mb-0">Reservation Status</label>
-                                    <select class="form-select" id="rs_status_edit" name="rs_status" required>
-                                        <option value="">Select Status</option>
-                                        <option value="Queued">Queued</option>
-                                        <option value="Ongoing">Ongoing</option>
-                                        <option value="Done">Done</option>
-                                        <option value="Cancelled">Cancelled</option>
-                                        <option value="Inactive">Inactive</option>
-                                    </select>
-                                    <span id="rs_status_edit_error"></span>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" name="submit" value="update" class="btn btn-primary">Update</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="update_reservation_btn">Update Reservation</button>
+                </div>
             </div>
         </div>
     </div>
