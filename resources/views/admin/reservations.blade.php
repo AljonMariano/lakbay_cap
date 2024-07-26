@@ -162,9 +162,8 @@
                                         <input type="hidden" name="reservation_id" id="edit_reservation_id" value="">
 
                                         <div class="mb-2">
-                                            <label for="event_name" class="form-label mb-0">Destination/ Activity</label>
-                                            <input type="text" class="form-control rounded-1" name="event_name" id="event_name" placeholder="Enter Destination/Activity" required>
-                                            <span id="event_name_error"></span>
+                                            <label for="destination_activity" class="form-label mb-0">Destination/Activity</label>
+                                            <input type="text" class="form-control rounded-1" id="destination_activity" name="destination_activity" placeholder="Enter Destination/Activity" required>
                                         </div>
 
                                         <div class="mb-2">
@@ -209,24 +208,22 @@
                                             <span id="vehicle_id_error"></span>
                                         </div>
 
-                                        
-
                                         <div class="mb-2">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="is_outsider" name="is_outsider">
-                                                <label class="form-check-label" for="is_outsider">
+                                                <input class="form-check-input" type="checkbox" id="outside_provincial_capitol" name="is_outsider">
+                                                <label class="form-check-label" for="outside_provincial_capitol">
                                                     Outside of Provincial Capitol?
                                                 </label>
                                             </div>
                                         </div>
 
-                                        <div id="office_requestor_fields">
+                                        <div id="inside_fields">
                                             <div class="mb-2">
-                                                <label for="off_id" class="form-label mb-0">Office</label>
-                                                <select class="form-select" name="off_id" id="off_id">
-                                                    <option value="">Select Office</option>
+                                                <label for="office_id" class="form-label mb-0">Office</label>
+                                                <select name="off_id" id="office" class="form-control rounded-1">
+                                                    <option value="" disabled selected>Select Office</option>
                                                     @foreach ($offices as $office)
-                                                    <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                                        <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
                                                     @endforeach
                                                 </select>
                                                 <span id="office_error"></span>
@@ -234,7 +231,8 @@
 
                                             <div class="mb-2">
                                                 <label for="requestor_id" class="form-label mb-0">Requestor</label>
-                                                <select name="requestor_id" id="requestor_id" class="form-control">
+                                                <select name="requestor_id" id="requestor_id" class="form-control rounded-1" required>
+                                                    <option value="" disabled selected>Select Requestor</option>
                                                     @foreach($requestors as $requestor)
                                                         <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
                                                     @endforeach
@@ -277,8 +275,6 @@
                                             <input type="text" class="form-control rounded-1" name="rs_purpose" placeholder="Enter Purpose" id="rs_purpose" required>
                                             <span id="rs_purpose_error"></span>
                                         </div>
-
-                                       
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -344,9 +340,8 @@
                         <div class="card rounded-0">
                             <div class="card-body">
                                 <div class="mb-2">
-                                    <label for="event_edit" class="form-label mb-0">Event Name</label>
-                                    <input type="text" class="form-control rounded-1" name="event_name" id="event_edit" placeholder="Enter Event Name" required>
-                                    <span id="event_edit_error"></span>
+                                    <label for="destination_activity_edit" class="form-label mb-0">Destination/Activity</label>
+                                    <input type="text" class="form-control rounded-1" id="destination_activity_edit" name="destination_activity" required>
                                 </div>
 
                                 <div class="mb-2">
@@ -393,9 +388,13 @@
                                     <span id="vehicle_id_edit_error"></span>
                                 </div>
 
-                                <div class="mb-2 form-check">
-                                    <input type="checkbox" class="form-check-input" id="is_outsider_edit" name="is_outsider">
-                                    <label class="form-check-label" for="is_outsider_edit">Outside of Provincial Capitol?</label>
+                                <div class="mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_outsider_edit" name="is_outsider">
+                                        <label class="form-check-label" for="is_outsider_edit">
+                                            Outside of Provincial Capitol?
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div id="office_requestor_fields_edit">

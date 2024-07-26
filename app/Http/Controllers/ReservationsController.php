@@ -38,7 +38,7 @@ class ReservationsController extends Controller
     public function getData()
     {
         try {
-            $reservations = Reservations::with(['events', 'requestors', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'office'])
+            $reservations = Reservations::with(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers'])
                 ->select('reservations.*')
                 ->get();
 
@@ -89,6 +89,9 @@ class ReservationsController extends Controller
                 ->addColumn('rs_status', function ($reservation) {
                     return $reservation->rs_status;
                 })
+                ->addColumn('office', function ($reservation) {
+                    return $reservation->office ? $reservation->office->off_name : 'N/A';
+                })
                 ->rawColumns(['vehicles', 'drivers', 'action'])
                 ->toJson();
 
@@ -109,7 +112,7 @@ class ReservationsController extends Controller
 
             if ($request->ajax()) {
                 \Log::info("Processing AJAX request");
-                $reservations = Reservations::with(['events', 'requestors', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'office'])
+                $reservations = Reservations::with(['requestors', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'office'])
                     ->select('reservations.*');
 
                 return DataTables::of($reservations)
@@ -268,38 +271,40 @@ class ReservationsController extends Controller
 
     public function store(Request $request)
     {
-        DB::beginTransaction();
         try {
-            $data = $request->all();
-            
-            if ($request->has('is_outsider') && $request->is_outsider == 'on') {
-                // If it's an outsider, create a new Office
-                $office = Offices::create([
-                    'off_name' => $request->outside_office,
-                    'off_acr' => substr($request->outside_office, 0, 5), // Generate an acronym
-                    'off_head' => 'Unknown', // Set a default value for off_head
-                ]);
-                $data['off_id'] = $office->off_id;
+            DB::beginTransaction();
 
-                // Create a new Requestor
-                $requestor = Requestors::create([
-                    'rq_full_name' => $request->outside_requestor,
-                    // Add any other necessary fields for Requestor
-                ]);
-                $data['requestor_id'] = $requestor->requestor_id;
+            $validatedData = $request->validate([
+                'rs_from' => 'required',
+                'rs_date_start' => 'required|date',
+                'rs_time_start' => 'required',
+                'rs_date_end' => 'required|date',
+                'rs_time_end' => 'required',
+                'rs_passengers' => 'required|integer',
+                'rs_travel_type' => 'required',
+                'rs_purpose' => 'required',
+                'destination_activity' => 'required|string|max:255',
+                'is_outsider' => 'required|boolean',
+                'outside_office' => 'required_if:is_outsider,1',
+                'outside_requestor' => 'required_if:is_outsider,1',
+                'off_id' => 'required_if:is_outsider,0',
+                'requestor_id' => 'required_if:is_outsider,0',
+            ]);
+
+            $validatedData['is_outsider'] = filter_var($request->input('is_outsider'), FILTER_VALIDATE_BOOLEAN);
+
+            if ($validatedData['is_outsider']) {
+                $validatedData['off_id'] = null;
+                $validatedData['requestor_id'] = null;
+            } else {
+                $validatedData['outside_office'] = null;
+                $validatedData['outside_requestor'] = null;
             }
 
-            // Create the event
-            $event = Events::create(['ev_name' => $data['event_name']]);
-            $data['event_id'] = $event->event_id;
+            $validatedData['rs_approval_status'] = 'Pending';
+            $validatedData['rs_status'] = 'Pending';
 
-            // Remove these fields as they're not in the reservations table
-            unset($data['is_outsider']);
-            unset($data['outside_requestor']);
-            unset($data['outside_office']);
-            unset($data['event_name']);
-
-            $reservation = Reservations::create($data);
+            $reservation = Reservations::create($validatedData);
 
             // Handle drivers and vehicles
             if ($request->has('driver_id') && $request->has('vehicle_id')) {
@@ -316,7 +321,8 @@ class ReservationsController extends Controller
             }
 
             DB::commit();
-            return response()->json(['success' => 'Reservation created successfully']);
+
+            return response()->json(['success' => 'Reservation created successfully', 'reservation' => $reservation]);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error creating reservation: ' . $e->getMessage());
@@ -330,7 +336,7 @@ class ReservationsController extends Controller
 public function edit($id)
 {
     try {
-        $reservation = Reservations::with(['events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'])
+        $reservation = Reservations::with(['requestors', 'office', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles'])
             ->findOrFail($id);
         
         \Log::info('Reservation data:', $reservation->toArray());
@@ -391,7 +397,7 @@ private function updateStatus($id, $approvalStatus, $reservationStatus, $reason 
 
         return response()->json([
             'success' => 'Reservation status updated successfully',
-            'reservation' => $reservation->load('events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'),
+            'reservation' => $reservation->load('reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'),
         ]);
     } catch (\Exception $e) {
         DB::rollBack();
@@ -698,7 +704,7 @@ public function getVehicles(Request $request)
         ->map(function ($vehicle) use ($unavailableVehicleIds) {
             return [
                 'id' => $vehicle->vehicle_id,
-                'name' => $vehicle->vh_brand . ' (' . $vehicle->vh_type . ') - ' . $vehicle->vh_plate,
+                'name' => $vehicle->vh_brand . ' (' . $vehicle->vh_plate . ') - ' . $vehicle->vh_type,
                 'reserved' => in_array($vehicle->vehicle_id, $unavailableVehicleIds)
             ];
         });

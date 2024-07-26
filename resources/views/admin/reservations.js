@@ -1,6 +1,3 @@
-
-
-
 $(document).ready(function() {
     const routes = window.appRoutes || {};
 
@@ -49,7 +46,7 @@ $(document).ready(function() {
         },
         columns: [
             {data: 'reservation_id', name: 'reservation_id'},
-            {data: 'events.ev_name', name: 'events.ev_name'},
+            {data: 'destination_activity', name: 'destination_activity'},
             {data: 'rs_from', name: 'rs_from'},
             {data: 'rs_date_start', name: 'rs_date_start'},
             {data: 'rs_time_start', name: 'rs_time_start',
@@ -75,7 +72,7 @@ $(document).ready(function() {
             },
             {data: 'drivers', name: 'drivers'},
             {data: 'requestors.rq_full_name', name: 'requestors.rq_full_name'},
-            {data: 'office.off_name', name: 'office.off_name'},
+            {data: 'office', name: 'office', orderable: false, searchable: false},
             {data: 'rs_purpose', name: 'rs_purpose'},
             {data: 'rs_passengers', name: 'rs_passengers'},
             {data: 'rs_travel_type', name: 'rs_travel_type'},
@@ -189,7 +186,7 @@ $(document).ready(function() {
 
                 // Populate form fields with reservation data
                 $('#edit_reservation_id').val(reservation.reservation_id);
-                $('#event_edit').val(reservation.events ? reservation.events.ev_name : '');
+                $('#destination_activity_edit').val(reservation.destination_activity || '');
                 $('#rs_from_edit').val(reservation.rs_from || '');
                 $('#rs_date_start_edit').val(reservation.rs_date_start || '');
                 $('#rs_time_start_edit').val(reservation.rs_time_start || '');
@@ -389,41 +386,43 @@ $(document).ready(function() {
     });
 
     // Handle form submission
-    $('#reservations-form').on('submit', function(e) {
+    $('#reservations-form').submit(function(e) {
         e.preventDefault(); // Prevent default form submission
 
-        var formData = $(this).serialize(); // Serialize form data
+        var formData = new FormData(this);
+
+        // Set is_outsider based on checkbox
+        formData.set('is_outsider', $('#outside_provincial_capitol').is(':checked') ? '1' : '0');
+
+        if ($('#outside_provincial_capitol').is(':checked')) {
+            formData.delete('off_id');
+            formData.delete('requestor_id');
+        } else {
+            formData.delete('outside_office');
+            formData.delete('outside_requestor');
+        }
 
         $.ajax({
-            url: routes.store,
-            method: 'POST',
+            url: $(this).attr('action'),
+            type: 'POST',
             data: formData,
+            processData: false,
+            contentType: false,
             success: function(response) {
-                console.log('Response:', response);
-                if(response.success === "Reservation created successfully") {
-                    // Hide the modal
-                    $('#insertModal').modal('hide');
-
-                    // Reload the DataTable
-                    table.ajax.reload(null, false);
-
-                    // Show success message
-                    showSuccessMessage(response.success);
-
-                    // Clear the form
-                    clearReservationForm();
-                } else {
-                    console.error('Unexpected response structure:', response);
-                    showErrorMessage('Error: Unexpected response from server');
-                }
+                console.log('Reservation created successfully:', response);
+                // Refresh the DataTable
+                table.ajax.reload();
+                // Hide the modal
+                $('#insertModal').modal('hide');
+                // Show success message
+                showSuccessMessage(response.success);
+                // Clear the form
+                clearReservationForm();
             },
             error: function(xhr, status, error) {
                 console.error('Error creating reservation:', xhr.responseText);
-                var errorMessage = 'Error creating reservation';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage += ': ' + xhr.responseJSON.error;
-                }
-                showErrorMessage(errorMessage);
+                // Display error message to user
+                showErrorMessage('Error creating reservation: ' + (xhr.responseJSON ? xhr.responseJSON.error : error));
             }
         });
     });
@@ -435,52 +434,25 @@ $(document).ready(function() {
     });
 
     // Handle form submission for updating reservation
-    $('#edit_reservation_form').on('submit', function(e) {
+    $('#edit_reservation_form').submit(function(e) {
         e.preventDefault();
         var formData = new FormData(this);
         var reservationId = $('#edit_reservation_id').val();
 
-        // Handle outsider data
+        // Set is_outsider based on checkbox
+        formData.set('is_outsider', $('#is_outsider_edit').is(':checked') ? '1' : '0');
+
         if ($('#is_outsider_edit').is(':checked')) {
-            formData.append('is_outsider', 'true');
-            formData.append('outside_office', $('#outside_office_edit').val());
-            formData.append('outside_requestor', $('#outside_requestor_edit').val());
             formData.delete('off_id');
             formData.delete('requestor_id');
         } else {
-            formData.append('is_outsider', 'false');
-            var offId = $('#off_id_edit').val();
-            var requestorId = $('#requestor_id_edit').val();
-            
-            if (offId) formData.append('off_id', offId);
-            if (requestorId) formData.append('requestor_id', requestorId);
-            
             formData.delete('outside_office');
             formData.delete('outside_requestor');
         }
 
-        // Add multi-select values manually
-        var driverIds = $('#driver_id_edit').val();
-        var vehicleIds = $('#vehicle_id_edit').val();
-        
-        if (driverIds) {
-            driverIds.forEach(function(id) {
-                formData.append('driver_id[]', id);
-            });
-        }
-        
-        if (vehicleIds) {
-            vehicleIds.forEach(function(id) {
-                formData.append('vehicle_id[]', id);
-            });
-        }
-
-        // Add _method field to simulate PUT request
-        formData.append('_method', 'PUT');
-
         $.ajax({
-            url: '/admin/reservations/' + reservationId,
-            method: 'POST',
+            url: routes.update.replace(':id', reservationId),
+            type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
@@ -488,22 +460,14 @@ $(document).ready(function() {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
-                if (response.success) {
-                    $('#edit_reservation_modal').modal('hide');
-                    table.ajax.reload(null, false);
-                    showSuccessMessage(response.success);
-                } else {
-                    showErrorMessage(response.error || 'Error updating reservation');
-                }
+                console.log('Update success:', response);
+                $('#edit_reservation_modal').modal('hide');
+                table.ajax.reload();
+                showSuccessMessage('Reservation updated successfully');
             },
             error: function(xhr, status, error) {
-                console.error('Error updating reservation:', xhr.responseText);
-                var errorMessage = 'Error updating reservation';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage += ': ' + xhr.responseJSON.error;
-                } else if (error) {
-                    errorMessage += ': ' + error;
-                }
+                console.error('Update error:', xhr.responseText);
+                var errorMessage = xhr.responseJSON ? xhr.responseJSON.error : 'An error occurred while updating the reservation';
                 showErrorMessage(errorMessage);
             }
         });
@@ -721,110 +685,32 @@ $(document).ready(function() {
         showRejectionModal(reservationId);
     });
 
-    function submitReservationForm(formId, url, method) {
-        $(formId).on('submit', function(e) {
-            e.preventDefault();
-            var formData = new FormData(this);
+    // Function to toggle fields based on checkbox state
+    function toggleOutsideFields(form) {
+        var isOutside = form.find('[name="is_outsider"]').is(':checked');
+        form.find('#inside_fields, #office_requestor_fields_edit').toggle(!isOutside);
+        form.find('#outside_fields, #outside_fields_edit').toggle(isOutside);
 
-            // Handle outsider data
-            if ($(formId + ' #is_outsider').is(':checked')) {
-                formData.append('outside_office', $(formId + ' #outside_office').val());
-                formData.append('outside_requestor', $(formId + ' #outside_requestor').val());
-                formData.delete('off_id');
-                formData.delete('requestor_id');
-            } else {
-                formData.append('off_id', $(formId + ' #office').val());
-                formData.append('requestor_id', $(formId + ' #requestor').val());
-                formData.delete('outside_office');
-                formData.delete('outside_requestor');
-            }
+        // Enable/disable fields based on visibility
+        form.find('#inside_fields select, #office_requestor_fields_edit select').prop('disabled', isOutside);
+        form.find('#outside_fields input, #outside_fields_edit input').prop('disabled', !isOutside);
 
-            // Add multi-select values manually
-            var driverIds = $(formId + ' [name="driver_id[]"]').val();
-            var vehicleIds = $(formId + ' [name="vehicle_id[]"]').val();
-            
-            if (driverIds) {
-                formData.delete('driver_id[]');
-                driverIds.forEach(function(id) {
-                    formData.append('driver_id[]', id);
-                });
-            }
-            
-            if (vehicleIds) {
-                formData.delete('vehicle_id[]');
-                vehicleIds.forEach(function(id) {
-                    formData.append('vehicle_id[]', id);
-                });
-            }
-
-            // If it's an edit form, add the _method field
-            if (method === 'PUT') {
-                formData.append('_method', 'PUT');
-            }
-
-            $.ajax({
-                url: url,
-                method: 'POST', // Always use POST for FormData
-                data: formData,
-                processData: false,
-                contentType: false,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    if (response.success) {
-                        showSuccessMessage(response.success);
-                        $(formId).trigger('reset');
-                        $('#reservations-table').DataTable().ajax.reload();
-                        $('.modal').modal('hide');
-                    } else {
-                        console.error('Unexpected response structure:', response);
-                        showErrorMessage('Unexpected response from server');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error submitting form:', xhr.responseText);
-                    showErrorMessage('Error submitting form: ' + (xhr.responseJSON ? xhr.responseJSON.error : error));
-                }
-            });
-        });
+        // Clear values when toggling
+        if (isOutside) {
+            form.find('#inside_fields select, #office_requestor_fields_edit select').val('');
+        } else {
+            form.find('#outside_fields input, #outside_fields_edit input').val('');
+        }
     }
 
-    // Call this function for both insert and edit forms
-    submitReservationForm('#insert_reservation_form', routes.store, 'POST');
-    submitReservationForm('#edit_reservation_form', routes.update.replace(':id', ''), 'PUT');
+    // Call this function for both forms
+    $('#reservations-form, #edit_reservation_form').each(function() {
+        toggleOutsideFields($(this));
+    });
 
-    // Event handler for update reservation button
-    $(document).on('click', '#update_reservation_btn', function(e) {
-        e.preventDefault();
-        console.log('Update button clicked');
-
-        var form = $('#edit_reservation_form');
-        var formData = new FormData(form[0]);
-        var reservationId = $('#edit_reservation_id').val();
-        console.log('Reservation ID:', reservationId);
-
-        $.ajax({
-            url: routes.update.replace(':id', reservationId),
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                console.log('Update success:', response);
-                $('#edit_reservation_modal').modal('hide');
-                table.ajax.reload();
-                showSuccessMessage('Reservation updated successfully');
-            },
-            error: function(xhr, status, error) {
-                console.error('Update error:', xhr.responseText);
-                var errorMessage = xhr.responseJSON ? xhr.responseJSON.message : 'An error occurred while updating the reservation';
-                showErrorMessage(errorMessage);
-            }
-        });
+    // Toggle fields when checkbox is clicked
+    $('#reservations-form [name="is_outsider"], #edit_reservation_form [name="is_outsider"]').on('change', function() {
+        toggleOutsideFields($(this).closest('form'));
     });
 });
 
@@ -834,6 +720,7 @@ function showSuccessMessage(message) {
     // Implementation of showing success message
     console.log('Success:', message);
 }
+
 
 function showErrorMessage(message) {
     // Implementation of showing error message

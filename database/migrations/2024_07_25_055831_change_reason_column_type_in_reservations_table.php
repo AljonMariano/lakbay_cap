@@ -24,6 +24,14 @@ class ChangeReasonColumnTypeInReservationsTable extends Migration
                 $table->text('reason')->nullable();
             });
         }
+
+        // Add the requestor_id column if it doesn't exist
+        Schema::table('reservations', function (Blueprint $table) {
+            if (!Schema::hasColumn('reservations', 'requestor_id')) {
+                $table->unsignedBigInteger('requestor_id')->after('event_id');
+                $table->foreign('requestor_id')->references('requestor_id')->on('requestors');
+            }
+        });
     }
 
     public function down()

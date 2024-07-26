@@ -16,15 +16,11 @@ class Reservations extends Model
     protected $table = 'reservations';
     protected $primaryKey = 'reservation_id';
     protected $fillable=[
-        'event_id', 'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
-        'rs_voucher', 'rs_approval_status', 'rs_status', 'rs_from', 'rs_date_start',
+        'rs_from', 'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
+        'rs_voucher', 'rs_approval_status', 'rs_status', 'rs_date_start',
         'rs_time_start', 'rs_date_end', 'rs_time_end', 'reason', 'rs_purpose',
-        
+        'destination_activity', 'is_outsider', 'outside_office', 'outside_requestor'
     ];
-    public function events(): BelongsTo
-    {
-        return $this->belongsTo(Events::class, 'event_id', 'event_id');
-    }
     public function requestors(): BelongsTo
     {
         return $this->belongsTo(Requestors::class, 'requestor_id', 'requestor_id');
