@@ -336,37 +336,64 @@ public function edit($id)
     }
 }
 
-    public function delete($reservation_id)
-{
-    try {
-        // Delete related records in reservation_vehicles
-        ReservationVehicle::where('reservation_id', $reservation_id)->delete();
-
-        // Delete the reservation
-        $reservation = Reservations::findOrFail($reservation_id);
-        $reservation->delete();
-
-        return response()->json(['success' => 'Reservation deleted successfully.']);
-    } catch (\Exception $e) {
-        \Log::error('Error deleting reservation: ' . $e->getMessage());
-        return response()->json(['error' => 'Failed to delete reservation'], 500);
+    public function destroy($id)
+    {
+        try {
+            $reservation = Reservations::findOrFail($id);
+            $reservation->delete();
+            return response()->json(['success' => 'Reservation deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error deleting reservation: ' . $e->getMessage()], 500);
+        }
     }
+
+public function approve($id)
+{
+    return $this->updateStatus($id, 'Approved', 'Ongoing');
 }
-    public function cancel($id)
+
+public function reject(Request $request, $id)
+{
+    return $this->updateStatus($id, 'Rejected', 'Rejected', $request->input('reason'));
+}
+
+public function cancel(Request $request, $id)
+{
+    return $this->updateStatus($id, 'Cancelled', 'Cancelled', $request->input('reason'));
+}
+
+private function updateStatus($id, $approvalStatus, $reservationStatus, $reason = null)
 {
     try {
+        DB::beginTransaction();
+
         $reservation = Reservations::findOrFail($id);
-        $reservation->rs_approval_status = 'Cancelled';
-        $reservation->rs_status = 'Cancelled';
+        $reservation->rs_approval_status = $approvalStatus;
+        $reservation->rs_status = $reservationStatus;
+
+        if ($reason) {
+            $reservation->reason = $reason;
+        }
+
         $reservation->save();
 
-        // Free up the reserved driver and vehicle
-        $reservation->reservation_vehicles()->update(['driver_id' => null, 'vehicle_id' => null]);
+        if ($reservationStatus === 'Cancelled' || $reservationStatus === 'Rejected') {
+            $reservation->reservation_vehicles()->delete();
+        }
 
-        return response()->json(['success' => 'Reservation successfully cancelled']);
+        DB::commit();
+
+        return response()->json([
+            'success' => 'Reservation status updated successfully',
+            'reservation' => $reservation->load('events', 'reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'),
+        ]);
     } catch (\Exception $e) {
-        \Log::error('Error cancelling reservation: ' . $e->getMessage());
-        return response()->json(['error' => 'Failed to cancel reservation'], 500);
+        DB::rollBack();
+        \Log::error('Error updating reservation status', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return response()->json(['error' => 'Error updating reservation status: ' . $e->getMessage()], 500);
     }
 }
 
@@ -684,26 +711,6 @@ public function markAsDone($id)
     } catch (\Exception $e) {
         return response()->json(['error' => 'Error marking reservation as done: ' . $e->getMessage()], 500);
     }
-}
-
-public function approve($id)
-{
-    return $this->updateStatus($id, 'Approved', 'Ongoing');
-}
-
-public function reject($id)
-{
-    return $this->updateStatus($id, 'Rejected', 'Rejected');
-}
-
-private function updateStatus($id, $approvalStatus, $reservationStatus)
-{
-    $reservation = Reservations::findOrFail($id);
-    $reservation->rs_approval_status = $approvalStatus;
-    $reservation->rs_status = $reservationStatus;
-    $reservation->save();
-
-    return response()->json(['success' => 'Reservation status updated successfully']);
 }
 
 

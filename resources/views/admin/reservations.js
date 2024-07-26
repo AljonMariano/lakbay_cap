@@ -1,6 +1,8 @@
 
 
 $(document).ready(function() {
+    const routes = window.appRoutes || {};
+
     function initializeSelect2(selector) {
         $(selector).select2({
             theme: 'bootstrap-5',
@@ -81,19 +83,19 @@ $(document).ready(function() {
             {data: 'rs_status', name: 'rs_status'},
             {data: 'reason', name: 'reason'},
             {
-                data: null,
+                data: 'action',
                 name: 'action',
                 orderable: false,
                 searchable: false,
                 render: function(data, type, full, meta) {
-                    var editBtn = '<button type="button" class="btn btn-sm btn-primary edit-btn" data-id="' + full.reservation_id + '">Edit</button>';
-                    var approveBtn = '<button type="button" class="btn btn-sm btn-success approve-btn" data-id="' + full.reservation_id + '">Approve</button>';
-                    var cancelBtn = '<button type="button" class="btn btn-sm btn-warning cancel-btn" data-id="' + full.reservation_id + '">Cancel</button>';
-                    var rejectBtn = '<button type="button" class="btn btn-sm btn-danger reject-btn" data-id="' + full.reservation_id + '">Reject</button>';
-                    var doneBtn = '<button type="button" class="btn btn-sm btn-info done-btn" data-id="' + full.reservation_id + '">Done</button>';
-                    var deleteBtn = '<button type="button" class="btn btn-sm btn-danger delete-btn" data-id="' + full.reservation_id + '">Delete</button>';
-                    
-                    return editBtn + ' ' + approveBtn + ' ' + cancelBtn + ' ' + rejectBtn + ' ' + doneBtn + ' ' + deleteBtn;
+                    return `
+                        <button type="button" class="btn btn-sm btn-primary edit-btn" data-id="${full.reservation_id}">Edit</button>
+                        <button type="button" class="btn btn-sm btn-success approve-btn" data-id="${full.reservation_id}">Approve</button>
+                        <button type="button" class="btn btn-sm btn-warning cancel-btn" data-id="${full.reservation_id}">Cancel</button>
+                        <button type="button" class="btn btn-sm btn-danger reject-btn" data-id="${full.reservation_id}">Reject</button>
+                        <button type="button" class="btn btn-sm btn-info done-btn" data-id="${full.reservation_id}">Done</button>
+                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${full.reservation_id}">Delete</button>
+                    `;
                 }
             }
         ],
@@ -109,11 +111,19 @@ $(document).ready(function() {
 
     // Function to load drivers and vehicles
     function loadDriversAndVehicles() {
+        if (!routes.getDrivers || !routes.getVehicles) {
+            console.error('Routes are not properly defined');
+            return;
+        }
+
         $.ajax({
             url: routes.getDrivers,
             method: 'GET',
             success: function(response) {
                 updateDriverSelect(response.drivers);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching drivers:', error);
             }
         });
 
@@ -122,6 +132,9 @@ $(document).ready(function() {
             method: 'GET',
             success: function(response) {
                 updateVehicleSelect(response.vehicles);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching vehicles:', error);
             }
         });
     }
@@ -230,7 +243,7 @@ $(document).ready(function() {
         $('#cancellationForm').off('submit').on('submit', function(e) {
             e.preventDefault();
             var reason = $('#cancellationReason').val();
-            updateReservationStatus(reservationId, 'Cancelled', reason);
+            updateReservationStatus(reservationId, 'cancel', reason);
         });
     }
 
@@ -239,19 +252,22 @@ $(document).ready(function() {
         $('#rejectionForm').off('submit').on('submit', function(e) {
             e.preventDefault();
             var reason = $('#rejectionReason').val();
-            updateReservationStatus(reservationId, 'Rejected', reason);
+            updateReservationStatus(reservationId, 'reject', reason);
         });
     }
 
-    function updateReservationStatus(reservationId, status, reason) {
+    function updateReservationStatus(reservationId, action, reason = '') {
+        if (!routes || !routes[action]) {
+            console.error(`${action} route is not properly defined`);
+            return;
+        }
+
         $.ajax({
-            url: routes.update.replace(':id', reservationId),
-            method: 'PUT',
+            url: routes[action].replace(':id', reservationId),
+            method: 'POST',
             data: {
-                rs_approval_status: status,
-                rs_status: status,
-                reason: reason,
-                _token: $('meta[name="csrf-token"]').attr('content')
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                reason: reason
             },
             success: function(response) {
                 if (response.success) {
@@ -265,7 +281,7 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error('Error updating reservation:', xhr.responseText);
-                showErrorMessage('Error updating reservation: ' + error);
+                showErrorMessage('Error updating reservation: ' + (xhr.responseJSON ? xhr.responseJSON.error : error));
             }
         });
     }
@@ -278,7 +294,27 @@ $(document).ready(function() {
 
     $(document).on('click', '.approve-btn', function() {
         var reservationId = $(this).data('id');
-        updateReservationStatus(reservationId, 'Approved', 'Processing');
+        $('#confirmModal').modal('show');
+        $('#confirm_message').text('Are you sure you want to approve this reservation?');
+        $('#ok_button').off('click').on('click', function() {
+            $.ajax({
+                url: routes.approve.replace(':id', reservationId),
+                method: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    $('#confirmModal').modal('hide');
+                    table.ajax.reload(null, false);
+                    showSuccessMessage('Reservation approved successfully');
+                },
+                error: function(xhr, status, error) {
+                    $('#confirmModal').modal('hide');
+                    console.error('Error approving reservation:', xhr.responseText);
+                    showErrorMessage('Error approving reservation');
+                }
+            });
+        });
     });
 
     $(document).on('click', '.cancel-btn', function() {
@@ -322,14 +358,18 @@ $(document).ready(function() {
         $('#confirm_message').text('Are you sure you want to delete this reservation?');
         $('#ok_button').off('click').on('click', function() {
             $.ajax({
-                url: `/delete-reservation/${reservationId}`,
-                method: 'GET',
+                url: routes.destroy.replace(':id', reservationId),
+                method: 'DELETE',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
                 success: function(response) {
                     $('#confirmModal').modal('hide');
                     table.ajax.reload(null, false);
                     showSuccessMessage('Reservation deleted successfully');
                 },
                 error: function(xhr, status, error) {
+                    $('#confirmModal').modal('hide');
                     console.error('Error deleting reservation:', xhr.responseText);
                     showErrorMessage('Error deleting reservation');
                 }
@@ -669,7 +709,7 @@ $(document).ready(function() {
     // Handle new action buttons
     $(document).on('click', '.approve', function() {
         var reservationId = $(this).data('id');
-        updateReservationStatus(reservationId, 'Approved', 'Processing');
+        approveReservation(reservationId);
     });
 
     $(document).on('click', '.cancel', function() {
@@ -781,11 +821,11 @@ $(document).ready(function() {
                 $('#is_outsider_edit').prop('checked', isOutsider).trigger('change');
 
                 if (isOutsider) {
-                    $('#outside_office_edit').val(reservation.outside_office);
-                    $('#outside_requestor_edit').val(reservation.outside_requestor);
+                  $('#outside_office_edit').val(reservation.outside_office);
+                  $('#outside_requestor_edit').val(reservation.outside_requestor);
                 } else {
-                    $('#off_id_edit').val(reservation.off_id);
-                    $('#requestor_id_edit').val(reservation.requestor_id);
+                  $('#off_id_edit').val(reservation.off_id);
+                  $('#requestor_id_edit').val(reservation.requestor_id);
                 }
 
                 // Clear and repopulate driver and vehicle selects
@@ -793,10 +833,10 @@ $(document).ready(function() {
                 $('#vehicle_id_edit').val(null).trigger('change');
 
                 if (reservation.reservation_vehicles && reservation.reservation_vehicles.length > 0) {
-                    var driverIds = reservation.reservation_vehicles.map(rv => rv.driver_id);
-                    var vehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id);
-                    $('#driver_id_edit').val(driverIds).trigger('change');
-                    $('#vehicle_id_edit').val(vehicleIds).trigger('change');
+                  var driverIds = reservation.reservation_vehicles.map(rv => rv.driver_id);
+                  var vehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id);
+                  $('#driver_id_edit').val(driverIds).trigger('change');
+                  $('#vehicle_id_edit').val(vehicleIds).trigger('change');
                 }
 
                 $('#edit_reservation_modal').modal('show');

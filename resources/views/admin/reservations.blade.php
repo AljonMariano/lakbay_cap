@@ -559,13 +559,17 @@
         var reservationsDataUrl = "{{ route('reservations.data') }}";
     </script>
     <script>
-        var routes = {
-            edit: "{{ route('reservations.edit', ':id') }}",
-            update: "{{ route('reservations.update', ':id') }}",
-            done: "{{ route('reservations.done', ':id') }}",
+        window.appRoutes = {
             getDrivers: "{{ route('get.drivers') }}",
             getVehicles: "{{ route('get.vehicles') }}",
-            store: "{{ route('reservations.store') }}"
+            approve: "{{ route('reservations.approve', ':id') }}",
+            reject: "{{ route('reservations.reject', ':id') }}",
+            cancel: "{{ route('reservations.cancel', ':id') }}",
+            store: "{{ route('reservations.store') }}",
+            update: "{{ route('reservations.update', ':id') }}",
+            edit: "{{ route('reservations.edit', ':id') }}",
+            done: "{{ route('reservations.done', ':id') }}",
+            destroy: "{{ route('reservations.destroy', ':id') }}"
         };
     </script>
     <script src="{{ asset('js/admin/reservations.js') }}"></script>
