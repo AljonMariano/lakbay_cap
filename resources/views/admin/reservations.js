@@ -84,7 +84,18 @@ $(document).ready(function() {
         responsive: true,
         autoWidth: false,
         scrollX: true,
-        fixedHeader: true
+        fixedHeader: true,
+        "bInfo" : true,
+        "bLengthChange": true,
+        "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        "bFilter": true,
+        "bSort": true,
+        "aaSorting": [],
+        "pageLength": 10,
+        "bJQueryUI": true,
+        "sPaginationType": "full_numbers",
+        "bAutoWidth": false,
+        "sDom": '<"H"lfrp>t<"F"ip>'
     });
 
     // Function to load drivers and vehicles

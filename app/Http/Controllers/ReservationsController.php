@@ -53,22 +53,25 @@ class ReservationsController extends Controller
                 }
             })
             ->addColumn('vehicle_name', function ($reservation) {
-                $vehicles = $reservation->reservation_vehicles->map(function ($rv) {
+                return $reservation->reservation_vehicles->map(function ($rv) {
                     return $rv->vehicles->vh_plate ?? 'N/A';
                 })->filter()->implode(', ') ?: 'N/A';
-                \Log::info("Vehicles for reservation {$reservation->reservation_id}: {$vehicles}");
-                return $vehicles;
             })
             ->addColumn('driver_name', function ($reservation) {
-                $drivers = $reservation->reservation_vehicles->map(function ($rv) {
+                return $reservation->reservation_vehicles->map(function ($rv) {
                     return $rv->drivers ? ($rv->drivers->dr_fname . ' ' . $rv->drivers->dr_lname) : 'N/A';
                 })->filter()->implode(', ') ?: 'N/A';
-                \Log::info("Drivers for reservation {$reservation->reservation_id}: {$drivers}");
-                return $drivers;
             })
             ->addColumn('action', function ($reservation) {
-                // Your action column logic here
-                return ''; // Placeholder, replace with actual action buttons
+                $buttons = '
+                    <button class="btn btn-sm btn-success approve-btn" data-id="'.$reservation->reservation_id.'">Approve</button>
+                    <button class="btn btn-sm btn-danger reject-btn" data-id="'.$reservation->reservation_id.'">Reject</button>
+                    <button class="btn btn-sm btn-warning cancel-btn" data-id="'.$reservation->reservation_id.'">Cancel</button>
+                    <button class="btn btn-sm btn-primary edit-btn" data-id="'.$reservation->reservation_id.'">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-btn" data-id="'.$reservation->reservation_id.'">Delete</button>
+                    <button class="btn btn-sm btn-info done-btn" data-id="'.$reservation->reservation_id.'">Done</button>
+                ';
+                return $buttons;
             })
             ->rawColumns(['action'])
             ->make(true);
@@ -586,17 +589,62 @@ class ReservationsController extends Controller
         return response()->json(['vehicles' => $vehicles]);
     }
 
+    public function approve($id)
+    {
+        $reservation = Reservations::findOrFail($id);
+        $reservation->rs_approval_status = 'Approved';
+        $reservation->rs_status = 'On-Going';
+        $reservation->save();
+
+        return response()->json(['success' => 'Reservation approved successfully']);
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $reservation = Reservations::findOrFail($id);
+        $reservation->rs_approval_status = 'Rejected';
+        $reservation->rs_status = 'Rejected';
+        $reservation->reason = $request->input('reason');
+        $reservation->save();
+
+        return response()->json(['success' => 'Reservation rejected successfully']);
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        $reservation = Reservations::findOrFail($id);
+        $reservation->rs_approval_status = 'Cancelled';
+        $reservation->rs_status = 'Cancelled';
+        $reservation->reason = $request->input('reason');
+        $reservation->save();
+
+        return response()->json(['success' => 'Reservation cancelled successfully']);
+    }
+
+    public function destroy($id)
+    {
+        $reservation = Reservations::findOrFail($id);
+        $reservation->delete();
+
+        return response()->json(['success' => 'Reservation deleted successfully']);
+    }
+
     public function markAsDone($id)
     {
-        try {
-            $reservation = Reservations::findOrFail($id);
-            $reservation->rs_status = 'Done';
-            $reservation->save();
+        $reservation = Reservations::findOrFail($id);
+        $reservation->rs_approval_status = 'Done';
+        $reservation->rs_status = 'Done';
+        $reservation->save();
 
-            return response()->json(['success' => 'Reservation marked as done successfully']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Error marking reservation as done: ' . $e->getMessage()], 500);
-        }
+        return response()->json(['success' => 'Reservation marked as done successfully']);
+    }
+
+    public function edit($id)
+    {
+        $reservation = Reservations::with(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers'])
+            ->findOrFail($id);
+
+        return response()->json($reservation);
     }
 }
 

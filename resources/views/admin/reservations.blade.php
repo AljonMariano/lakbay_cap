@@ -136,6 +136,28 @@
             overflow: hidden !important;
             height: auto !important;
         }
+
+        #reservations-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        #reservations-table th, #reservations-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #reservations-table th {
+            background-color: #f2f2f2;
+        }
+        #reservations-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        #reservations-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .action-buttons {
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
