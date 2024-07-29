@@ -65,6 +65,9 @@ class ReservationsController extends Controller
             ->addColumn('created_at', function ($reservation) {
                 return $reservation->created_at;
             })
+            ->addColumn('reason', function ($reservation) {
+                return $reservation->reason ?? '';
+            })
             ->addColumn('action', function ($reservation) {
                 $buttons = '
                     <button class="btn btn-sm btn-success approve-btn" data-id="'.$reservation->reservation_id.'">Approve</button>
@@ -147,89 +150,27 @@ class ReservationsController extends Controller
 
     public function update(Request $request, $id)
     {
+        \Log::info('Update method called', ['id' => $id, 'method' => $request->method()]);
+        
         try {
-            DB::beginTransaction();
-
-            \Log::info('Update request received', $request->all());
-
             $reservation = Reservations::findOrFail($id);
+            
+            // Update reservation fields
+            $reservation->update($request->except(['driver_id', 'vehicle_id']));
 
-            \Log::info('Reservation found', $reservation->toArray());
-
-            // Update the reservation
-            $reservation->fill($request->only([
-                'rs_passengers', 'rs_travel_type',
-                'rs_purpose', 'rs_from',
-                'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end',
-                'reason', 'destination_activity'
-            ]));
-
-            // Handle is_outsider flag
-            $reservation->is_outsider = $request->input('is_outsider') === 'true' || $request->input('is_outsider') === '1';
-
-            if ($reservation->is_outsider) {
-                $reservation->outside_office = $request->input('outside_office');
-                $reservation->outside_requestor = $request->input('outside_requestor');
-                $reservation->off_id = null;
-                $reservation->requestor_id = null;
-            } else {
-                $reservation->off_id = $request->input('off_id');
-                $reservation->requestor_id = $request->input('requestor_id');
-                $reservation->outside_office = null;
-                $reservation->outside_requestor = null;
-            }
-
-            // Ensure requestor_id and off_id are not null
-            if (!$reservation->requestor_id) {
-                throw new \Exception('Requestor ID cannot be null');
-            }
-            if (!$reservation->off_id) {
-                throw new \Exception('Office ID cannot be null');
-            }
-
-            // If the reservation is cancelled or rejected, delete the reservation_vehicles
-            if (in_array($request->rs_status, ['Cancelled', 'Rejected'])) {
-                $reservation->reservation_vehicles()->delete();
-            } else {
-                // Update reservation vehicles
-                if ($request->has('driver_id') && $request->has('vehicle_id')) {
-                    $reservation->reservation_vehicles()->delete();
-
-                    $driverIds = $request->input('driver_id', []);
-                    $vehicleIds = $request->input('vehicle_id', []);
-
-                    if (is_array($driverIds) && is_array($vehicleIds)) {
-                        foreach ($driverIds as $index => $driverId) {
-                            if (isset($vehicleIds[$index])) {
-                                $reservation->reservation_vehicles()->create([
-                                    'driver_id' => $driverId,
-                                    'vehicle_id' => $vehicleIds[$index],
-                                ]);
-                            }
-                        }
-                    } else {
-                        \Log::warning('Driver IDs or Vehicle IDs are not arrays');
-                    }
+            // Update drivers and vehicles
+            if ($request->has('driver_id') && $request->has('vehicle_id')) {
+                $reservation->reservation_vehicles()->delete(); // Remove old associations
+                foreach ($request->driver_id as $index => $driverId) {
+                    $reservation->reservation_vehicles()->create([
+                        'driver_id' => $driverId,
+                        'vehicle_id' => $request->vehicle_id[$index]
+                    ]);
                 }
             }
 
-            $reservation->save();
-
-            DB::commit();
-
-            \Log::info('Reservation updated successfully');
-
-            return response()->json([
-                'success' => 'Reservation updated successfully',
-                'reservation' => $reservation->load('reservation_vehicles.drivers', 'reservation_vehicles.vehicles', 'requestors', 'office'),
-            ]);
-
+            return response()->json(['success' => true, 'message' => 'Reservation updated successfully']);
         } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error updating reservation', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return response()->json(['error' => 'Error updating reservation: ' . $e->getMessage()], 500);
         }
     }
@@ -644,12 +585,19 @@ class ReservationsController extends Controller
 
     public function edit($id)
     {
-        $reservation = Reservations::with(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers'])
-            ->findOrFail($id);
+        $reservation = Reservations::with(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers'])->findOrFail($id);
+        $drivers = Drivers::all();
+        $vehicles = Vehicles::all();
+        $offices = Offices::all();
+        $requestors = Requestors::all();
 
         return response()->json([
             'reservation' => $reservation,
-            'reservation_id' => $reservation->reservation_id // Explicitly include the reservation_id
+            'drivers' => $drivers,
+            'vehicles' => $vehicles,
+            'offices' => $offices,
+            'requestors' => $requestors,
+            'is_outsider' => $reservation->is_outsider
         ]);
     }
 }

@@ -62,6 +62,7 @@ $(document).ready(function() {
             },
             {data: 'rs_approval_status', name: 'rs_approval_status'},
             {data: 'rs_status', name: 'rs_status'},
+            {data: 'reason', name: 'reason'},
             {data: 'action', name: 'action', orderable: false, searchable: false}
         ],
         order: [[0, 'desc']],
@@ -515,25 +516,24 @@ $(document).ready(function() {
         var formData = new FormData(this);
         var reservationId = $('#edit_reservation_id').val();
 
-        // Set is_outsider based on checkbox
-        formData.set('is_outsider', $('#is_outsider_edit').is(':checked') ? '1' : '0');
+        // Handle select fields
+        $('select', this).each(function() {
+            formData.append(this.name, $(this).val());
+        });
 
-        if ($('#is_outsider_edit').is(':checked')) {
-            formData.delete('off_id');
-            formData.delete('requestor_id');
-        } else {
-            formData.delete('outside_office');
-            formData.delete('outside_requestor');
-        }
+        // Handle the is_outsider checkbox
+        var isOutsider = $('#is_outsider_edit').is(':checked');
+        formData.append('is_outsider', isOutsider ? '1' : '0');
 
         $.ajax({
             url: routes.update.replace(':id', reservationId),
-            type: 'POST',
+            method: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'X-HTTP-Method-Override': 'PUT'
             },
             success: function(response) {
                 console.log('Update success:', response);
@@ -543,8 +543,11 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error('Update error:', xhr.responseText);
-                var errorMessage = xhr.responseJSON ? xhr.responseJSON.error : 'An error occurred while updating the reservation';
-                showErrorMessage(errorMessage);
+                showErrorMessage('Error updating reservation: ' + xhr.responseText);
+            },
+            complete: function() {
+                // Prevent any further form submissions
+                $('#edit_reservation_form').off('submit');
             }
         });
     });

@@ -43,8 +43,8 @@ Route::get('/', [Controller::class, 'redirect']);
 
 // AUTH route
 Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
+    Route::match(['put', 'post'], '/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
     Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
-    Route::match(['put', 'patch'], '/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
     Route::post('/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 

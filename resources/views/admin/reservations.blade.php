@@ -338,6 +338,7 @@
                     <th>Reserved on</th>
                     <th>Approval Status</th>
                     <th>Status</th>
+                    <th>Reason</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -348,14 +349,15 @@
     <div id="edit_reservation_modal" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Reservation</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="edit_reservation_form">
-                        @csrf
-                        @method('PUT')
+                <form id="edit_reservation_form" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Reservation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="_method" value="PUT">
                         <input type="hidden" id="reservation_id" name="reservation_id">
                         <div class="card rounded-0">
                             <div class="card-body">
@@ -408,35 +410,26 @@
                                     <span id="vehicle_id_edit_error"></span>
                                 </div>
 
-                                <div class="mb-2">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="is_outsider_edit" name="is_outsider">
-                                        <label class="form-check-label" for="is_outsider_edit">
-                                            Outside of Provincial Capitol?
-                                        </label>
-                                    </div>
-                                </div>
-
                                 <div id="office_requestor_fields_edit">
-                                    <div class="mb-2">
-                                        <label for="office_edit" class="form-label mb-0">Office</label>
-                                        <select name="off_id" id="office_edit" class="form-control">
+                                    <div id="edit_office_select" class="mb-3">
+                                        <label for="edit_office" class="form-label">Office</label>
+                                        <select class="form-select" id="edit_office" name="off_id">
                                             <option value="">Select Office</option>
-                                            @foreach ($offices as $office)
-                                                <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                            @foreach($offices as $office)
+                                                <option value="{{ $office->off_id }}">{{ $office->off_name }}</option>
                                             @endforeach
                                         </select>
-                                        <span id="office_edit_error"></span>
                                     </div>
 
-                                    <div class="mb-2">
-                                        <label for="requestor_edit" class="form-label mb-0">Requestor</label>
-                                        <select name="requestor_id" id="requestor_edit" class="form-control">
+                                    <div id="edit_requestor_select" class="mb-3">
+                                        <label for="edit_requestor" class="form-label">Requestor</label>
+                                        <select class="form-select" id="edit_requestor" name="requestor_id">
                                             <option value="">Select Requestor</option>
                                             @foreach($requestors as $requestor)
                                                 <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
                                             @endforeach
                                         </select>
+                                    </div>
                                         <span id="requestor_edit_error"></span>
                                     </div>
                                 </div>
@@ -483,12 +476,13 @@
                                 </div>
                             </div>
                         </div>
-                    </form>
+                    
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="update_reservation_btn">Update Reservation</button>
+                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="update_reservation_btn">Update Reservation</button>
-                </div>
+                </form>
             </div>
         </div>
     </div>
