@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reservations', function (Blueprint $table) {
-            $table->unsignedBigInteger('requestor_id')->nullable()->change();
+            $table->string('destination_activity')->nullable()->change();
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('reservations', function (Blueprint $table) {
-            $table->unsignedBigInteger('requestor_id')->nullable(false)->change();
+            $table->string('destination_activity')->nullable(false)->change();
         });
     }
-};
+}; 

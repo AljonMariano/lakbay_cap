@@ -40,8 +40,8 @@ $(document).ready(function() {
         ajax: {
             url: reservationsDataUrl,
             error: function (xhr, error, thrown) {
-                console.error('DataTables AJAX error:', error);
-                console.error('DataTables AJAX error details:', xhr.responseText);
+                console.error("DataTables AJAX error:", error);
+                console.error("DataTables AJAX error details:", xhr.responseText);
             }
         },
         columns: [
@@ -49,30 +49,25 @@ $(document).ready(function() {
             {data: 'destination_activity', name: 'destination_activity'},
             {data: 'rs_from', name: 'rs_from'},
             {data: 'rs_date_start', name: 'rs_date_start'},
-            {data: 'rs_time_start', name: 'rs_time_start',
-                render: function(data, type, row) {
-                    return type === 'display' ? formatTime(data) : data;
-                }
-            },
+            {data: 'rs_time_start', name: 'rs_time_start'},
             {data: 'rs_date_end', name: 'rs_date_end'},
-            {data: 'rs_time_end', name: 'rs_time_end',
-                render: function(data, type, row) {
-                    return type === 'display' ? formatTime(data) : data;
-                }
-            },
-            {data: 'vehicles', name: 'vehicles',
-                render: function(data, type, row) {
-                    if (data && Array.isArray(data) && data.length > 0) {
-                        return data.map(function(vehicle) {
-                            return vehicle.vh_brand + ' ' + vehicle.vh_type + ' (' + vehicle.vh_plate + ')';
-                        }).join(', ');
-                    }
-                    return 'N/A';
-                }
-            },
-            {data: 'drivers', name: 'drivers'},
+            {data: 'rs_time_end', name: 'rs_time_end'},
             {data: 'requestor', name: 'requestor'},
-            {data: 'office', name: 'office', orderable: false, searchable: false},
+            {data: 'office', name: 'office'},
+            {
+                data: 'driver_name',
+                name: 'driver_name',
+                render: function(data, type, row) {
+                    return data || 'N/A';
+                }
+            },
+            {
+                data: 'vehicle_name',
+                name: 'vehicle_name',
+                render: function(data, type, row) {
+                    return data || 'N/A';
+                }
+            },
             {data: 'rs_purpose', name: 'rs_purpose'},
             {data: 'rs_passengers', name: 'rs_passengers'},
             {data: 'rs_travel_type', name: 'rs_travel_type'},
@@ -80,22 +75,7 @@ $(document).ready(function() {
             {data: 'rs_approval_status', name: 'rs_approval_status'},
             {data: 'rs_status', name: 'rs_status'},
             {data: 'reason', name: 'reason'},
-            {
-                data: 'action',
-                name: 'action',
-                orderable: false,
-                searchable: false,
-                render: function(data, type, full, meta) {
-                    return `
-                        <button type="button" class="btn btn-sm btn-primary edit-btn" data-id="${full.reservation_id}">Edit</button>
-                        <button type="button" class="btn btn-sm btn-success approve-btn" data-id="${full.reservation_id}">Approve</button>
-                        <button type="button" class="btn btn-sm btn-warning cancel-btn" data-id="${full.reservation_id}">Cancel</button>
-                        <button type="button" class="btn btn-sm btn-danger reject-btn" data-id="${full.reservation_id}">Reject</button>
-                        <button type="button" class="btn btn-sm btn-info done-btn" data-id="${full.reservation_id}">Done</button>
-                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${full.reservation_id}">Delete</button>
-                    `;
-                }
-            }
+            {data: 'action', name: 'action', orderable: false, searchable: false}
         ],
         order: [[0, 'asc']],
         drawCallback: function(settings) {
@@ -390,11 +370,11 @@ $(document).ready(function() {
         e.preventDefault(); // Prevent default form submission
 
         var formData = new FormData(this);
+        var isOutsider = $('#outside_provincial_capitol').is(':checked');
+        
+        formData.set('is_outsider', isOutsider ? '1' : '0');
 
-        // Set is_outsider based on checkbox
-        formData.set('is_outsider', $('#outside_provincial_capitol').is(':checked') ? '1' : '0');
-
-        if ($('#outside_provincial_capitol').is(':checked')) {
+        if (isOutsider) {
             formData.delete('off_id');
             formData.delete('requestor_id');
         } else {
@@ -403,26 +383,20 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: $(this).attr('action'),
+            url: routes.store,
             type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             success: function(response) {
-                console.log('Reservation created successfully:', response);
-                // Refresh the DataTable
-                table.ajax.reload();
-                // Hide the modal
+                console.log('Success:', response);
                 $('#insertModal').modal('hide');
-                // Show success message
-                showSuccessMessage(response.success);
-                // Clear the form
-                clearReservationForm();
+                table.ajax.reload();
+                showSuccessMessage('Reservation created successfully');
             },
             error: function(xhr, status, error) {
-                console.error('Error creating reservation:', xhr.responseText);
-                // Display error message to user
-                showErrorMessage('Error creating reservation: ' + (xhr.responseJSON ? xhr.responseJSON.error : error));
+                console.error('Error:', xhr.responseText);
+                showErrorMessage('Error creating reservation: ' + (xhr.responseJSON ? JSON.stringify(xhr.responseJSON.error) : error));
             }
         });
     });
@@ -434,6 +408,10 @@ $(document).ready(function() {
     });
 
     // Handle form submission for updating reservation
+    $('#update_reservation_btn').on('click', function() {
+        $('#edit_reservation_form').submit();
+    });
+
     $('#edit_reservation_form').submit(function(e) {
         e.preventDefault();
         var formData = new FormData(this);
@@ -711,6 +689,29 @@ $(document).ready(function() {
     // Toggle fields when checkbox is clicked
     $('#reservations-form [name="is_outsider"], #edit_reservation_form [name="is_outsider"]').on('change', function() {
         toggleOutsideFields($(this).closest('form'));
+    });
+
+    function toggleOutsideFields() {
+        var isOutside = $('#outside_provincial_capitol').is(':checked');
+        $('#inside_fields').toggle(!isOutside);
+        $('#outside_fields').toggle(isOutside);
+
+        // Enable/disable fields based on visibility
+        $('#inside_fields select').prop('disabled', isOutside);
+        $('#outside_fields input').prop('disabled', !isOutside);
+
+        // Clear values when toggling
+        if (isOutside) {
+            $('#inside_fields select').val('');
+        } else {
+            $('#outside_fields input').val('');
+        }
+    }
+
+    // Call this function when the page loads and when the checkbox is clicked
+    $(document).ready(function() {
+        toggleOutsideFields();
+        $('#outside_provincial_capitol').on('change', toggleOutsideFields);
     });
 });
 

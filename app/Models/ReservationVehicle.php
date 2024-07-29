@@ -29,11 +29,11 @@ class ReservationVehicle extends Model
 
     public function drivers(): BelongsTo
     {
-        return $this->belongsTo(Drivers::class, 'driver_id');
+        return $this->belongsTo(Drivers::class, 'driver_id', 'driver_id');
     }
 
     public function vehicles(): BelongsTo
     {
-        return $this->belongsTo(Vehicles::class, 'vehicle_id');
+        return $this->belongsTo(Vehicles::class, 'vehicle_id', 'vehicle_id');
     }
 }

@@ -16,10 +16,11 @@ class Reservations extends Model
     protected $table = 'reservations';
     protected $primaryKey = 'reservation_id';
     protected $fillable=[
-        'rs_from', 'requestor_id', 'off_id', 'rs_passengers', 'rs_travel_type',
-        'rs_voucher', 'rs_approval_status', 'rs_status', 'rs_date_start',
-        'rs_time_start', 'rs_date_end', 'rs_time_end', 'reason', 'rs_purpose',
-        'destination_activity', 'is_outsider', 'outside_office', 'outside_requestor'
+        'rs_passengers', 'rs_travel_type', 'rs_purpose', 'rs_from',
+        'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end',
+        'reason', 'destination_activity', 'rs_approval_status', 'rs_status',
+        'is_outsider', 'outside_office', 'outside_requestor',
+        'off_id', 'requestor_id'
     ];
     protected $casts = [
         'is_outsider' => 'boolean',
@@ -30,9 +31,9 @@ class Reservations extends Model
     {
         return $this->belongsTo(Requestors::class, 'requestor_id', 'requestor_id');
     }
-    public function reservation_vehicles(): HasMany
+    public function reservation_vehicles()
     {
-        return $this->hasMany(ReservationVehicle::class, 'reservation_id');
+        return $this->hasMany(ReservationVehicle::class, 'reservation_id', 'reservation_id');
     }
     public function office(): BelongsTo
     {
@@ -44,10 +45,10 @@ class Reservations extends Model
         return $this->hasManyThrough(
             Drivers::class,
             ReservationVehicle::class,
-            'reservation_id', 
-            'driver_id', 
-            'id',
-            'id'
+            'reservation_id', // Foreign key on ReservationVehicle table
+            'driver_id', // Foreign key on Drivers table
+            'reservation_id', // Local key on Reservations table
+            'driver_id' // Local key on ReservationVehicle table
         );
     }
 

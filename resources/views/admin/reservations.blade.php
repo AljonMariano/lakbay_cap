@@ -210,7 +210,7 @@
 
                                         <div class="mb-2">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="outside_provincial_capitol" name="is_outsider">
+                                                <input type="checkbox" id="outside_provincial_capitol" name="is_outsider" value="1">
                                                 <label class="form-check-label" for="outside_provincial_capitol">
                                                     Outside of Provincial Capitol?
                                                 </label>
@@ -219,8 +219,8 @@
 
                                         <div id="inside_fields">
                                             <div class="mb-2">
-                                                <label for="office_id" class="form-label mb-0">Office</label>
-                                                <select name="off_id" id="office" class="form-control rounded-1">
+                                                <label for="off_id" class="form-label mb-0">Office</label>
+                                                <select name="off_id" id="off_id" class="form-control rounded-1" required>                                                   
                                                     <option value="" disabled selected>Select Office</option>
                                                     @foreach ($offices as $office)
                                                         <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
@@ -244,18 +244,17 @@
                                         <div id="outside_fields" style="display: none;">
                                             <div class="mb-2">
                                                 <label for="outside_office" class="form-label mb-0">Outside Office</label>
-                                                <input type="text" class="form-control rounded-1" name="outside_office" id="outside_office" placeholder="Enter Outside Office">
+                                                <input type="text" class="form-control rounded-1" name="outside_office" id="outside_office" placeholder="Enter Office">
                                             </div>
-
                                             <div class="mb-2">
                                                 <label for="outside_requestor" class="form-label mb-0">Outside Requestor</label>
-                                                <input type="text" class="form-control rounded-1" name="outside_requestor" id="outside_requestor" placeholder="Enter Outside Requestor">
+                                                <input type="text" class="form-control rounded-1" name="outside_requestor" id="outside_requestor" placeholder="Enter Requestor">
                                             </div>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="rs_passengers" class="form-label mb-0">Passengers</label>
-                                            <input type="text" class="form-control rounded-1" name="rs_passengers" placeholder="Enter Number of Passengers" id="rs_passengers" value="">
+                                            <input type="number" class="form-control rounded-1" name="rs_passengers" id="rs_passengers" placeholder="Enter Number of Passengers" required>
                                             <span id="rs_passengers_error"></span>
                                         </div>
                                         
@@ -293,12 +292,12 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <table class="table table-bordered table-hover reservations-table" id="reservations-table" name="reservations-table">
+                <table id="reservations-table">
                     <thead>
                         <tr>
-                            <th>ID</th>                            
+                            <th>ID</th>
                             <th>Destination/Activity</th>
-                            <th>From</th>                            
+                            <th>From</th>
                             <th>Start Date</th>
                             <th>Start Time</th>
                             <th>End Date</th>
@@ -317,8 +316,6 @@
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
-                    </tbody>
                 </table>
             </div>
         </div>
@@ -435,7 +432,7 @@
 
                                 <div class="mb-2">
                                     <label for="rs_passengers_edit" class="form-label mb-0">Passengers</label>
-                                    <input type="text" class="form-control rounded-1" name="rs_passengers" placeholder="Enter Number of Passengers" id="rs_passengers_edit" value="">
+                                    <input type="number" class="form-control rounded-1" name="rs_passengers" placeholder="Enter Number of Passengers" id="rs_passengers_edit" value="">
                                     <span id="rs_passengers_edit_error"></span>
                                 </div>
                                 
