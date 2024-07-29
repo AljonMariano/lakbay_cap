@@ -12,6 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <style>
         input[type="date"], input[type="time"] {
             position: relative;
@@ -137,17 +138,22 @@
             height: auto !important;
         }
 
+        .table-responsive {
+            overflow-x: auto;
+        }
         #reservations-table {
+            width: 100% !important;
             border-collapse: collapse;
-            width: 100%;
         }
         #reservations-table th, #reservations-table td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
+            white-space: nowrap;
         }
         #reservations-table th {
             background-color: #f2f2f2;
+            font-weight: bold;
         }
         #reservations-table tr:nth-child(even) {
             background-color: #f9f9f9;
@@ -155,8 +161,8 @@
         #reservations-table tr:hover {
             background-color: #f5f5f5;
         }
-        .action-buttons {
-            white-space: nowrap;
+        .action-buttons button {
+            margin: 2px;
         }
     </style>
 </head>
@@ -311,36 +317,31 @@
     </div>
 
     <span id="form_result"></span>
-    <div class="container">
-        <div class="row">
-            <div class="col">
-                <table id="reservations-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Destination/Activity</th>
-                            <th>From</th>
-                            <th>Start Date</th>
-                            <th>Start Time</th>
-                            <th>End Date</th>
-                            <th>End Time</th>
-                            <th>Vehicles</th>
-                            <th>Drivers</th>
-                            <th>Requestor</th>
-                            <th>Office</th>
-                            <th>Purpose</th>
-                            <th>Passengers</th>
-                            <th>Travel Type</th>
-                            <th>Created At</th>
-                            <th>Approval Status</th>
-                            <th>Reservation Status</th>
-                            <th>Reason</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-        </div>
+    <div class="table-responsive">
+        <table id="reservations-table" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Destination/Activity</th>
+                    <th>From</th>
+                    <th>Start Date</th>
+                    <th>Start Time</th>
+                    <th>End Date</th>
+                    <th>End Time</th>
+                    <th>Requestor</th>
+                    <th>Office</th>
+                    <th>Driver</th>
+                    <th>Vehicle</th>
+                    <th>Purpose</th>
+                    <th>Passengers</th>
+                    <th>Travel Type</th>
+                    <th>Reserved on</th>
+                    <th>Approval Status</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+        </table>
     </div>
 
     <!-------------EDIT MODAL --------------->
@@ -355,7 +356,7 @@
                     <form id="edit_reservation_form">
                         @csrf
                         @method('PUT')
-                        <input type="hidden" id="edit_reservation_id" name="reservation_id">
+                        <input type="hidden" id="reservation_id" name="reservation_id">
                         <div class="card rounded-0">
                             <div class="card-body">
                                 <div class="mb-2">

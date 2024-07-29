@@ -62,6 +62,9 @@ class ReservationsController extends Controller
                     return $rv->drivers ? ($rv->drivers->dr_fname . ' ' . $rv->drivers->dr_lname) : 'N/A';
                 })->filter()->implode(', ') ?: 'N/A';
             })
+            ->addColumn('created_at', function ($reservation) {
+                return $reservation->created_at;
+            })
             ->addColumn('action', function ($reservation) {
                 $buttons = '
                     <button class="btn btn-sm btn-success approve-btn" data-id="'.$reservation->reservation_id.'">Approve</button>
@@ -644,7 +647,10 @@ class ReservationsController extends Controller
         $reservation = Reservations::with(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers'])
             ->findOrFail($id);
 
-        return response()->json($reservation);
+        return response()->json([
+            'reservation' => $reservation,
+            'reservation_id' => $reservation->reservation_id // Explicitly include the reservation_id
+        ]);
     }
 }
 
