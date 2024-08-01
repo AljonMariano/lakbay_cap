@@ -164,6 +164,16 @@
         .action-buttons button {
             margin: 2px;
         }
+
+        #alert-container {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        #success-message, #error-message {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -238,14 +248,14 @@
 
                                         <div class="mb-2">
                                             <div class="form-check">
-                                                <input type="checkbox" id="outside_provincial_capitol" name="is_outsider" value="1">
-                                                <label class="form-check-label" for="outside_provincial_capitol">
-                                                    Outside of Provincial Capitol?
+                                                <input class="form-check-input" type="checkbox" name="is_outsider" id="is_outsider">
+                                                <label class="form-check-label" for="is_outsider">
+                                                    Outside of the Capitol?
                                                 </label>
                                             </div>
                                         </div>
 
-                                        <div id="inside_fields">
+                                        <div class="inside-fields">
                                             <div class="mb-2">
                                                 <label for="off_id" class="form-label mb-0">Office</label>
                                                 <select name="off_id" id="off_id" class="form-control rounded-1" required>                                                   
@@ -269,7 +279,7 @@
                                             </div>
                                         </div>
 
-                                        <div id="outside_fields" style="display: none;">
+                                        <div class="outside-fields" style="display: none;">
                                             <div class="mb-2">
                                                 <label for="outside_office" class="form-label mb-0">Outside Office</label>
                                                 <input type="text" class="form-control rounded-1" name="outside_office" id="outside_office" placeholder="Enter Office">
@@ -316,6 +326,12 @@
         </div>
     </div>
 
+    <!-- Add the alerts here, just above the table -->
+    <div id="alert-container" class="mb-3">
+        <div id="success-message" class="alert alert-success d-none" role="alert"></div>
+        <div id="error-message" class="alert alert-danger d-none" role="alert"></div>
+    </div>
+
     <span id="form_result"></span>
     <div class="table-responsive">
         <table id="reservations-table" class="table table-bordered table-striped">
@@ -349,16 +365,15 @@
     <div id="edit_reservation_modal" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <form id="edit_reservation_form" method="POST">
+                <form id="edit_reservation_form" action="{{ route('reservations.update', ['id' => ':id']) }}" method="POST">
                     @csrf
                     @method('PUT')
+                    <input type="hidden" name="reservation_id" id="edit_reservation_id">
                     <div class="modal-header">
                         <h5 class="modal-title">Edit Reservation</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" name="_method" value="PUT">
-                        <input type="hidden" id="reservation_id" name="reservation_id">
                         <div class="card rounded-0">
                             <div class="card-body">
                                 <div class="mb-2">
@@ -397,7 +412,7 @@
                                 <div class="mb-2">
                                     <label for="driver_id_edit" class="form-label mb-0">Driver</label>
                                     <select name="driver_id[]" id="driver_id_edit" class="form-control" multiple required>
-                                        <!-- Populate with drivers -->
+                                        
                                     </select>
                                     <span id="driver_id_edit_error"></span>
                                 </div>
@@ -405,12 +420,21 @@
                                 <div class="mb-2">
                                     <label for="vehicle_id_edit" class="form-label mb-0">Vehicle</label>
                                     <select name="vehicle_id[]" id="vehicle_id_edit" class="form-control" multiple required>
-                                        <!-- Populate with vehicles -->
+                                        
                                     </select>
                                     <span id="vehicle_id_edit_error"></span>
                                 </div>
 
-                                <div id="office_requestor_fields_edit">
+                                <div class="mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="is_outsider" id="is_outsider_edit">
+                                        <label class="form-check-label" for="is_outsider_edit">
+                                            Outside of the Capitol?
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="inside-fields">
                                     <div id="edit_office_select" class="mb-3">
                                         <label for="edit_office" class="form-label">Office</label>
                                         <select class="form-select" id="edit_office" name="off_id">
@@ -434,7 +458,7 @@
                                     </div>
                                 </div>
 
-                                <div id="outside_fields_edit" style="display: none;">
+                                <div class="outside-fields" style="display: none;">
                                     <div class="mb-2">
                                         <label for="outside_office_edit" class="form-label mb-0">Outside Office</label>
                                         <input type="text" class="form-control rounded-1" name="outside_office" id="outside_office_edit" placeholder="Enter Outside Office">

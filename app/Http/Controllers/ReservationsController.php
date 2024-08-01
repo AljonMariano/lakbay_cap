@@ -22,6 +22,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Support\Facades\Log;
 
 class ReservationsController extends Controller
 {
@@ -39,18 +40,10 @@ class ReservationsController extends Controller
 
         return DataTables::of($reservations)
             ->addColumn('requestor', function ($reservation) {
-                if ($reservation->is_outsider) {
-                    return $reservation->outside_requestor ?? 'N/A';
-                } else {
-                    return $reservation->requestors->rq_full_name ?? 'N/A';
-                }
+                return $reservation->is_outsider ? ($reservation->outside_requestor ?? 'N/A') : ($reservation->requestors->rq_full_name ?? 'N/A');
             })
             ->addColumn('office', function ($reservation) {
-                if ($reservation->is_outsider) {
-                    return $reservation->outside_office ?? 'N/A';
-                } else {
-                    return $reservation->office->off_name ?? 'N/A';
-                }
+                return $reservation->is_outsider ? ($reservation->outside_office ?? 'N/A') : ($reservation->office->off_name ?? 'N/A');
             })
             ->addColumn('vehicle_name', function ($reservation) {
                 return $reservation->reservation_vehicles->map(function ($rv) {
@@ -150,28 +143,77 @@ class ReservationsController extends Controller
 
     public function update(Request $request, $id)
     {
-        \Log::info('Update method called', ['id' => $id, 'method' => $request->method()]);
-        
+        \Log::info('Update method called', [
+            'id' => $id,
+            'all request data' => $request->all()
+        ]);
+
+        if (!$id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Reservation ID is missing'
+            ], 400);
+        }
+
         try {
             $reservation = Reservations::findOrFail($id);
             
-            // Update reservation fields
-            $reservation->update($request->except(['driver_id', 'vehicle_id']));
+            // Validate the input
+            $validatedData = $request->validate([
+                'destination_activity' => 'required|string',
+                'rs_from' => 'required|string',
+                'rs_date_start' => 'required|date',
+                'rs_time_start' => 'required',
+                'rs_date_end' => 'required|date',
+                'rs_time_end' => 'required',
+                'rs_passengers' => 'required|integer',
+                'rs_travel_type' => 'required|string',
+                'rs_purpose' => 'required|string',
+                'reason' => 'nullable|string',
+                'is_outsider' => 'required|boolean',
+                'off_id' => 'nullable|exists:offices,off_id',
+                'requestor_id' => 'nullable|exists:requestors,requestor_id',
+                'outside_office' => 'nullable|string',
+                'outside_requestor' => 'nullable|string',
+            ]);
 
-            // Update drivers and vehicles
+            // Update the reservation
+            $reservation->update($validatedData);
+
+            // Handle drivers and vehicles
             if ($request->has('driver_id') && $request->has('vehicle_id')) {
-                $reservation->reservation_vehicles()->delete(); // Remove old associations
-                foreach ($request->driver_id as $index => $driverId) {
+                $reservation->reservation_vehicles()->delete();
+                foreach ($request->driver_id as $key => $driverId) {
+                    $vehicleId = $request->vehicle_id[$key] ?? null;
                     $reservation->reservation_vehicles()->create([
                         'driver_id' => $driverId,
-                        'vehicle_id' => $request->vehicle_id[$index]
+                        'vehicle_id' => $vehicleId
                     ]);
                 }
             }
 
-            return response()->json(['success' => true, 'message' => 'Reservation updated successfully']);
+            $updatedReservation = $reservation->fresh()->load(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reservation updated successfully',
+                'data' => $updatedReservation
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Error updating reservation: ' . $e->getMessage()], 500);
+            \Log::error('Error updating reservation', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while updating the reservation'
+            ], 500);
         }
     }
 
@@ -239,7 +281,7 @@ class ReservationsController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error creating reservation:', ['message' => $e->getMessage()]);
-            return response()->json(['error' => 'Error creating reservation: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'An unexpected error occurred'], 500);
         }
     }
 
@@ -601,4 +643,9 @@ class ReservationsController extends Controller
         ]);
     }
 }
+
+
+
+
+
 

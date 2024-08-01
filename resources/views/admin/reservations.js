@@ -37,7 +37,13 @@ $(document).ready(function() {
     var table = $('#reservations-table').DataTable({
         processing: true,
         serverSide: true,
-        ajax: reservationsDataUrl,
+        ajax: {
+            url: reservationsDataUrl,
+            type: 'GET',
+            dataSrc: function(json) {
+                return json.data;
+            }
+        },
         columns: [
             {data: 'reservation_id', name: 'reservation_id'},
             {data: 'destination_activity', name: 'destination_activity'},
@@ -68,6 +74,10 @@ $(document).ready(function() {
         order: [[0, 'desc']],
         pageLength: 10,
         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        drawCallback: function(settings) {
+            // Re-initialize any event listeners or plugins after table redraw
+        },
+        "rowId": 'reservation_id' // Add this line to set a unique identifier for each row
     });
 
     // Function to load drivers and vehicles
@@ -120,23 +130,23 @@ $(document).ready(function() {
     loadDriversAndVehicles();
 
     // Function to toggle outsider fields
-    function toggleOutsiderFields(isOutsider, prefix) {
-        if (isOutsider) {
-            $(`#office_requestor_fields_${prefix}`).hide();
-            $(`#outside_fields_${prefix}`).show();
-            $(`#office_${prefix}, #requestor_${prefix}`).prop('required', false);
-            $(`#outside_office_${prefix}, #outside_requestor_${prefix}`).prop('required', true);
-        } else {
-            $(`#office_requestor_fields_${prefix}`).show();
-            $(`#outside_fields_${prefix}`).hide();
-            $(`#office_${prefix}, #requestor_${prefix}`).prop('required', true);
-            $(`#outside_office_${prefix}, #outside_requestor_${prefix}`).prop('required', false);
-        }
+    function toggleOutsideFields(form) {
+        var isOutsider = form.find('[name="is_outsider"]').is(':checked');
+        form.find('.inside-fields').toggle(!isOutsider);
+        form.find('.outside-fields').toggle(isOutsider);
+
+        form.find('.inside-fields select').prop('disabled', isOutsider);
+        form.find('.outside-fields input').prop('disabled', !isOutsider);
     }
 
-    // Handle outsider toggle for edit modal
-    $('#is_outsider_edit').change(function() {
-        toggleOutsiderFields($(this).is(':checked'), 'edit');
+    // Call this on page load and when the checkbox changes
+    $(document).ready(function() {
+        toggleOutsideFields($('#reservations-form'));
+        toggleOutsideFields($('#edit_reservation_form'));
+    });
+
+    $('[name="is_outsider"]').on('change', function() {
+        toggleOutsideFields($(this).closest('form'));
     });
 
     function loadReservationData(reservationId) {
@@ -322,7 +332,8 @@ $(document).ready(function() {
     }
 
     // Update reservation form submission
-    $('#update_reservation_btn').click(function() {
+    $('#update_reservation_btn').click(function(e) {
+        e.preventDefault();
         var formData = $('#edit_reservation_form').serialize();
         var reservationId = $('#edit_reservation_form #reservation_id').val();
         
@@ -333,15 +344,18 @@ $(document).ready(function() {
 
         $.ajax({
             url: routes.update.replace(':id', reservationId),
-            method: 'PUT',
+            method: 'POST',
             data: formData,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: function(response) {
                 $('#edit_reservation_modal').modal('hide');
                 showSuccessMessage('Reservation updated successfully');
                 table.ajax.reload();
             },
-            error: function(xhr) {
-                showErrorMessage('Error updating reservation');
+            error: function(xhr, status, error) {
+                showErrorMessage('Error updating reservation: ' + xhr.responseText);
             }
         });
     });
@@ -464,40 +478,57 @@ $(document).ready(function() {
         loadDriversAndVehicles();
     });
 
-    // Handle form submission
-    $('#reservations-form').submit(function(e) {
-        e.preventDefault(); // Prevent default form submission
-
-        var formData = new FormData(this);
-        var isOutsider = $('#outside_provincial_capitol').is(':checked');
+    // Handle form submission for both create and edit
+    $('#reservations-form, #edit_reservation_form').on('submit', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var formData = new FormData(form[0]);
         
-        formData.set('is_outsider', isOutsider ? '1' : '0');
+        // Ensure is_outsider is being set correctly
+        var isOutsider = form.find('[name="is_outsider"]').is(':checked') ? 1 : 0;
+        formData.set('is_outsider', isOutsider);
 
+        // If it's an outsider, set off_id and requestor_id to null
         if (isOutsider) {
-            formData.delete('off_id');
-            formData.delete('requestor_id');
+            formData.set('off_id', '');
+            formData.set('requestor_id', '');
         } else {
-            formData.delete('outside_office');
-            formData.delete('outside_requestor');
+            formData.set('outside_office', '');
+            formData.set('outside_requestor', '');
         }
 
         $.ajax({
-            url: routes.store,
-            type: 'POST',
+            url: form.attr('action'),
+            method: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             success: function(response) {
                 console.log('Success:', response);
-                $('#insertModal').modal('hide');
-                table.ajax.reload();
-                showSuccessMessage('Reservation created successfully');
+                showSuccessMessage('Reservation ' + (form.attr('id') === 'reservations-form' ? 'created' : 'updated') + ' successfully');
+                $('#insertModal, #edit_reservation_modal').modal('hide');
+                $('#reservations-table').DataTable().ajax.reload();
             },
             error: function(xhr, status, error) {
-                console.error('Error:', xhr.responseText);
-                showErrorMessage('Error creating reservation: ' + (xhr.responseJSON ? JSON.stringify(xhr.responseJSON.error) : error));
+                console.error('Error:', xhr.responseJSON);
+                showErrorMessage('Error ' + (form.attr('id') === 'reservations-form' ? 'creating' : 'updating') + ' reservation: ' + (xhr.responseJSON ? xhr.responseJSON.message : error));
             }
         });
+    });
+
+    // Handle outsider toggle for both create and edit forms
+    $('#is_outsider, #is_outsider_edit').change(function() {
+        var form = $(this).closest('form');
+        toggleOutsideFields(form);
+    });
+
+    // Call this on page load and when opening the edit modal
+    $(document).ready(function() {
+        toggleOutsideFields($('#reservations-form'));
+    });
+
+    $('#edit_reservation_modal').on('show.bs.modal', function () {
+        toggleOutsideFields($('#edit_reservation_form'));
     });
 
     // Handle edit button click
@@ -511,43 +542,50 @@ $(document).ready(function() {
         $('#edit_reservation_form').submit();
     });
 
-    $('#edit_reservation_form').submit(function(e) {
+    $('#edit_reservation_form').on('submit', function(e) {
         e.preventDefault();
-        var formData = new FormData(this);
+        var form = $(this);
         var reservationId = $('#edit_reservation_id').val();
+        var url = form.attr('action').replace(':id', reservationId);
+        
+        var formData = new FormData(this);
+        formData.append('reservation_id', reservationId);
 
-        // Handle select fields
-        $('select', this).each(function() {
-            formData.append(this.name, $(this).val());
-        });
-
-        // Handle the is_outsider checkbox
-        var isOutsider = $('#is_outsider_edit').is(':checked');
-        formData.append('is_outsider', isOutsider ? '1' : '0');
+        // Ensure is_outsider is being set correctly
+        var isOutsider = $('#is_outsider').is(':checked') ? 1 : 0;
+        formData.set('is_outsider', isOutsider);
 
         $.ajax({
-            url: routes.update.replace(':id', reservationId),
+            url: url,
             method: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                'X-HTTP-Method-Override': 'PUT'
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
-                console.log('Update success:', response);
-                $('#edit_reservation_modal').modal('hide');
-                table.ajax.reload();
-                showSuccessMessage('Reservation updated successfully');
+                console.log('Server response:', response);  // Add this line for debugging
+                if (response.success) {
+                    $('#edit_reservation_modal').modal('hide');
+                    // Update the specific row instead of reloading the entire table
+                    table.row('#' + response.data.reservation_id).data(response.data).draw();
+                    showSuccessMessage(response.message);
+                } else {
+                    showErrorMessage(response.message || 'An error occurred while updating the reservation.');
+                }
             },
             error: function(xhr, status, error) {
-                console.error('Update error:', xhr.responseText);
-                showErrorMessage('Error updating reservation: ' + xhr.responseText);
+                console.error('Error:', xhr.responseText);
+                var errorMessage = 'Error updating reservation. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                showErrorMessage(errorMessage);
             },
-            complete: function() {
-                // Prevent any further form submissions
-                $('#edit_reservation_form').off('submit');
+            complete: function(xhr, textStatus) {
+                console.log('AJAX request completed. Status:', textStatus);
+                console.log('Response:', xhr.responseJSON);
             }
         });
     });
@@ -617,24 +655,12 @@ $(document).ready(function() {
 
     // Function to show success message
     function showSuccessMessage(message) {
-        var html = "<div class='alert alert-success alert-dismissible fade show' role='alert'>" +
-                   "<strong>Success!</strong> " + message +
-                   "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>" +
-                   "</div>";
-        $('#form_result').html(html);
-        // Automatically close the alert after 5 seconds
-        setTimeout(function() {
-            $('.alert').alert('close');
-        }, 5000);
+        showAlert('success', message);
     }
 
     // Function to show error message
     function showErrorMessage(message) {
-        var html = "<div class='alert alert-danger alert-dismissible fade show' role='alert'>" +
-                   "<strong>Error!</strong> " + message +
-                   "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>" +
-                   "</div>";
-        $('#form_result').html(html);
+        showAlert('error', message);
     }
 
     // Function to format time
@@ -644,7 +670,7 @@ $(document).ready(function() {
         hours = parseInt(hours);
         let ampm = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12;
-        hours = hours ? hours : 12; // the hour '0' should be '12'
+        hours = hours ? hours : 12; 
         minutes = minutes.padStart(2, '0');
         return `${hours}:${minutes} ${ampm}`;
     }
@@ -764,24 +790,6 @@ $(document).ready(function() {
         showRejectionModal(reservationId);
     });
 
-    // Function to toggle fields based on checkbox state
-    function toggleOutsideFields(form) {
-        var isOutside = form.find('[name="is_outsider"]').is(':checked');
-        form.find('#inside_fields, #office_requestor_fields_edit').toggle(!isOutside);
-        form.find('#outside_fields, #outside_fields_edit').toggle(isOutside);
-
-        // Enable/disable fields based on visibility
-        form.find('#inside_fields select, #office_requestor_fields_edit select').prop('disabled', isOutside);
-        form.find('#outside_fields input, #outside_fields_edit input').prop('disabled', !isOutside);
-
-        // Clear values when toggling
-        if (isOutside) {
-            form.find('#inside_fields select, #office_requestor_fields_edit select').val('');
-        } else {
-            form.find('#outside_fields input, #outside_fields_edit input').val('');
-        }
-    }
-
     // Call this function for both forms
     $('#reservations-form, #edit_reservation_form').each(function() {
         toggleOutsideFields($(this));
@@ -792,30 +800,29 @@ $(document).ready(function() {
         toggleOutsideFields($(this).closest('form'));
     });
 
-    function toggleOutsideFields() {
-        var isOutside = $('#outside_provincial_capitol').is(':checked');
-        $('#inside_fields').toggle(!isOutside);
-        $('#outside_fields').toggle(isOutside);
+    function showAlert(type, message) {
+        const alertElement = type === 'success' ? $('#success-message') : $('#error-message');
+        alertElement.text(message).removeClass('d-none');
+        
+        // Scroll to the alert
+        $('html, body').animate({
+            scrollTop: $("#alert-container").offset().top - 20
+        }, 200);
 
-        // Enable/disable fields based on visibility
-        $('#inside_fields select').prop('disabled', isOutside);
-        $('#outside_fields input').prop('disabled', !isOutside);
-
-        // Clear values when toggling
-        if (isOutside) {
-            $('#inside_fields select').val('');
-        } else {
-            $('#outside_fields input').val('');
-        }
+        // Hide the alert after 5 seconds
+        setTimeout(function() {
+            alertElement.addClass('d-none').text('');
+        }, 5000);
     }
 
-    // Call this function when the page loads and when the checkbox is clicked
-    $(document).ready(function() {
-        toggleOutsideFields();
-        $('#outside_provincial_capitol').on('change', toggleOutsideFields);
-    });
-});
+    function showSuccessMessage(message) {
+        showAlert('success', message);
+    }
 
+    function showErrorMessage(message) {
+        showAlert('error', message);
+    }
+});
 
 // Make sure these functions are defined
 function showSuccessMessage(message) {
