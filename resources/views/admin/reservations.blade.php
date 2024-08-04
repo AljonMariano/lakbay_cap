@@ -247,47 +247,32 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="is_outsider" id="is_outsider">
-                                                <label class="form-check-label" for="is_outsider">
-                                                    Outside of the Capitol?
-                                                </label>
-                                            </div>
+                                            <label for="is_outsider">
+                                                <input type="checkbox" id="is_outsider" name="is_outsider" value="1"> Outside of Capitol?
+                                            </label>
                                         </div>
 
-                                        <div class="inside-fields">
-                                            <div class="mb-2">
-                                                <label for="off_id" class="form-label mb-0">Office</label>
-                                                <select name="off_id" id="off_id" class="form-control rounded-1" required>                                                   
-                                                    <option value="" disabled selected>Select Office</option>
-                                                    @foreach ($offices as $office)
-                                                        <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <span id="office_error"></span>
-                                            </div>
-
-                                            <div class="mb-2">
-                                                <label for="requestor_id" class="form-label mb-0">Requestor</label>
-                                                <select name="requestor_id" id="requestor_id" class="form-control rounded-1" required>
-                                                    <option value="" disabled selected>Select Requestor</option>
-                                                    @foreach($requestors as $requestor)
-                                                        <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <span id="requestor_id_error"></span>
-                                            </div>
+                                        <div class="mb-2">
+                                            <label for="off_id">Office</label>
+                                            <select class="form-control" id="off_id" name="off_id">
+                                                <option value="" disabled selected>Select Office</option>
+                                                @foreach ($offices as $office)
+                                                    <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="text" class="form-control d-none" id="outside_office" name="outside_office" placeholder="Enter outside office">
                                         </div>
 
-                                        <div class="outside-fields" style="display: none;">
-                                            <div class="mb-2">
-                                                <label for="outside_office" class="form-label mb-0">Outside Office</label>
-                                                <input type="text" class="form-control rounded-1" name="outside_office" id="outside_office" placeholder="Enter Office">
-                                            </div>
-                                            <div class="mb-2">
-                                                <label for="outside_requestor" class="form-label mb-0">Outside Requestor</label>
-                                                <input type="text" class="form-control rounded-1" name="outside_requestor" id="outside_requestor" placeholder="Enter Requestor">
-                                            </div>
+                                        <div class="mb-2">
+                                            <label for="requestor_id">Requestor</label>
+                                            <select class="form-control" id="requestor_id" name="requestor_id">
+                                                <option value="" disabled selected>Select Requestor</option>
+                                                @foreach($requestors as $requestor)
+                                                    <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="text" class="form-control d-none" id="outside_requestor" name="outside_requestor" placeholder="Enter outside requestor">
+                                            <span id="requestor_id_error"></span>
                                         </div>
 
                                         <div class="mb-2">
@@ -365,9 +350,9 @@
     <div id="edit_reservation_modal" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <form id="edit_reservation_form" action="{{ route('reservations.update', ['id' => ':id']) }}" method="POST">
+                <form id="edit_reservation_form" method="POST">
                     @csrf
-                    @method('PUT')
+                    @method('POST')
                     <input type="hidden" name="reservation_id" id="edit_reservation_id">
                     <div class="modal-header">
                         <h5 class="modal-title">Edit Reservation</h5>
@@ -426,48 +411,35 @@
                                 </div>
 
                                 <div class="mb-2">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="is_outsider" id="is_outsider_edit">
-                                        <label class="form-check-label" for="is_outsider_edit">
-                                            Outside of the Capitol?
-                                        </label>
-                                    </div>
+                                    <label for="is_outsider_edit">
+                                        <input type="checkbox" id="is_outsider_edit" name="is_outsider" value="1"> Outside of Capitol?
+                                    </label>
                                 </div>
 
-                                <div class="inside-fields">
-                                    <div id="edit_office_select" class="mb-3">
-                                        <label for="edit_office" class="form-label">Office</label>
-                                        <select class="form-select" id="edit_office" name="off_id">
-                                            <option value="">Select Office</option>
-                                            @foreach($offices as $office)
-                                                <option value="{{ $office->off_id }}">{{ $office->off_name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div id="edit_requestor_select" class="mb-3">
-                                        <label for="edit_requestor" class="form-label">Requestor</label>
-                                        <select class="form-select" id="edit_requestor" name="requestor_id">
-                                            <option value="">Select Requestor</option>
-                                            @foreach($requestors as $requestor)
-                                                <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                        <span id="requestor_edit_error"></span>
-                                    </div>
+                                <div class="mb-2">
+                                    <label for="off_id_edit">Office</label>
+                                    <select class="form-control" id="off_id_edit" name="off_id">
+                                        <option value="" disabled selected>Select Office</option>
+                                        @foreach($offices as $office)
+                                            <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" class="form-control d-none" id="outside_office_edit" name="outside_office" placeholder="Enter outside office">
                                 </div>
 
-                                <div class="outside-fields" style="display: none;">
-                                    <div class="mb-2">
-                                        <label for="outside_office_edit" class="form-label mb-0">Outside Office</label>
-                                        <input type="text" class="form-control rounded-1" name="outside_office" id="outside_office_edit" placeholder="Enter Outside Office">
-                                    </div>
+                                <div class="mb-2">
+                                    <label for="requestor_id_edit">Requestor</label>
+                                    <select class="form-control" id="requestor_id_edit" name="requestor_id">
+                                        <option value="" disabled selected>Select Requestor</option>
+                                        @foreach($requestors as $requestor)
+                                            <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" class="form-control d-none" id="outside_requestor_edit" name="outside_requestor" placeholder="Enter outside requestor">
+                                </div>
 
-                                    <div class="mb-2">
-                                        <label for="outside_requestor_edit" class="form-label mb-0">Outside Requestor</label>
-                                        <input type="text" class="form-control rounded-1" name="outside_requestor" id="outside_requestor_edit" placeholder="Enter Outside Requestor">
-                                    </div>
+                                <div id="edit_drivers_vehicles_container">
+                                    
                                 </div>
 
                                 <div class="mb-2">
@@ -503,7 +475,7 @@
                     
                         <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="update_reservation_btn">Update Reservation</button>
+                        <button type="button" class="btn btn-primary" id="update_reservation_btn">Update Reservation</button>
                      </div>
                 </div>
                 </form>
@@ -586,15 +558,38 @@
             getVehicles: "{{ route('get.vehicles') }}",
             approve: "{{ route('reservations.approve', ':id') }}",
             reject: "{{ route('reservations.reject', ':id') }}",
-            cancel: "{{ route('reservations.cancel', ':id') }}",
-            store: "{{ route('reservations.store') }}",
+            cancel: "{{ route('reservations.cancel', ':id') }}",            
             update: "{{ route('reservations.update', ':id') }}",
             edit: "{{ route('reservations.edit', ':id') }}",
             done: "{{ route('reservations.done', ':id') }}",
-            destroy: "{{ route('reservations.destroy', ':id') }}"
+            destroy: "{{ route('reservations.destroy', ':id') }}",
+          
         };
     </script>
     <script src="{{ asset('js/admin/reservations.js') }}"></script>
+    <script>
+        console.log('Reservations.js loaded and executed');
+
+      
+        $(document).ready(function() {
+            console.log('Document ready in reservations.js');
+        });
+
+       
+        setTimeout(function() {
+            console.log('Delayed log from reservations.js');
+        }, 1000);
+    </script>
+    <script>
+        if (typeof jQuery != 'undefined') {
+            console.log('jQuery is loaded');
+        } else {
+            console.log('jQuery is not loaded');
+        }
+    </script>
+    <script>
+        console.log('Inline script in reservations.blade.php executed');
+    </script>
 </body>
 </html>
 

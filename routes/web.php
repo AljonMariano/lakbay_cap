@@ -18,6 +18,7 @@ use App\Http\Controllers\AdminPageController;
 use App\Http\Controllers\UserPageController;
 use App\Http\Controllers\UsersReservationsController;
 use App\Http\Controllers\AdminProfileController;
+use Illuminate\Support\Facades\Log;
 
 
 
@@ -43,7 +44,7 @@ Route::get('/', [Controller::class, 'redirect']);
 
 // AUTH route
 Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
-    Route::match(['put', 'patch'], '/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
+    Route::post('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
     Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
     Route::post('/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
@@ -110,7 +111,7 @@ Route::get('/reservations/data', [ReservationsController::class, 'getData'])->na
 Route::get('/reservations/{id}', [ReservationsController::class, 'show'])->name('reservations.show');
 Route::post('/reservations', [ReservationsController::class, 'store'])->name('reservations.store');
 Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
-Route::match(['put', 'patch'], '/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
+Route::post('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
 Route::delete('/reservations/{id}', [ReservationsController::class, 'destroy'])->name('reservations.destroy');
 Route::post('/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
 Route::get('/event-calendar', [ReservationsController::class, 'eventCalendar'])->name('reservations.calendar');
@@ -123,11 +124,11 @@ Route::get('/reservations-excel', [ReservationsController::class, 'exportExcel']
 Route::get('/reservations-pdf', [ReservationsController::class, 'exportPdf'])->name('reservations.pdf');
 Route::get('/get-drivers', [ReservationsController::class, 'getDrivers'])->name('get.drivers');
 Route::get('/get-vehicles', [ReservationsController::class, 'getVehicles'])->name('get.vehicles');
-Route::post('/reservations', [ReservationsController::class, 'store'])->name('reservations.store');
 Route::post('/admin/reservations/{id}/approve', [ReservationsController::class, 'approve'])->name('reservations.approve');
 Route::post('/admin/reservations/{id}/reject', [ReservationsController::class, 'reject'])->name('reservations.reject');
 Route::post('/admin/reservations/{id}/cancel', [ReservationsController::class, 'cancel'])->name('reservations.cancel');
 Route::post('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
+
 
 
 
@@ -353,5 +354,15 @@ Route::get('/check-all-reservations', function() {
 });
 
 Route::get('/js/admin/reservations.js', function () {
-    return response()->file(resource_path('views/admin/reservations.js'));
+    try {
+        return response()->file(resource_path('views/admin/reservations.js'));
+    } catch (\Exception $e) {
+        Log::error('Error serving reservations.js: ' . $e->getMessage());
+        abort(404);
+    }
 })->name('admin.reservations.js');
+
+Route::get('/test-log', function() {
+    Log::info('Test log entry');
+    return 'Log test complete';
+});

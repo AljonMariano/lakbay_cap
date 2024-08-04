@@ -143,22 +143,11 @@ class ReservationsController extends Controller
 
     public function update(Request $request, $id)
     {
-        \Log::info('Update method called', [
-            'id' => $id,
-            'all request data' => $request->all()
-        ]);
-
-        if (!$id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Reservation ID is missing'
-            ], 400);
-        }
+        \Log::info('Update method called for reservation ID: ' . $id);
 
         try {
             $reservation = Reservations::findOrFail($id);
             
-            // Validate the input
             $validatedData = $request->validate([
                 'destination_activity' => 'required|string',
                 'rs_from' => 'required|string',
@@ -169,94 +158,66 @@ class ReservationsController extends Controller
                 'rs_passengers' => 'required|integer',
                 'rs_travel_type' => 'required|string',
                 'rs_purpose' => 'required|string',
-                'reason' => 'nullable|string',
-                'is_outsider' => 'required|boolean',
-                'off_id' => 'nullable|exists:offices,off_id',
-                'requestor_id' => 'nullable|exists:requestors,requestor_id',
-                'outside_office' => 'nullable|string',
-                'outside_requestor' => 'nullable|string',
+                'off_id' => 'required_without:outside_office',
+                'outside_office' => 'required_if:is_outsider,1',
+                'requestor_id' => 'required_without:outside_requestor',
+                'outside_requestor' => 'required_if:is_outsider,1',
+                'driver_id' => 'required|array',
+                'vehicle_id' => 'required|array',
+                'is_outsider' => 'boolean',
+                'rs_reason' => 'nullable|string',
             ]);
 
-            // Update the reservation
+            DB::beginTransaction();
+
             $reservation->update($validatedData);
 
             // Handle drivers and vehicles
-            if ($request->has('driver_id') && $request->has('vehicle_id')) {
-                $reservation->reservation_vehicles()->delete();
-                foreach ($request->driver_id as $key => $driverId) {
-                    $vehicleId = $request->vehicle_id[$key] ?? null;
-                    $reservation->reservation_vehicles()->create([
-                        'driver_id' => $driverId,
-                        'vehicle_id' => $vehicleId
-                    ]);
-                }
+            $reservation->reservation_vehicles()->delete();
+            foreach ($request->driver_id as $index => $driverId) {
+                $reservation->reservation_vehicles()->create([
+                    'driver_id' => $driverId,
+                    'vehicle_id' => $request->vehicle_id[$index],
+                ]);
             }
 
-            $updatedReservation = $reservation->fresh()->load(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers']);
+            DB::commit();
+
+            $updatedReservation = $reservation->fresh()->load('requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers');
+            
+            // Log the updated reservation data
+            Log::info('Updated reservation data', ['reservation' => $updatedReservation]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Reservation updated successfully',
-                'data' => $updatedReservation
+                'reservation' => $updatedReservation
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
         } catch (\Exception $e) {
-            \Log::error('Error updating reservation', [
+            DB::rollBack();
+            Log::error('Error updating reservation', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'id' => $id,
+                'request_data' => $request->all()
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while updating the reservation'
+                'message' => 'An error occurred while updating the reservation: ' . $e->getMessage()
             ], 500);
         }
     }
 
     public function store(Request $request)
     {
-        \Log::info('Reservation store request:', $request->all());
-
-        $isOutsider = $request->boolean('is_outsider');
-
-        $rules = [
-            'rs_passengers' => 'required|integer',
-            'rs_travel_type' => 'required|string',
-            'rs_purpose' => 'required|string',
-            'rs_from' => 'required|string',
-            'rs_date_start' => 'required|date',
-            'rs_time_start' => 'required',
-            'rs_date_end' => 'required|date',
-            'rs_time_end' => 'required',
-            'destination_activity' => 'required|string',
-            'is_outsider' => 'required|boolean',
-            'off_id' => $isOutsider ? 'nullable' : 'required|exists:offices,off_id',
-            'requestor_id' => $isOutsider ? 'nullable' : 'required|exists:requestors,requestor_id',
-            'outside_office' => $isOutsider ? 'required|string' : 'nullable',
-            'outside_requestor' => $isOutsider ? 'required|string' : 'nullable',
-        ];
+        \Log::info('Store method called');
+        Log::info('Reservation store request:', $request->all());
 
         try {
-            $data = $request->validate($rules);
-
-            $data['rs_approval_status'] = 'Pending';
-            $data['rs_status'] = 'Pending';
-
-            if ($isOutsider) {
-                $data['off_id'] = null;
-                $data['requestor_id'] = null;
-            } else {
-                $data['outside_office'] = null;
-                $data['outside_requestor'] = null;
-            }
-
             DB::beginTransaction();
 
-            $reservation = Reservations::create($data);
+            $reservation = new Reservations($request->all());
+            $reservation->save();
 
             // Handle drivers and vehicles
             if ($request->has('driver_id') && $request->has('vehicle_id')) {
@@ -273,14 +234,19 @@ class ReservationsController extends Controller
             }
 
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Reservation created successfully']);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
-            \Log::error('Validation failed:', $e->errors());
-            return response()->json(['error' => $e->errors()], 422);
+
+            $reservation = $reservation->fresh()->load('requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers');
+
+            Log::info('Reservation created successfully:', $reservation->toArray());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reservation created successfully',
+                'reservation' => $reservation
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error creating reservation:', ['message' => $e->getMessage()]);
+            Log::error('Error creating reservation:', ['message' => $e->getMessage()]);
             return response()->json(['error' => 'An unexpected error occurred'], 500);
         }
     }

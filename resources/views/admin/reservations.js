@@ -1,3 +1,30 @@
+console.log('Reservations.js loaded and executed');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded and parsed');
+
+    var editButtons = document.querySelectorAll('.edit');
+    editButtons.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Edit button clicked');
+            var reservationId = this.getAttribute('data-id');
+            console.log('Reservation ID:', reservationId);
+        });
+    });
+
+    var updateButton = document.getElementById('update_reservation_btn');
+    if (updateButton) {
+        updateButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Update button clicked');
+            var form = document.getElementById('edit_reservation_form');
+            var reservationId = form.querySelector('input[name="reservation_id"]').value;
+            console.log('Reservation ID for update:', reservationId);
+        });
+    }
+});
+
 $(document).ready(function() {
     const routes = window.appRoutes || {};
 
@@ -77,7 +104,12 @@ $(document).ready(function() {
         drawCallback: function(settings) {
             // Re-initialize any event listeners or plugins after table redraw
         },
-        "rowId": 'reservation_id' // Add this line to set a unique identifier for each row
+        "rowId": function(data) {
+            return 'row-' + data.reservation_id;
+        },
+        createdRow: function(row, data, dataIndex) {
+            $(row).attr('id', 'row-' + data.reservation_id);
+        }
     });
 
     // Function to load drivers and vehicles
@@ -132,11 +164,14 @@ $(document).ready(function() {
     // Function to toggle outsider fields
     function toggleOutsideFields(form) {
         var isOutsider = form.find('[name="is_outsider"]').is(':checked');
-        form.find('.inside-fields').toggle(!isOutsider);
-        form.find('.outside-fields').toggle(isOutsider);
-
-        form.find('.inside-fields select').prop('disabled', isOutsider);
-        form.find('.outside-fields input').prop('disabled', !isOutsider);
+        
+        if (isOutsider) {
+            form.find('[name="off_id"], [name="requestor_id"]').addClass('d-none').prop('disabled', true);
+            form.find('[name="outside_office"], [name="outside_requestor"]').removeClass('d-none').prop('disabled', false);
+        } else {
+            form.find('[name="off_id"], [name="requestor_id"]').removeClass('d-none').prop('disabled', false);
+            form.find('[name="outside_office"], [name="outside_requestor"]').addClass('d-none').prop('disabled', true);
+        }
     }
 
     // Call this on page load and when the checkbox changes
@@ -258,20 +293,28 @@ $(document).ready(function() {
     // Update the event handlers for the action buttons
     $(document).on('click', '.edit-btn', function() {
         var reservationId = $(this).data('id');
+        console.log('Edit button clicked for reservation ID:', reservationId);
+        var url = routes.edit.replace(':id', reservationId);
+        
         $.ajax({
-            url: routes.edit.replace(':id', reservationId),
+            url: url,
             method: 'GET',
             success: function(response) {
-                if (response && response.reservation) {
-                    // Populate the edit form with the reservation data
-                    populateEditForm(response.reservation);
-                    $('#edit_reservation_modal').modal('show');
-                } else {
-                    showErrorMessage('Error: Invalid response from server');
-                }
+                console.log('Reservation data received', response);
+                var form = $('#edit_reservation_form');
+                form.find('input[name="reservation_id"]').val(reservationId);
+                form.attr('action', form.attr('action').replace(':id', reservationId));
+                
+                // Populate other form fields...
+                $('#destination_activity_edit').val(response.reservation.destination_activity);
+                $('#rs_from_edit').val(response.reservation.rs_from);
+                // ... populate other fields ...
+
+                $('#edit_reservation_modal').modal('show');
             },
-            error: function(xhr) {
-                showErrorMessage('Error fetching reservation data');
+            error: function(xhr, status, error) {
+                console.error('Error loading reservation data', {status: status, error: error, responseText: xhr.responseText});
+                showErrorMessage('Error loading reservation data. Please try again.');
             }
         });
     });
@@ -291,28 +334,30 @@ $(document).ready(function() {
             $('#edit_reservation_form #rs_purpose_edit').val(data.rs_purpose);
             $('#edit_reservation_form #reason_edit').val(data.reason);
             
-            // Handle is_outsider checkbox
-            $('#edit_reservation_form #is_outsider_edit').prop('checked', data.is_outsider);
-            
-            // Handle office and requestor fields based on is_outsider
-            if (data.is_outsider) {
-                $('#edit_reservation_form #outside_office_edit').val(data.outside_office);
-                $('#edit_reservation_form #outside_requestor_edit').val(data.outside_requestor);
-                $('#edit_reservation_form #office_requestor_fields_edit').hide();
-                $('#edit_reservation_form #outside_fields_edit').show();
+            // Handle office field
+            if (data.off_id) {
+                $('#edit_office').val(data.off_id).show();
+                $('#edit_outside_office').hide();
             } else {
-                $('#edit_reservation_form #office_edit').val(data.off_id);
-                $('#edit_reservation_form #requestor_edit').val(data.requestor_id);
-                $('#edit_reservation_form #office_requestor_fields_edit').show();
-                $('#edit_reservation_form #outside_fields_edit').hide();
+                $('#edit_office').hide();
+                $('#edit_outside_office').val(data.outside_office).show();
             }
-            
-            // Handle multiple select for drivers and vehicles
+
+            // Handle requestor field
+            if (data.requestor_id) {
+                $('#edit_requestor').val(data.requestor_id).show();
+                $('#edit_outside_requestor').hide();
+            } else {
+                $('#edit_requestor').hide();
+                $('#edit_outside_requestor').val(data.outside_requestor).show();
+            }
+
+            // Handle drivers and vehicles
             if (data.reservation_vehicles && data.reservation_vehicles.length > 0) {
                 var driverIds = data.reservation_vehicles.map(rv => rv.driver_id);
                 var vehicleIds = data.reservation_vehicles.map(rv => rv.vehicle_id);
-                $('#edit_reservation_form #driver_id_edit').val(driverIds).trigger('change');
-                $('#edit_reservation_form #vehicle_id_edit').val(vehicleIds).trigger('change');
+                $('#driver_id_edit').val(driverIds).trigger('change');
+                $('#vehicle_id_edit').val(vehicleIds).trigger('change');
             }
             
             // If you're using any date/time pickers, you might need to reinitialize them
@@ -331,34 +376,71 @@ $(document).ready(function() {
         }
     }
 
-    // Update reservation form submission
-    $('#update_reservation_btn').click(function(e) {
+    $('#update_reservation_btn').on('click', function(e) {
         e.preventDefault();
-        var formData = $('#edit_reservation_form').serialize();
-        var reservationId = $('#edit_reservation_form #reservation_id').val();
+        var form = $('#edit_reservation_form');
+        var reservationId = form.find('input[name="reservation_id"]').val();
+        console.log('Updating Reservation ID:', reservationId);
+        var url = routes.update.replace(':id', reservationId);
         
-        if (!reservationId) {
-            showErrorMessage('Error: Reservation ID is missing');
-            return;
-        }
+        // Handle is_outsider checkbox
+        var isOutsider = form.find('#is_outsider_edit').is(':checked') ? '1' : '0';
+        form.find('input[name="is_outsider"]').val(isOutsider);
+
+        console.log('Update button clicked for reservation ID:', reservationId);
+        console.log('Form data:', form.serialize());
 
         $.ajax({
-            url: routes.update.replace(':id', reservationId),
+            url: url,
             method: 'POST',
-            data: formData,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
+            data: form.serialize(),
             success: function(response) {
-                $('#edit_reservation_modal').modal('hide');
-                showSuccessMessage('Reservation updated successfully');
-                table.ajax.reload();
+                console.log('AJAX response:', response);
+                if (response.success) {
+                    $('#edit_reservation_modal').modal('hide');
+                    showSuccessMessage(response.message);
+                    
+                    // Reload the entire table
+                    table.ajax.reload(null, false);
+                } else {
+                    showErrorMessage(response.message || 'An error occurred while updating the reservation.');
+                }
             },
             error: function(xhr, status, error) {
-                showErrorMessage('Error updating reservation: ' + xhr.responseText);
+                console.error('AJAX request failed', {
+                    status: status,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+                showErrorMessage('Error updating reservation. Please try again.');
             }
         });
     });
+
+    
+    // Helper function to format reservation data for DataTable
+    function formatReservationData(reservation) {
+        if (!reservation) {
+            console.error('Reservation data is undefined');
+            return {};
+        }
+        return {
+            reservation_id: reservation.reservation_id || '',
+            destination_activity: reservation.destination_activity || '',
+            rs_from: reservation.rs_from || '',
+            start_datetime: (reservation.rs_date_start || '') + ' ' + (reservation.rs_time_start || ''),
+            end_datetime: (reservation.rs_date_end || '') + ' ' + (reservation.rs_time_end || ''),
+            requestor: reservation.is_outsider ? (reservation.outside_requestor || '') : ((reservation.requestors && reservation.requestors.rq_full_name) || 'N/A'),
+            office: reservation.is_outsider ? (reservation.outside_office || '') : ((reservation.office && reservation.office.off_name) || 'N/A'),
+            vehicle: (reservation.reservation_vehicles || []).map(rv => (rv.vehicles && rv.vehicles.vh_plate) || 'N/A').join(', '),
+            driver: (reservation.reservation_vehicles || []).map(rv => (rv.drivers && `${rv.drivers.dr_fname} ${rv.drivers.dr_lname}`) || 'N/A').join(', '),
+            rs_status: reservation.rs_status || '',
+            rs_approval_status: reservation.rs_approval_status || '',
+            reason: reservation.rs_reason || '',
+            action: '<button class="btn btn-sm btn-primary edit-btn" data-id="' + (reservation.reservation_id || '') + '">Edit</button>' +
+                    '<button class="btn btn-sm btn-danger delete-btn" data-id="' + (reservation.reservation_id || '') + '">Delete</button>'
+        };
+    }
 
     $(document).on('click', '.approve-btn', function() {
         var reservationId = $(this).data('id');
@@ -503,6 +585,9 @@ $(document).ready(function() {
             data: formData,
             processData: false,
             contentType: false,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: function(response) {
                 console.log('Success:', response);
                 showSuccessMessage('Reservation ' + (form.attr('id') === 'reservations-form' ? 'created' : 'updated') + ' successfully');
@@ -534,107 +619,30 @@ $(document).ready(function() {
     // Handle edit button click
     $(document).on('click', '.edit', function() {
         var reservationId = $(this).data('id');
-        loadReservationData(reservationId);
-    });
-
-    // Handle form submission for updating reservation
-    $('#update_reservation_btn').on('click', function() {
-        $('#edit_reservation_form').submit();
-    });
-
-    $('#edit_reservation_form').on('submit', function(e) {
-        e.preventDefault();
-        var form = $(this);
-        var reservationId = $('#edit_reservation_id').val();
-        var url = form.attr('action').replace(':id', reservationId);
+        var url = routes.edit.replace(':id', reservationId);
         
-        var formData = new FormData(this);
-        formData.append('reservation_id', reservationId);
-
-        // Ensure is_outsider is being set correctly
-        var isOutsider = $('#is_outsider').is(':checked') ? 1 : 0;
-        formData.set('is_outsider', isOutsider);
+        console.log('Edit button clicked for reservation ID:', reservationId);
 
         $.ajax({
             url: url,
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
+            method: 'GET',
             success: function(response) {
-                console.log('Server response:', response);  // Add this line for debugging
-                if (response.success) {
-                    $('#edit_reservation_modal').modal('hide');
-                    // Update the specific row instead of reloading the entire table
-                    table.row('#' + response.data.reservation_id).data(response.data).draw();
-                    showSuccessMessage(response.message);
-                } else {
-                    showErrorMessage(response.message || 'An error occurred while updating the reservation.');
-                }
+                console.log('Reservation data received', response);
+                var form = $('#edit_reservation_form');
+                form.find('input[name="reservation_id"]').val(reservationId);
+                form.attr('action', form.attr('action').replace(':id', reservationId));
+                
+                // Populate other form fields...
+                $('#destination_activity_edit').val(response.reservation.destination_activity);
+                $('#rs_from_edit').val(response.reservation.rs_from);
+                // ... populate other fields ...
+
+                $('#edit_reservation_modal').modal('show');
             },
             error: function(xhr, status, error) {
-                console.error('Error:', xhr.responseText);
-                var errorMessage = 'Error updating reservation. Please try again.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                }
-                showErrorMessage(errorMessage);
-            },
-            complete: function(xhr, textStatus) {
-                console.log('AJAX request completed. Status:', textStatus);
-                console.log('Response:', xhr.responseJSON);
+                console.error('Error loading reservation data', {status: status, error: error, responseText: xhr.responseText});
+                showErrorMessage('Error loading reservation data. Please try again.');
             }
-        });
-    });
-
-    // Handle delete button click
-    $(document).on('click', '.delete', function() {
-        var reservationId = $(this).data('id');
-        $('#confirmModal').modal('show');
-        $('#confirm_message').text('Are you sure you want to delete this reservation?');
-        $('#ok_button').off('click').on('click', function() {
-            $.ajax({
-                url: `/delete-reservation/${reservationId}`,
-                method: 'GET',
-                success: function(response) {
-                    $('#confirmModal').modal('hide');
-                    table.ajax.reload(null, false);
-                    showSuccessMessage('Reservation deleted successfully');
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error deleting reservation:', xhr.responseText);
-                    showErrorMessage('Error deleting reservation');
-                }
-            });
-        });
-    });
-
-    // Handle done button click
-    $(document).on('click', '.done', function() {
-        var reservationId = $(this).data('id');
-        $('#confirmModal').modal('show');
-        $('#confirm_message').text('Are you sure you want to mark this reservation as done?');
-        $('#ok_button').off('click').on('click', function() {
-            $.ajax({
-                url: routes.done.replace(':id', reservationId),
-                method: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    $('#confirmModal').modal('hide');
-                    table.ajax.reload(null, false);
-                    showSuccessMessage('Reservation marked as done successfully');
-                },
-                error: function(xhr, status, error) {
-                    $('#confirmModal').modal('hide');
-                    console.error('Error marking reservation as done:', xhr.responseText);
-                    showErrorMessage('Error marking reservation as done');
-                }
-            });
         });
     });
 
@@ -746,12 +754,6 @@ $(document).ready(function() {
         dateFormat: "H:i",
     });
 
-    // Close modal when clicking the close button (X)
-    $('.modal .btn-close').on('click', function() {
-        var modalId = $(this).closest('.modal').attr('id');
-        $('#' + modalId).modal('hide');
-    });
-
     // Close modal when clicking the Cancel button
     $('.modal .btn-secondary[data-bs-dismiss="modal"]').on('click', function() {
         var modalId = $(this).closest('.modal').attr('id');
@@ -795,11 +797,6 @@ $(document).ready(function() {
         toggleOutsideFields($(this));
     });
 
-    // Toggle fields when checkbox is clicked
-    $('#reservations-form [name="is_outsider"], #edit_reservation_form [name="is_outsider"]').on('change', function() {
-        toggleOutsideFields($(this).closest('form'));
-    });
-
     function showAlert(type, message) {
         const alertElement = type === 'success' ? $('#success-message') : $('#error-message');
         alertElement.text(message).removeClass('d-none');
@@ -835,5 +832,6 @@ function showErrorMessage(message) {
     // Implementation of showing error message
     console.error('Error:', message);
 }
+
 
 
