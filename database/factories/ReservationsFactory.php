@@ -22,12 +22,12 @@ class ReservationsFactory extends Factory
     public function definition(): array
     {
         return [
-            'rs_voucher' => fake()->randomNumber(),
+            'rs_purpose' => fake()->randomNumber(),
             'rs_passengers' => fake()->numberBetween(1,20),
             'rs_travel_type'=> fake()->randomElement(['Daily Travel', 'Outside Province']),
             'rs_approval_status' => fake()->randomElement(['Pending', 'Approved', 'Rejected']),
             'rs_status' => fake()->randomElement(['Active', 'Inactive']),
-            'event_id' => fake()->numberBetween(1,50), 
+            'destination_activity' => fake()->numberBetween(1,50), 
             'requestor_id' => fake()->numberBetween(1,10), 
             'off_id' => Offices::factory(), 
             'created_at' => fake()->dateTimeBetween('-1 year', 'now'),

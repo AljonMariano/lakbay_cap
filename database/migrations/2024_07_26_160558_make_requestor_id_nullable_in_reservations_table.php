@@ -12,7 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reservations', function (Blueprint $table) {
-            $table->string('destination_activity')->nullable()->change();
+            // Remove the line that adds the destination_activity column
+            // $table->string('destination_activity')->nullable()->after('rs_status');
+            
+            // If you want to make any changes to the existing destination_activity column, you can do it here
+            // For example, if you want to make it nullable:
+            // $table->string('destination_activity')->nullable()->change();
         });
     }
 
@@ -22,7 +27,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('reservations', function (Blueprint $table) {
-            $table->string('destination_activity')->nullable(false)->change();
+            // Remove any changes made in the up method
+            // For example, if you made destination_activity nullable:
+            // $table->string('destination_activity')->nullable(false)->change();
         });
     }
-}; 
+};

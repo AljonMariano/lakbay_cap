@@ -302,13 +302,41 @@ $(document).ready(function() {
             success: function(response) {
                 console.log('Reservation data received', response);
                 var form = $('#edit_reservation_form');
+                var reservation = response.reservation;
+
+                // Populate form fields
                 form.find('input[name="reservation_id"]').val(reservationId);
-                form.attr('action', form.attr('action').replace(':id', reservationId));
-                
-                // Populate other form fields...
-                $('#destination_activity_edit').val(response.reservation.destination_activity);
-                $('#rs_from_edit').val(response.reservation.rs_from);
-                // ... populate other fields ...
+                $('#destination_activity_edit').val(reservation.destination_activity);
+                $('#rs_from_edit').val(reservation.rs_from);
+                $('#rs_date_start_edit').val(reservation.rs_date_start);
+                $('#rs_time_start_edit').val(reservation.rs_time_start);
+                $('#rs_date_end_edit').val(reservation.rs_date_end);
+                $('#rs_time_end_edit').val(reservation.rs_time_end);
+                $('#rs_purpose_edit').val(reservation.rs_purpose);
+                $('#rs_passengers_edit').val(reservation.rs_passengers);
+                $('#rs_travel_type_edit').val(reservation.rs_travel_type);
+
+                // Populate select fields
+                $('#requestor_id_edit').val(reservation.requestor_id).trigger('change');
+                $('#off_id_edit').val(reservation.off_id).trigger('change');
+
+                // Populate driver and vehicle fields (assuming they're multi-select)
+                var driverIds = reservation.reservation_vehicles.map(rv => rv.driver_id);
+                var vehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id);
+                $('#driver_id_edit').val(driverIds).trigger('change');
+                $('#vehicle_id_edit').val(vehicleIds).trigger('change');
+
+                // Set the approval status and status
+                $('#rs_approval_status_edit').val(reservation.rs_approval_status);
+                $('#rs_status_edit').val(reservation.rs_status);
+
+                // Handle outsider fields
+                $('#is_outsider_edit').prop('checked', reservation.is_outsider);
+                $('#outside_office_edit').val(reservation.outside_office);
+                $('#outside_requestor_edit').val(reservation.outside_requestor);
+
+                // Show/hide outsider fields based on is_outsider value
+                toggleOutsideFields($('#edit_reservation_form'));
 
                 $('#edit_reservation_modal').modal('show');
             },
@@ -630,7 +658,16 @@ $(document).ready(function() {
                 console.log('Reservation data received', response);
                 var form = $('#edit_reservation_form');
                 form.find('input[name="reservation_id"]').val(reservationId);
-                form.attr('action', form.attr('action').replace(':id', reservationId));
+                
+                // Check if the form has an action attribute before trying to replace
+                var formAction = form.attr('action');
+                if (formAction) {
+                    form.attr('action', formAction.replace(':id', reservationId));
+                } else {
+                    console.warn('Form action attribute is not set');
+                    // You might want to set a default action here
+                    // form.attr('action', '/your-default-update-route/' + reservationId);
+                }
                 
                 // Populate other form fields...
                 $('#destination_activity_edit').val(response.reservation.destination_activity);

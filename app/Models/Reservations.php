@@ -45,10 +45,10 @@ class Reservations extends Model
         return $this->hasManyThrough(
             Drivers::class,
             ReservationVehicle::class,
-            'reservation_id', // Foreign key on ReservationVehicle table
-            'driver_id', // Foreign key on Drivers table
-            'reservation_id', // Local key on Reservations table
-            'driver_id' // Local key on ReservationVehicle table
+            'reservation_id', 
+            'driver_id',
+            'reservation_id', 
+            'driver_id' 
         );
     }
 

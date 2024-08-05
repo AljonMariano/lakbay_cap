@@ -216,7 +216,14 @@ class ReservationsController extends Controller
         try {
             DB::beginTransaction();
 
-            $reservation = new Reservations($request->all());
+            // Create a new reservation with the request data
+            $reservationData = $request->all();
+            
+            // Set default status values
+            $reservationData['rs_approval_status'] = 'Pending';
+            $reservationData['rs_status'] = 'Pending';
+
+            $reservation = new Reservations($reservationData);
             $reservation->save();
 
             // Handle drivers and vehicles

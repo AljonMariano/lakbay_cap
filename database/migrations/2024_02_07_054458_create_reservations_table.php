@@ -13,18 +13,19 @@ return new class extends Migration
     {
         Schema::create('reservations', function (Blueprint $table) {
             $table->id('reservation_id');
-            $table->bigInteger('rs_voucher')->nullable();
+            $table->string('rs_purpose')->nullable(); 
             $table->bigInteger('rs_passengers');
             $table->string('rs_travel_type', 255)->nullable();
             $table->string('rs_approval_status', 20)->nullable();
             $table->string('rs_status', 20)->nullable();
+            $table->string('destination_activity')->nullable(); 
             $table->boolean('rs_cancelled')->default(false);
             $table->unsignedBigInteger('event_id');
-            $table->unsignedBigInteger('requestor_id');
+            
             $table->foreign('event_id')->references('event_id')->on('events');
+            $table->unsignedBigInteger('requestor_id')->nullable();
             $table->foreign('requestor_id')->references('requestor_id')->on('requestors');
             $table->timestamps();
-            $table->unsignedBigInteger('requestor_id')->nullable();
         });
     }
 
