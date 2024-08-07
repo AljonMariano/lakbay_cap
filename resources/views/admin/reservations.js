@@ -113,12 +113,7 @@ $(document).ready(function() {
     });
 
     // Function to load drivers and vehicles
-    function loadDriversAndVehicles() {
-        var startDate = $('#rs_date_start').val();
-        var startTime = $('#rs_time_start').val();
-        var endDate = $('#rs_date_end').val();
-        var endTime = $('#rs_time_end').val();
-
+    function loadDriversAndVehicles(startDate, startTime, endDate, endTime, currentReservationId = null) {
         $.ajax({
             url: routes.getDriversAndVehicles,
             method: 'GET',
@@ -126,53 +121,71 @@ $(document).ready(function() {
                 start_date: startDate,
                 start_time: startTime,
                 end_date: endDate,
-                end_time: endTime
+                end_time: endTime,
+                current_reservation_id: currentReservationId
             },
             success: function(response) {
                 console.log('Drivers and vehicles loaded:', response);
                 if (response.drivers && response.vehicles) {
-                    populateSelect('#driver_id', response.drivers);
-                    populateSelect('#vehicle_id', response.vehicles);
-                    populateSelect('#driver_id_edit', response.drivers);
-                    populateSelect('#vehicle_id_edit', response.vehicles);
+                    populateSelect('#driver_id', response.drivers, false);
+                    populateSelect('#vehicle_id', response.vehicles, false);
+                    populateSelect('#driver_id_edit', response.drivers, true);
+                    populateSelect('#vehicle_id_edit', response.vehicles, true);
                 } else {
                     console.error('Invalid response format:', response);
                 }
             },
             error: function(xhr, status, error) {
-                console.error("Error loading drivers and vehicles:", error);
+                console.error('Error loading drivers and vehicles:', error);
             }
         });
     }
 
     // Function to populate select fields
-    function populateSelect(selectId, data) {
+    function populateSelect(selectId, data, isEditForm) {
         var select = $(selectId);
+        var currentValues = select.val() || [];
         select.empty();
         select.append('<option value="">Select an option</option>');
 
         $.each(data, function(index, item) {
             var option = $('<option>', {
                 value: item.id,
-                text: item.text,
-                disabled: item.is_reserved === 1
+                text: item.text
             });
             
-            if (item.is_reserved === 1) {
+            if (!isEditForm && item.is_reserved === 1) {
+                option.prop('disabled', true);
                 option.text(item.text + ' (Already Reserved)');
             }
             
             select.append(option);
         });
-        select.trigger('change');
+
+        if (isEditForm) {
+            select.val(currentValues).trigger('change');
+        } else {
+            select.trigger('change');
+        }
     }
 
-    // Call loadDriversAndVehicles when any date or time input changes
-    $('#rs_date_start, #rs_time_start, #rs_date_end, #rs_time_end').on('change', loadDriversAndVehicles);
+    // Call loadDriversAndVehicles when any date or time input changes in the reservation form
+    $('#rs_date_start, #rs_time_start, #rs_date_end, #rs_time_end').on('change', function() {
+        var startDate = $('#rs_date_start').val();
+        var startTime = $('#rs_time_start').val();
+        var endDate = $('#rs_date_end').val();
+        var endTime = $('#rs_time_end').val();
+        loadDriversAndVehicles(startDate, startTime, endDate, endTime);
+    });
 
-    // Also call it when the page loads
-    $(document).ready(function() {
-        loadDriversAndVehicles();
+    // Call loadDriversAndVehicles when any date or time input changes in the edit modal
+    $('#rs_date_start_edit, #rs_time_start_edit, #rs_date_end_edit, #rs_time_end_edit').on('change', function() {
+        var startDate = $('#rs_date_start_edit').val();
+        var startTime = $('#rs_time_start_edit').val();
+        var endDate = $('#rs_date_end_edit').val();
+        var endTime = $('#rs_time_end_edit').val();
+        var currentReservationId = $('#edit_reservation_id').val();
+        loadDriversAndVehicles(startDate, startTime, endDate, endTime, currentReservationId);
     });
 
     // Initialize Select2
@@ -212,62 +225,92 @@ $(document).ready(function() {
         toggleOutsideFields($(this).closest('form'));
     });
 
-    function loadReservationData(reservationId) {
+    // Update the edit button click handler
+    $(document).on('click', '.edit-btn', function() {
+        var reservationId = $(this).data('id');
+        console.log('Edit button clicked for reservation ID:', reservationId);
         $.ajax({
             url: routes.edit.replace(':id', reservationId),
             method: 'GET',
             success: function(response) {
-                var reservation = response.reservation;
-                console.log('Reservation data:', reservation);
-
-                // Populate form fields with reservation data
-                $('#edit_reservation_id').val(reservation.reservation_id);
-                $('#destination_activity_edit').val(reservation.destination_activity || '');
-                $('#rs_from_edit').val(reservation.rs_from || '');
-                $('#rs_date_start_edit').val(reservation.rs_date_start || '');
-                $('#rs_time_start_edit').val(reservation.rs_time_start || '');
-                $('#rs_date_end_edit').val(reservation.rs_date_end || '');
-                $('#rs_time_end_edit').val(reservation.rs_time_end || '');
-                $('#rs_passengers_edit').val(reservation.rs_passengers || '');
-                $('#rs_travel_type_edit').val(reservation.rs_travel_type || '');
-                $('#rs_purpose_edit').val(reservation.rs_purpose || '');
-                $('#reason_edit').val(reservation.reason || '');
-                
-
-                // Handle outsider status
-                var isOutsider = !reservation.requestor_id && !reservation.off_id;
-                $('#is_outsider_edit').prop('checked', isOutsider).trigger('change');
-
-                if (isOutsider) {
-                    $('#outside_office_edit').val(reservation.outside_office || '');
-                    $('#outside_requestor_edit').val(reservation.outside_requestor || '');
-                } else {
-                    $('#office_edit').val(reservation.off_id || '').trigger('change');
-                    $('#requestor_edit').val(reservation.requestor_id || '').trigger('change');
-                }
-
-                // Populate drivers and vehicles
-                if (reservation.reservation_vehicles && reservation.reservation_vehicles.length > 0) {
-                    var driverIds = [];
-                    var vehicleIds = [];
-                    reservation.reservation_vehicles.forEach(function(rv) {
-                        if (rv.driver_id) driverIds.push(rv.driver_id);
-                        if (rv.vehicle_id) vehicleIds.push(rv.vehicle_id);
-                    });
-                    $('#driver_id_edit').val(driverIds).trigger('change');
-                    $('#vehicle_id_edit').val(vehicleIds).trigger('change');
-                }
-
-                // Update time displays
-                updateTimeDisplay();
-
-                $('#edit_reservation_modal').modal('show');
+                console.log('Edit data received:', response);
+                populateEditForm(response);
+                var startDate = response.reservation.rs_date_start;
+                var startTime = response.reservation.rs_time_start;
+                var endDate = response.reservation.rs_date_end;
+                var endTime = response.reservation.rs_time_end;
+                loadDriversAndVehicles(startDate, startTime, endDate, endTime, reservationId);
             },
             error: function(xhr, status, error) {
-                console.error('Error fetching reservation:', xhr.responseText);
-                showErrorMessage('Error fetching reservation details');
+                console.error('Error loading reservation data', error);
+                showErrorMessage('Error loading reservation data. Please try again.');
             }
         });
+    });
+
+    // Function to populate edit form
+    function populateEditForm(data) {
+        if (data && data.reservation) {
+            var reservation = data.reservation;
+            $('#edit_reservation_form #edit_reservation_id').val(reservation.reservation_id);
+            $('#edit_reservation_form #destination_activity_edit').val(reservation.destination_activity);
+            $('#edit_reservation_form #rs_from_edit').val(reservation.rs_from);
+            $('#edit_reservation_form #rs_date_start_edit').val(reservation.rs_date_start);
+            $('#edit_reservation_form #rs_time_start_edit').val(reservation.rs_time_start);
+            $('#edit_reservation_form #rs_date_end_edit').val(reservation.rs_date_end);
+            $('#edit_reservation_form #rs_time_end_edit').val(reservation.rs_time_end);
+            $('#edit_reservation_form #rs_passengers_edit').val(reservation.rs_passengers);
+            $('#edit_reservation_form #rs_travel_type_edit').val(reservation.rs_travel_type);
+            $('#edit_reservation_form #rs_purpose_edit').val(reservation.rs_purpose);
+
+            // Populate drivers and vehicles
+            if (reservation.reservation_vehicles && reservation.reservation_vehicles.length > 0) {
+                var driverIds = reservation.reservation_vehicles.map(rv => rv.driver_id);
+                var vehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id);
+
+                // Clear and populate driver select
+                $('#driver_id_edit').empty();
+                $.each(data.drivers, function(index, driver) {
+                    var option = new Option(driver.text, driver.id, false, driverIds.includes(driver.id));
+                    $('#driver_id_edit').append(option);
+                });
+
+                // Clear and populate vehicle select
+                $('#vehicle_id_edit').empty();
+                $.each(data.vehicles, function(index, vehicle) {
+                    var option = new Option(vehicle.text, vehicle.id, false, vehicleIds.includes(vehicle.id));
+                    $('#vehicle_id_edit').append(option);
+                });
+
+                // Trigger change to update Select2
+                $('#driver_id_edit, #vehicle_id_edit').trigger('change');
+            }
+
+            // Handle other fields (office, requestor, etc.)
+            $('#edit_reservation_form #off_id_edit').val(reservation.off_id).trigger('change');
+            $('#edit_reservation_form #requestor_id_edit').val(reservation.requestor_id).trigger('change');
+
+            // Handle outsider fields
+            $('#is_outsider_edit').prop('checked', reservation.is_outsider == 1);
+            $('#outside_office_edit').val(reservation.outside_office);
+            $('#outside_requestor_edit').val(reservation.outside_requestor);
+
+            // Toggle outside fields visibility
+            toggleOutsideFields($('#edit_reservation_form'));
+
+            // Set the selected values after a short delay to ensure options are loaded
+            setTimeout(function() {
+                var driverIds = reservation.reservation_vehicles.map(rv => rv.driver_id.toString());
+                var vehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id.toString());
+                
+                $('#edit_reservation_form #driver_id_edit').val(driverIds).trigger('change');
+                $('#edit_reservation_form #vehicle_id_edit').val(vehicleIds).trigger('change');
+            }, 500);
+
+            $('#edit_reservation_modal').modal('show');
+        } else {
+            console.error('No data received to populate edit form');
+        }
     }
 
     function showCancellationModal(reservationId) {
@@ -374,62 +417,6 @@ $(document).ready(function() {
             }
         });
     });
-
-    // Function to populate the edit form
-    function populateEditForm(data) {
-        if (data) {
-            $('#edit_reservation_form #reservation_id').val(data.reservation_id);
-            $('#edit_reservation_form #destination_activity_edit').val(data.destination_activity);
-            $('#edit_reservation_form #rs_from_edit').val(data.rs_from);
-            $('#edit_reservation_form #rs_date_start_edit').val(data.rs_date_start);
-            $('#edit_reservation_form #rs_time_start_edit').val(data.rs_time_start);
-            $('#edit_reservation_form #rs_date_end_edit').val(data.rs_date_end);
-            $('#edit_reservation_form #rs_time_end_edit').val(data.rs_time_end);
-            $('#edit_reservation_form #rs_passengers_edit').val(data.rs_passengers);
-            $('#edit_reservation_form #rs_travel_type_edit').val(data.rs_travel_type);
-            $('#edit_reservation_form #rs_purpose_edit').val(data.rs_purpose);
-            $('#edit_reservation_form #reason_edit').val(data.reason);
-            
-            // Handle is_outsider checkbox
-            $('#edit_reservation_form #is_outsider_edit').prop('checked', data.is_outsider == 1);
-            toggleOutsiderFields(data.is_outsider == 1, true);
-
-            // Set office and requestor fields
-            if (data.is_outsider == 1) {
-                $('#edit_reservation_form #outside_office_edit').val(data.outside_office);
-                $('#edit_reservation_form #outside_requestor_edit').val(data.outside_requestor);
-            } else {
-                $('#edit_reservation_form #off_id_edit').val(data.off_id);
-                $('#edit_reservation_form #requestor_id_edit').val(data.requestor_id);
-            }
-
-            // Set drivers and vehicles
-            var driverIds = data.reservation_vehicles.map(rv => rv.driver_id);
-            var vehicleIds = data.reservation_vehicles.map(rv => rv.vehicle_id);
-            $('#edit_reservation_form #driver_id_edit').val(driverIds).trigger('change');
-            $('#edit_reservation_form #vehicle_id_edit').val(vehicleIds).trigger('change');
-
-            // Reinitialize flatpickr for date and time inputs
-            flatpickr('#rs_date_start_edit, #rs_date_end_edit', {
-                dateFormat: "Y-m-d",
-                allowInput: true,
-                clickOpens: true
-            });
-            flatpickr('#rs_time_start_edit, #rs_time_end_edit', {
-                enableTime: true,
-                noCalendar: true,
-                dateFormat: "H:i",
-                time_24hr: true,
-                allowInput: true,
-                clickOpens: true
-            });
-
-            // Trigger change event for select fields to ensure proper rendering
-            $('#edit_reservation_form select').trigger('change');
-        } else {
-            console.error('No data received to populate edit form');
-        }
-    }
 
     $('#update_reservation_btn').on('click', function(e) {
         e.preventDefault();
@@ -648,6 +635,7 @@ $(document).ready(function() {
                 showSuccessMessage('Reservation ' + (form.attr('id') === 'reservations-form' ? 'created' : 'updated') + ' successfully');
                 $('#insertModal, #edit_reservation_modal').modal('hide');
                 $('#reservations-table').DataTable().ajax.reload();
+                clearReservationForm();  // Clear the form after successful submission
             },
             error: function(xhr, status, error) {
                 console.error('Error:', xhr.responseJSON);
@@ -669,45 +657,6 @@ $(document).ready(function() {
 
     $('#edit_reservation_modal').on('show.bs.modal', function () {
         toggleOutsideFields($('#edit_reservation_form'));
-    });
-
-    // Handle edit button click
-    $(document).on('click', '.edit', function() {
-        var reservationId = $(this).data('id');
-        var url = routes.edit.replace(':id', reservationId);
-        
-        console.log('Edit button clicked for reservation ID:', reservationId);
-
-        $.ajax({
-            url: url,
-            method: 'GET',
-            success: function(response) {
-                console.log('Reservation data received', response);
-                var form = $('#edit_reservation_form');
-                form.find('input[name="reservation_id"]').val(reservationId);
-                
-                // Check if the form has an action attribute before trying to replace
-                var formAction = form.attr('action');
-                if (formAction) {
-                    form.attr('action', formAction.replace(':id', reservationId));
-                } else {
-                    console.warn('Form action attribute is not set');
-                    // You might want to set a default action here
-                    // form.attr('action', '/your-default-update-route/' + reservationId);
-                }
-                
-                // Populate other form fields...
-                $('#destination_activity_edit').val(response.reservation.destination_activity);
-                $('#rs_from_edit').val(response.reservation.rs_from);
-                // ... populate other fields ...
-
-                $('#edit_reservation_modal').modal('show');
-            },
-            error: function(xhr, status, error) {
-                console.error('Error loading reservation data', {status: status, error: error, responseText: xhr.responseText});
-                showErrorMessage('Error loading reservation data. Please try again.');
-            }
-        });
     });
 
     // Function to clear the reservation form
