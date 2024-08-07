@@ -128,6 +128,7 @@ Route::post('/admin/reservations/{id}/approve', [ReservationsController::class, 
 Route::post('/admin/reservations/{id}/reject', [ReservationsController::class, 'reject'])->name('reservations.reject');
 Route::post('/admin/reservations/{id}/cancel', [ReservationsController::class, 'cancel'])->name('reservations.cancel');
 Route::post('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
+Route::get('/get-drivers-vehicles', [ReservationsController::class, 'getDriversAndVehicles'])->name('get.drivers.vehicles');
 
 
 
@@ -309,13 +310,16 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
     Route::get('/delete-reservation/{reservation_id}', [ReservationsController::class, 'delete']);
     Route::get('/reservations', [UsersReservationsController::class, 'show'])->name('users.reservations.show');
     Route::post('/reservations', [UsersReservationsController::class, 'store'])->name('users.reservations.store');
-    Route::get('/get-drivers-vehicles', [UsersReservationsController::class, 'getDriversAndVehicles'])->name('users.get.drivers.vehicles');
+    Route::get('/get-drivers-vehicles', [ReservationsController::class, 'getDriversAndVehicles'])->name('get.drivers.vehicles');
 
     // Test Section
     Route::get('/test-select', [ReservationsController::class, 'test_select'])->name('reservations.testSelect');
     Route::get('/test-return', [ReservationsController::class, 'test_return'])->name('reservations.testReturn');
 
 });
+
+
+
 
 
 

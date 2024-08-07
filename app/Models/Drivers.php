@@ -25,4 +25,11 @@ class Drivers extends Model
     {
         return $this->belongsTo(Offices::class, 'off_id');
     }
+
+    public function reservations()
+    {
+        return $this->belongsToMany(Reservations::class, 'reservation_vehicle', 'driver_id', 'reservation_id');
+    }
 }
+
+

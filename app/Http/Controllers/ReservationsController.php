@@ -23,6 +23,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class ReservationsController extends Controller
 {
@@ -223,19 +224,23 @@ class ReservationsController extends Controller
             $reservationData['rs_approval_status'] = 'Pending';
             $reservationData['rs_status'] = 'Pending';
 
-            $reservation = new Reservations($reservationData);
-            $reservation->save();
+            $reservation = Reservations::create($reservationData);
 
             // Handle drivers and vehicles
             if ($request->has('driver_id') && $request->has('vehicle_id')) {
                 $driverIds = $request->input('driver_id');
                 $vehicleIds = $request->input('vehicle_id');
 
-                foreach ($driverIds as $index => $driverId) {
-                    ReservationVehicle::create([
+                // Ensure both arrays have the same length
+                $count = min(count($driverIds), count($vehicleIds));
+
+                for ($i = 0; $i < $count; $i++) {
+                    DB::table('reservation_vehicles')->insert([
                         'reservation_id' => $reservation->reservation_id,
-                        'driver_id' => $driverId,
-                        'vehicle_id' => $vehicleIds[$index],
+                        'driver_id' => $driverIds[$i],
+                        'vehicle_id' => $vehicleIds[$i],
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 }
             }
@@ -253,8 +258,8 @@ class ReservationsController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error creating reservation:', ['message' => $e->getMessage()]);
-            return response()->json(['error' => 'An unexpected error occurred'], 500);
+            Log::error('Error creating reservation:', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['error' => 'An unexpected error occurred: ' . $e->getMessage()], 500);
         }
     }
 
@@ -484,18 +489,13 @@ class ReservationsController extends Controller
 
         $unavailableDriverIds = ReservationVehicle::whereHas('reservation', function ($query) use ($startDateTime, $endDateTime, $reservationId) {
             $query->where('rs_status', '!=', 'Done')
-                  ->where('reservation_id', '!=', $reservationId);
-            
-            if ($startDateTime && $endDateTime) {
-                $query->where(function ($q) use ($startDateTime, $endDateTime) {
-                    $q->whereBetween('rs_date_start', [$startDateTime, $endDateTime])
-                      ->orWhereBetween('rs_date_end', [$startDateTime, $endDateTime])
-                      ->orWhere(function ($q2) use ($startDateTime, $endDateTime) {
-                          $q2->where('rs_date_start', '<=', $startDateTime)
-                             ->where('rs_date_end', '>=', $endDateTime);
+                  ->where('reservation_id', '!=', $reservationId)
+                  ->where(function ($q) use ($startDateTime, $endDateTime) {
+                      $q->where(function ($q2) use ($startDateTime, $endDateTime) {
+                          $q2->where('rs_date_start', '<=', $endDateTime)
+                             ->where('rs_date_end', '>=', $startDateTime);
                       });
-                });
-            }
+                  });
         })->pluck('driver_id')->toArray();
 
         $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
@@ -505,7 +505,7 @@ class ReservationsController extends Controller
                 return [
                     'id' => $driver->driver_id,
                     'name' => $driver->dr_fname . ' ' . $driver->dr_lname,
-                    'reserved' => in_array($driver->driver_id, $unavailableDriverIds)
+                    'available' => !in_array($driver->driver_id, $unavailableDriverIds)
                 ];
             });
 
@@ -520,18 +520,13 @@ class ReservationsController extends Controller
 
         $unavailableVehicleIds = ReservationVehicle::whereHas('reservation', function ($query) use ($startDateTime, $endDateTime, $reservationId) {
             $query->where('rs_status', '!=', 'Done')
-                  ->where('reservation_id', '!=', $reservationId);
-            
-            if ($startDateTime && $endDateTime) {
-                $query->where(function ($q) use ($startDateTime, $endDateTime) {
-                    $q->whereBetween('rs_date_start', [$startDateTime, $endDateTime])
-                      ->orWhereBetween('rs_date_end', [$startDateTime, $endDateTime])
-                      ->orWhere(function ($q2) use ($startDateTime, $endDateTime) {
-                          $q2->where('rs_date_start', '<=', $startDateTime)
-                             ->where('rs_date_end', '>=', $endDateTime);
+                  ->where('reservation_id', '!=', $reservationId)
+                  ->where(function ($q) use ($startDateTime, $endDateTime) {
+                      $q->where(function ($q2) use ($startDateTime, $endDateTime) {
+                          $q2->where('rs_date_start', '<=', $endDateTime)
+                             ->where('rs_date_end', '>=', $startDateTime);
                       });
-                });
-            }
+                  });
         })->pluck('vehicle_id')->toArray();
 
         $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
@@ -541,7 +536,7 @@ class ReservationsController extends Controller
                 return [
                     'id' => $vehicle->vehicle_id,
                     'name' => $vehicle->vh_brand . ' (' . $vehicle->vh_plate . ') - ' . $vehicle->vh_type,
-                    'reserved' => in_array($vehicle->vehicle_id, $unavailableVehicleIds)
+                    'available' => !in_array($vehicle->vehicle_id, $unavailableVehicleIds)
                 ];
             });
 
@@ -613,6 +608,46 @@ class ReservationsController extends Controller
             'offices' => $offices,
             'requestors' => $requestors,
             'is_outsider' => $reservation->is_outsider
+        ]);
+    }
+
+    public function getDriversAndVehicles(Request $request)
+    {
+        $startDateTime = $request->input('start_date') . ' ' . $request->input('start_time');
+        $endDateTime = $request->input('end_date') . ' ' . $request->input('end_time');
+
+        \Log::info('Checking availability for: ' . $startDateTime . ' to ' . $endDateTime);
+
+        $conflictingReservations = DB::table('reservations')
+            ->join('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
+            ->where(function ($query) use ($startDateTime, $endDateTime) {
+                $query->where(function ($q) use ($startDateTime, $endDateTime) {
+                    $q->whereRaw("CONCAT(rs_date_start, ' ', rs_time_start) < ?", [$endDateTime])
+                      ->whereRaw("CONCAT(rs_date_end, ' ', rs_time_end) > ?", [$startDateTime]);
+                });
+            })
+            ->whereIn('reservations.rs_status', ['Pending', 'Approved', 'On-Going'])
+            ->get();
+
+        \Log::info('Conflicting Reservations: ' . $conflictingReservations->toJson());
+
+        $reservedDriverIds = $conflictingReservations->pluck('driver_id')->unique()->toArray();
+        $reservedVehicleIds = $conflictingReservations->pluck('vehicle_id')->unique()->toArray();
+
+        \Log::info('Reserved Driver IDs: ' . implode(', ', $reservedDriverIds));
+        \Log::info('Reserved Vehicle IDs: ' . implode(', ', $reservedVehicleIds));
+
+        $drivers = Drivers::select('driver_id as id', DB::raw("CONCAT(dr_fname, ' ', dr_lname) as text"))
+            ->addSelect(DB::raw('CASE WHEN driver_id IN (' . implode(',', $reservedDriverIds ?: [0]) . ') THEN 1 ELSE 0 END as is_reserved'))
+            ->get();
+
+        $vehicles = Vehicles::select('vehicle_id as id', DB::raw("CONCAT(vh_brand, ' (', vh_plate, ')') as text"))
+            ->addSelect(DB::raw('CASE WHEN vehicle_id IN (' . implode(',', $reservedVehicleIds ?: [0]) . ') THEN 1 ELSE 0 END as is_reserved'))
+            ->get();
+
+        return response()->json([
+            'drivers' => $drivers,
+            'vehicles' => $vehicles
         ]);
     }
 }

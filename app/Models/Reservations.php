@@ -40,16 +40,15 @@ class Reservations extends Model
         return $this->belongsTo(Offices::class, 'off_id', 'off_id');
     }
 
-    public function drivers(): HasManyThrough
+   
+
+    public function vehicles()
     {
-        return $this->hasManyThrough(
-            Drivers::class,
-            ReservationVehicle::class,
-            'reservation_id', 
-            'driver_id',
-            'reservation_id', 
-            'driver_id' 
-        );
+        return $this->belongsToMany(Vehicles::class, 'reservation_vehicle', 'reservation_id', 'vehicle_id');
     }
 
+    public function drivers()
+    {
+        return $this->belongsToMany(Drivers::class, 'reservation_vehicle', 'reservation_id', 'driver_id');
+    }
 }

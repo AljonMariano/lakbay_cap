@@ -114,52 +114,80 @@ $(document).ready(function() {
 
     // Function to load drivers and vehicles
     function loadDriversAndVehicles() {
-        if (!routes.getDrivers || !routes.getVehicles) {
-            console.error('Routes are not properly defined');
-            return;
-        }
+        var startDate = $('#rs_date_start').val();
+        var startTime = $('#rs_time_start').val();
+        var endDate = $('#rs_date_end').val();
+        var endTime = $('#rs_time_end').val();
 
         $.ajax({
-            url: routes.getDrivers,
+            url: routes.getDriversAndVehicles,
             method: 'GET',
+            data: {
+                start_date: startDate,
+                start_time: startTime,
+                end_date: endDate,
+                end_time: endTime
+            },
             success: function(response) {
-                updateDriverSelect(response.drivers);
+                console.log('Drivers and vehicles loaded:', response);
+                if (response.drivers && response.vehicles) {
+                    populateSelect('#driver_id', response.drivers);
+                    populateSelect('#vehicle_id', response.vehicles);
+                    populateSelect('#driver_id_edit', response.drivers);
+                    populateSelect('#vehicle_id_edit', response.vehicles);
+                } else {
+                    console.error('Invalid response format:', response);
+                }
             },
             error: function(xhr, status, error) {
-                console.error('Error fetching drivers:', error);
-            }
-        });
-
-        $.ajax({
-            url: routes.getVehicles,
-            method: 'GET',
-            success: function(response) {
-                updateVehicleSelect(response.vehicles);
-            },
-            error: function(xhr, status, error) {
-                console.error('Error fetching vehicles:', error);
+                console.error("Error loading drivers and vehicles:", error);
             }
         });
     }
 
-    function updateDriverSelect(drivers) {
-        var $driverSelect = $('#driver_id, #driver_id_edit');
-        $driverSelect.empty();
-        drivers.forEach(function(driver) {
-            $driverSelect.append(new Option(driver.name, driver.id, false, false));
+    // Function to populate select fields
+    function populateSelect(selectId, data) {
+        var select = $(selectId);
+        select.empty();
+        select.append('<option value="">Select an option</option>');
+
+        $.each(data, function(index, item) {
+            var option = $('<option>', {
+                value: item.id,
+                text: item.text,
+                disabled: item.is_reserved === 1
+            });
+            
+            if (item.is_reserved === 1) {
+                option.text(item.text + ' (Already Reserved)');
+            }
+            
+            select.append(option);
         });
+        select.trigger('change');
     }
 
-    function updateVehicleSelect(vehicles) {
-        var $vehicleSelect = $('#vehicle_id, #vehicle_id_edit');
-        $vehicleSelect.empty();
-        vehicles.forEach(function(vehicle) {
-            $vehicleSelect.append(new Option(vehicle.name, vehicle.id, false, false));
-        });
-    }
+    // Call loadDriversAndVehicles when any date or time input changes
+    $('#rs_date_start, #rs_time_start, #rs_date_end, #rs_time_end').on('change', loadDriversAndVehicles);
 
-    // Call this function when the page loads
-    loadDriversAndVehicles();
+    // Also call it when the page loads
+    $(document).ready(function() {
+        loadDriversAndVehicles();
+    });
+
+    // Initialize Select2
+    $('#driver_id, #vehicle_id, #driver_id_edit, #vehicle_id_edit').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'Select option(s)',
+        allowClear: true,
+        closeOnSelect: false
+    });
+
+    // Refresh drivers and vehicles when the modal is opened
+    $('#insertModal, #edit_reservation_modal').on('show.bs.modal', function() {
+        loadDriversAndVehicles();
+    });
 
     // Function to toggle outsider fields
     function toggleOutsideFields(form) {
@@ -362,41 +390,40 @@ $(document).ready(function() {
             $('#edit_reservation_form #rs_purpose_edit').val(data.rs_purpose);
             $('#edit_reservation_form #reason_edit').val(data.reason);
             
-            // Handle office field
-            if (data.off_id) {
-                $('#edit_office').val(data.off_id).show();
-                $('#edit_outside_office').hide();
+            // Handle is_outsider checkbox
+            $('#edit_reservation_form #is_outsider_edit').prop('checked', data.is_outsider == 1);
+            toggleOutsiderFields(data.is_outsider == 1, true);
+
+            // Set office and requestor fields
+            if (data.is_outsider == 1) {
+                $('#edit_reservation_form #outside_office_edit').val(data.outside_office);
+                $('#edit_reservation_form #outside_requestor_edit').val(data.outside_requestor);
             } else {
-                $('#edit_office').hide();
-                $('#edit_outside_office').val(data.outside_office).show();
+                $('#edit_reservation_form #off_id_edit').val(data.off_id);
+                $('#edit_reservation_form #requestor_id_edit').val(data.requestor_id);
             }
 
-            // Handle requestor field
-            if (data.requestor_id) {
-                $('#edit_requestor').val(data.requestor_id).show();
-                $('#edit_outside_requestor').hide();
-            } else {
-                $('#edit_requestor').hide();
-                $('#edit_outside_requestor').val(data.outside_requestor).show();
-            }
+            // Set drivers and vehicles
+            var driverIds = data.reservation_vehicles.map(rv => rv.driver_id);
+            var vehicleIds = data.reservation_vehicles.map(rv => rv.vehicle_id);
+            $('#edit_reservation_form #driver_id_edit').val(driverIds).trigger('change');
+            $('#edit_reservation_form #vehicle_id_edit').val(vehicleIds).trigger('change');
 
-            // Handle drivers and vehicles
-            if (data.reservation_vehicles && data.reservation_vehicles.length > 0) {
-                var driverIds = data.reservation_vehicles.map(rv => rv.driver_id);
-                var vehicleIds = data.reservation_vehicles.map(rv => rv.vehicle_id);
-                $('#driver_id_edit').val(driverIds).trigger('change');
-                $('#vehicle_id_edit').val(vehicleIds).trigger('change');
-            }
-            
-            // If you're using any date/time pickers, you might need to reinitialize them
-            // For example, if you're using flatpickr:
-            flatpickr("#rs_date_start_edit", {
-                defaultDate: data.rs_date_start
+            // Reinitialize flatpickr for date and time inputs
+            flatpickr('#rs_date_start_edit, #rs_date_end_edit', {
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                clickOpens: true
             });
-            flatpickr("#rs_date_end_edit", {
-                defaultDate: data.rs_date_end
+            flatpickr('#rs_time_start_edit, #rs_time_end_edit', {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                allowInput: true,
+                clickOpens: true
             });
-            
+
             // Trigger change event for select fields to ensure proper rendering
             $('#edit_reservation_form select').trigger('change');
         } else {
@@ -759,15 +786,39 @@ $(document).ready(function() {
         });
     });
 
-    // Initialize flatpickr for date and time inputs
-    flatpickr('input[type="date"]', {
+    // Update the flatpickr initialization for date and time inputs
+    flatpickr('input.datepicker', {
         dateFormat: "Y-m-d",
+        allowInput: true,
+        clickOpens: true,
+        wrap: true,
+        placeholder: "Select Date"
     });
-    flatpickr('input[type="time"]', {
+
+    flatpickr('input.timepicker', {
         enableTime: true,
         noCalendar: true,
         dateFormat: "H:i",
+        allowInput: true,
+        clickOpens: true,
+        wrap: true,
+        placeholder: "Select Time"
     });
+
+    // Add this function to handle time selection
+    function setCurrentTime(inputId) {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const currentTime = `${hours}:${minutes}`;
+        
+        const input = document.getElementById(inputId);
+        input.value = currentTime;
+        
+        // Trigger the change event to update flatpickr
+        const event = new Event('input', { bubbles: true });
+        input.dispatchEvent(event);
+    }
 
     // Initialize Select2 for edit modal
     $('#driver_id_edit, #vehicle_id_edit').select2({

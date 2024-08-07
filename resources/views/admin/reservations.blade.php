@@ -174,6 +174,16 @@
         #success-message, #error-message {
             margin-bottom: 0;
         }
+
+        .select2-results__option[aria-disabled=true] {
+            opacity: 0.6;
+        }
+        .select2-results__option[aria-disabled=true]:hover {
+            cursor: not-allowed;
+        }
+        .select2-selection__choice__remove {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -212,24 +222,23 @@
 
                                         <div class="mb-2">
                                             <label for="rs_date_start" class="form-label mb-0">Start Date</label>
-                                            <input type="date" class="form-control rounded-1" name="rs_date_start" id="rs_date_start" placeholder="Select Start Date" required>
+                                            <input type="text" id="rs_date_start" name="rs_date_start" class="form-control rounded-1 datepicker" placeholder="Select Start Date" required>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="rs_time_start" class="form-label mb-0">Start Time</label>
-                                            <input type="time" class="form-control rounded-1" name="rs_time_start" id="rs_time_start" placeholder="Select Start Time" required>
-                                            <span id="rs_time_start_display"></span>
+                                            <input type="text" id="rs_time_start" name="rs_time_start" class="form-control rounded-1 timepicker" placeholder="Select Start Time" required>
+                                            <button type="button" class="btn btn-sm btn-secondary mt-1" onclick="setCurrentTime('rs_time_start')">Set Current Time</button>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="rs_date_end" class="form-label mb-0">End Date</label>
-                                            <input type="date" class="form-control rounded-1" name="rs_date_end" id="rs_date_end" placeholder="Select End Date" required>
+                                            <input type="text" id="rs_date_end" name="rs_date_end" class="form-control rounded-1 datepicker" placeholder="Select End Date" required>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="rs_time_end" class="form-label mb-0">End Time</label>
-                                            <input type="time" class="form-control rounded-1" name="rs_time_end" id="rs_time_end" placeholder="Select End Time" required>
-                                            <span id="rs_time_end_display"></span>
+                                            <input type="text" id="rs_time_end" name="rs_time_end" class="form-control rounded-1 timepicker" placeholder="Select End Time" required>
                                         </div>
 
                                         <div class="mb-2">
@@ -374,24 +383,23 @@
 
                                 <div class="mb-2">
                                     <label for="rs_date_start_edit" class="form-label mb-0">Start Date</label>
-                                    <input type="date" class="form-control rounded-1" name="rs_date_start" id="rs_date_start_edit" placeholder="Select Start Date" required>
+                                    <input type="text" id="rs_date_start_edit" name="rs_date_start" class="form-control rounded-1 datepicker" placeholder="Select Start Date" required>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="rs_time_start_edit" class="form-label mb-0">Start Time</label>
-                                    <input type="time" class="form-control rounded-1" name="rs_time_start" id="rs_time_start_edit" placeholder="Select Start Time" required>
-                                    <span id="rs_time_start_edit_display"></span>
+                                    <input type="text" id="rs_time_start_edit" name="rs_time_start" class="form-control rounded-1 timepicker" placeholder="Select Start Time" required>
+                                    <button type="button" class="btn btn-sm btn-secondary mt-1" onclick="setCurrentTime('rs_time_start_edit')">Set Current Time</button>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="rs_date_end_edit" class="form-label mb-0">End Date</label>
-                                    <input type="date" class="form-control rounded-1" name="rs_date_end" id="rs_date_end_edit" placeholder="Select End Date" required>
+                                    <input type="text" id="rs_date_end_edit" name="rs_date_end" class="form-control rounded-1 datepicker" placeholder="Select End Date" required>
                                 </div>
 
                                 <div class="mb-2">
                                     <label for="rs_time_end_edit" class="form-label mb-0">End Time</label>
-                                    <input type="time" class="form-control rounded-1" name="rs_time_end" id="rs_time_end_edit" placeholder="Select End Time" required>
-                                    <span id="rs_time_end_edit_display"></span>
+                                    <input type="text" id="rs_time_end_edit" name="rs_time_end" class="form-control rounded-1 timepicker" placeholder="Select End Time" required>
                                 </div>
 
                                 <div class="mb-2">
@@ -563,7 +571,7 @@
             edit: "{{ route('reservations.edit', ':id') }}",
             done: "{{ route('reservations.done', ':id') }}",
             destroy: "{{ route('reservations.destroy', ':id') }}",
-          
+            getDriversAndVehicles: "{{ route('get.drivers.vehicles') }}",
         };
     </script>
     <script src="{{ asset('js/admin/reservations.js') }}"></script>
@@ -590,8 +598,47 @@
     <script>
         console.log('Inline script in reservations.blade.php executed');
     </script>
+    <script>
+        // Add this to your existing JavaScript file or in a <script> tag at the end of your blade file
+        $(document).ready(function() {
+            // Initialize datepicker
+            $(".datepicker").flatpickr({
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                clickOpens: true
+            });
+
+            // Initialize timepicker
+            $(".timepicker").flatpickr({
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                allowInput: true,
+                clickOpens: true
+            });
+        });
+
+        // Define the setCurrentTime function
+        function setCurrentTime(inputId) {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const currentTime = `${hours}:${minutes}`;
+            
+            const input = document.getElementById(inputId);
+            input.value = currentTime;
+            
+            // Trigger the change event to update flatpickr
+            const event = new Event('input', { bubbles: true });
+            input.dispatchEvent(event);
+        }
+    </script>
 </body>
 </html>
+
+
+
 
 
 
