@@ -39,6 +39,7 @@ class ReservationsController extends Controller
     public function getData()
     {
         $reservations = Reservations::with(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers'])
+            ->where('rs_status', '!=', 'Deleted')
             ->select('reservations.*');
 
         return DataTables::of($reservations)
@@ -627,10 +628,16 @@ class ReservationsController extends Controller
 
     public function destroy($id)
     {
-        $reservation = Reservations::findOrFail($id);
-        $reservation->delete();
+        try {
+            $reservation = Reservations::findOrFail($id);
+            $reservation->rs_approval_status = 'Deleted';
+            $reservation->rs_status = 'Deleted';
+            $reservation->save();
 
-        return response()->json(['success' => 'Reservation deleted successfully']);
+            return response()->json(['success' => 'Reservation deleted successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred while deleting the reservation.'], 500);
+        }
     }
 
     public function markAsDone($id)
