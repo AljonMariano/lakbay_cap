@@ -256,9 +256,9 @@ $(document).ready(function() {
             $('#edit_reservation_form #destination_activity_edit').val(reservation.destination_activity);
             $('#edit_reservation_form #rs_from_edit').val(reservation.rs_from);
             $('#edit_reservation_form #rs_date_start_edit').val(reservation.rs_date_start);
-            $('#edit_reservation_form #rs_time_start_edit').val(reservation.rs_time_start);
+            $('#edit_reservation_form #rs_time_start_edit').val(formatTime(reservation.rs_time_start));
             $('#edit_reservation_form #rs_date_end_edit').val(reservation.rs_date_end);
-            $('#edit_reservation_form #rs_time_end_edit').val(reservation.rs_time_end);
+            $('#edit_reservation_form #rs_time_end_edit').val(formatTime(reservation.rs_time_end));
             $('#edit_reservation_form #rs_passengers_edit').val(reservation.rs_passengers);
             $('#edit_reservation_form #rs_travel_type_edit').val(reservation.rs_travel_type);
             $('#edit_reservation_form #rs_purpose_edit').val(reservation.rs_purpose);
@@ -380,9 +380,9 @@ $(document).ready(function() {
                 $('#destination_activity_edit').val(reservation.destination_activity);
                 $('#rs_from_edit').val(reservation.rs_from);
                 $('#rs_date_start_edit').val(reservation.rs_date_start);
-                $('#rs_time_start_edit').val(reservation.rs_time_start);
+                $('#rs_time_start_edit').val(formatTime(reservation.rs_time_start));
                 $('#rs_date_end_edit').val(reservation.rs_date_end);
-                $('#rs_time_end_edit').val(reservation.rs_time_end);
+                $('#rs_time_end_edit').val(formatTime(reservation.rs_time_end));
                 $('#rs_purpose_edit').val(reservation.rs_purpose);
                 $('#rs_passengers_edit').val(reservation.rs_passengers);
                 $('#rs_travel_type_edit').val(reservation.rs_travel_type);
@@ -726,10 +726,10 @@ $(document).ready(function() {
         let startTimeEdit = $('#rs_time_start_edit').val();
         let endTimeEdit = $('#rs_time_end_edit').val();
 
-        $('#rs_time_start_display').text(startTime ? formatTime(startTime) : '');
-        $('#rs_time_end_display').text(endTime ? formatTime(endTime) : '');
-        $('#rs_time_start_display_edit').text(startTimeEdit ? formatTime(startTimeEdit) : '');
-        $('#rs_time_end_display_edit').text(endTimeEdit ? formatTime(endTimeEdit) : '');
+        $('#rs_time_start_display').text(formatTime(startTime));
+        $('#rs_time_end_display').text(formatTime(endTime));
+        $('#rs_time_start_display_edit').text(formatTime(startTimeEdit));
+        $('#rs_time_end_display_edit').text(formatTime(endTimeEdit));
     }
 
     // Event listeners to update the display when time changes
@@ -770,7 +770,8 @@ $(document).ready(function() {
     flatpickr('input.timepicker', {
         enableTime: true,
         noCalendar: true,
-        dateFormat: "H:i",
+        dateFormat: "h:i K",
+        time_24hr: false,
         allowInput: true,
         clickOpens: true,
         wrap: true,
@@ -811,7 +812,11 @@ $(document).ready(function() {
     flatpickr('#rs_time_start_edit, #rs_time_end_edit', {
         enableTime: true,
         noCalendar: true,
-        dateFormat: "H:i",
+        dateFormat: "h:i K",
+        time_24hr: false,
+        allowInput: true,
+        clickOpens: true,
+        wrap: true
     });
 
     // Close modal when clicking the Cancel button

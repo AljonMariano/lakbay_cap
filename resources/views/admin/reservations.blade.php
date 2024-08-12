@@ -632,8 +632,8 @@
             $(".timepicker").flatpickr({
                 enableTime: true,
                 noCalendar: true,
-                dateFormat: "H:i",
-                time_24hr: true,
+                dateFormat: "h:i K", // This will display time in 12-hour format with AM/PM
+                time_24hr: false,
                 allowInput: true,
                 clickOpens: true
             });

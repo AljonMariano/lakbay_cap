@@ -75,6 +75,12 @@ class ReservationsController extends Controller
                 ';
                 return $buttons;
             })
+            ->editColumn('rs_time_start', function ($reservation) {
+                return date('h:i A', strtotime($reservation->rs_time_start));
+            })
+            ->editColumn('rs_time_end', function ($reservation) {
+                return date('h:i A', strtotime($reservation->rs_time_end));
+            })
             ->rawColumns(['action'])
             ->make(true);
     }
@@ -193,6 +199,9 @@ class ReservationsController extends Controller
 
             DB::beginTransaction();
 
+            $validatedData['rs_time_start'] = $this->convertTo24HourFormat($request->rs_time_start);
+            $validatedData['rs_time_end'] = $this->convertTo24HourFormat($request->rs_time_end);
+
             $reservation->update($validatedData);
 
             // Handle drivers and vehicles
@@ -261,6 +270,9 @@ class ReservationsController extends Controller
             if ($conflictingReservations) {
                 return response()->json(['error' => 'The selected driver(s) or vehicle(s) are not available for the specified time range.'], 422);
             }
+
+            $reservationData['rs_time_start'] = $this->convertTo24HourFormat($request->rs_time_start);
+            $reservationData['rs_time_end'] = $this->convertTo24HourFormat($request->rs_time_end);
 
             $reservation = Reservations::create($reservationData);
 
@@ -736,6 +748,10 @@ class ReservationsController extends Controller
     }
 }
 
+private function convertTo24HourFormat($time)
+{
+    return date("H:i", strtotime($time));
+}
 
 }
 
