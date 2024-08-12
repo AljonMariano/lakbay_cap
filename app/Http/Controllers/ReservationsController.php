@@ -24,6 +24,8 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
+
 
 class ReservationsController extends Controller
 {
@@ -169,6 +171,26 @@ class ReservationsController extends Controller
                 'rs_reason' => 'nullable|string',
             ]);
 
+            // Check for conflicting reservations
+            $conflictingReservations = Reservations::where(function ($query) use ($request, $id) {
+                $query->whereRaw("CONCAT(rs_date_start, ' ', rs_time_start) < ?", [$request->rs_date_end . ' ' . $request->rs_time_end])
+                      ->whereRaw("CONCAT(rs_date_end, ' ', rs_time_end) > ?", [$request->rs_date_start . ' ' . $request->rs_time_start]);
+                
+                if ($id) {
+                    $query->where('reservation_id', '!=', $id);
+                }
+            })
+            ->whereIn('rs_status', ['Pending', 'Approved', 'On-Going'])
+            ->whereHas('reservation_vehicles', function ($query) use ($request) {
+                $query->whereIn('driver_id', $request->driver_id)
+                      ->orWhereIn('vehicle_id', $request->vehicle_id);
+            })
+            ->exists();
+
+            if ($conflictingReservations) {
+                return response()->json(['error' => 'The selected driver(s) or vehicle(s) are not available for the specified time range.'], 422);
+            }
+
             DB::beginTransaction();
 
             $reservation->update($validatedData);
@@ -223,6 +245,22 @@ class ReservationsController extends Controller
             // Set default status values
             $reservationData['rs_approval_status'] = 'Pending';
             $reservationData['rs_status'] = 'Pending';
+
+            // Check for conflicting reservations
+            $conflictingReservations = Reservations::where(function ($query) use ($request) {
+                $query->whereRaw("CONCAT(rs_date_start, ' ', rs_time_start) < ?", [$request->rs_date_end . ' ' . $request->rs_time_end])
+                      ->whereRaw("CONCAT(rs_date_end, ' ', rs_time_end) > ?", [$request->rs_date_start . ' ' . $request->rs_time_start]);
+            })
+            ->whereIn('rs_status', ['Pending', 'Approved', 'On-Going'])
+            ->whereHas('reservation_vehicles', function ($query) use ($request) {
+                $query->whereIn('driver_id', $request->driver_id)
+                      ->orWhereIn('vehicle_id', $request->vehicle_id);
+            })
+            ->exists();
+
+            if ($conflictingReservations) {
+                return response()->json(['error' => 'The selected driver(s) or vehicle(s) are not available for the specified time range.'], 422);
+            }
 
             $reservation = Reservations::create($reservationData);
 
@@ -615,24 +653,35 @@ class ReservationsController extends Controller
     {
         $startDateTime = $request->input('start_date') . ' ' . $request->input('start_time');
         $endDateTime = $request->input('end_date') . ' ' . $request->input('end_time');
+        $currentReservationId = $request->input('current_reservation_id');
 
         \Log::info('Checking availability for: ' . $startDateTime . ' to ' . $endDateTime);
+        \Log::info('Current Reservation ID: ' . $currentReservationId);
 
-        $conflictingReservations = DB::table('reservations')
-            ->join('reservation_vehicles', 'reservations.reservation_id', '=', 'reservation_vehicles.reservation_id')
-            ->where(function ($query) use ($startDateTime, $endDateTime) {
+        $conflictingReservations = Reservations::with(['reservation_vehicles'])
+            ->where(function ($query) use ($startDateTime, $endDateTime, $currentReservationId) {
                 $query->where(function ($q) use ($startDateTime, $endDateTime) {
-                    $q->whereRaw("CONCAT(rs_date_start, ' ', rs_time_start) < ?", [$endDateTime])
-                      ->whereRaw("CONCAT(rs_date_end, ' ', rs_time_end) > ?", [$startDateTime]);
+                    $q->where(function ($innerQ) use ($startDateTime, $endDateTime) {
+                        $innerQ->whereRaw("CONCAT(rs_date_start, ' ', rs_time_start) < ?", [$endDateTime])
+                               ->whereRaw("CONCAT(rs_date_end, ' ', rs_time_end) > ?", [$startDateTime]);
+                    });
+                })
+                ->when($currentReservationId, function ($q) use ($currentReservationId) {
+                    return $q->where('reservation_id', '!=', $currentReservationId);
                 });
             })
-            ->whereIn('reservations.rs_status', ['Pending', 'Approved', 'On-Going'])
+            ->whereIn('rs_status', ['Pending', 'Approved', 'On-Going'])
             ->get();
 
         \Log::info('Conflicting Reservations: ' . $conflictingReservations->toJson());
 
-        $reservedDriverIds = $conflictingReservations->pluck('driver_id')->unique()->toArray();
-        $reservedVehicleIds = $conflictingReservations->pluck('vehicle_id')->unique()->toArray();
+        $reservedDriverIds = $conflictingReservations->flatMap(function ($reservation) {
+            return $reservation->reservation_vehicles->pluck('driver_id');
+        })->unique()->values()->toArray();
+
+        $reservedVehicleIds = $conflictingReservations->flatMap(function ($reservation) {
+            return $reservation->reservation_vehicles->pluck('vehicle_id');
+        })->unique()->values()->toArray();
 
         \Log::info('Reserved Driver IDs: ' . implode(', ', $reservedDriverIds));
         \Log::info('Reserved Vehicle IDs: ' . implode(', ', $reservedVehicleIds));
@@ -650,10 +699,45 @@ class ReservationsController extends Controller
             'vehicles' => $vehicles
         ]);
     }
+
+    public function printReservation($id)
+{
+    try {
+        $reservation = Reservations::with(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers'])->findOrFail($id);
+        
+        $templatePath = storage_path('app/public/Gas_Slip.html');
+        $html = file_get_contents($templatePath);
+
+        // Replace placeholders with actual data
+        $replacements = [
+            '$rs_date_start' => $reservation->rs_date_start,
+            '$rs_date_end' => $reservation->rs_date_end,
+            '$destination' => $reservation->destination_activity,
+            '$purpose' => $reservation->rs_purpose,
+            '$vh_brand' => $reservation->reservation_vehicles->first()->vehicles->vh_brand ?? 'N/A',
+            '$vh_plate' => $reservation->reservation_vehicles->first()->vehicles->vh_plate ?? 'N/A',
+            '$dr_fname' => $reservation->reservation_vehicles->first()->drivers->dr_fname ?? 'N/A',
+            '$dr_lname' => $reservation->reservation_vehicles->first()->drivers->dr_lname ?? 'N/A'
+        ];
+
+        foreach ($replacements as $placeholder => $value) {
+            $html = str_replace($placeholder, $value, $html);
+        }
+
+        // Add print script
+        $html .= '<script>window.onload = function() { window.print(); }</script>';
+
+        return response($html)->header('Content-Type', 'text/html');
+
+    } catch (\Exception $e) {
+        \Log::error('Error in printReservation: ' . $e->getMessage());
+        \Log::error($e->getTraceAsString());
+        return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+    }
 }
 
 
-
+}
 
 
 

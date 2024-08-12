@@ -557,6 +557,25 @@
         </div>
     </div>
 
+    <!-- Print Confirmation Modal -->
+    <div class="modal fade" id="printConfirmationModal" tabindex="-1" aria-labelledby="printConfirmationModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="printConfirmationModalLabel">Print Confirmation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Would you like to print?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+            <button type="button" class="btn btn-primary" id="confirmPrint">Yes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script>
         var reservationsDataUrl = "{{ route('reservations.data') }}";
     </script>
@@ -575,6 +594,7 @@
         };
     </script>
     <script src="{{ asset('js/admin/reservations.js') }}"></script>
+    <script src="{{ asset('js/reservation-print.js') }}"></script>
     <script>
         console.log('Reservations.js loaded and executed');
 

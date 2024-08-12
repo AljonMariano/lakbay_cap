@@ -154,7 +154,7 @@ $(document).ready(function() {
                 text: item.text
             });
             
-            if (!isEditForm && item.is_reserved === 1) {
+            if (item.is_reserved === 1) {
                 option.prop('disabled', true);
                 option.text(item.text + ' (Already Reserved)');
             }
@@ -573,7 +573,22 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.done-btn', function() {
+        console.log('Done button clicked');
         var reservationId = $(this).data('id');
+        console.log('Reservation ID:', reservationId);
+        $('#printConfirmationModal').modal('show');
+        $('#confirmPrint').data('reservationId', reservationId);
+    });
+    
+    $('#confirmPrint').on('click', function() {
+        console.log('Confirm Print clicked');
+        var reservationId = $(this).data('reservationId');
+        console.log('Reservation ID for printing:', reservationId);
+        markAsDoneAndPrint(reservationId);
+    });
+    
+    function markAsDoneAndPrint(reservationId) {
+        console.log('Marking as done and printing reservation:', reservationId);
         $.ajax({
             url: routes.done.replace(':id', reservationId),
             method: 'POST',
@@ -581,14 +596,22 @@ $(document).ready(function() {
                 _token: $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
+                console.log('Reservation marked as done:', response);
                 showSuccessMessage(response.success);
                 table.ajax.reload();
+                printReservation(reservationId);
             },
-            error: function(xhr) {
+            error: function(xhr, status, error) {
+                console.error('Error marking reservation as done:', error);
                 showErrorMessage('Error marking reservation as done');
             }
         });
-    });
+    }
+    
+    function printReservation(reservationId) {
+        console.log('Attempting to print reservation:', reservationId);
+        window.open('/admin/reservations/' + reservationId + '/print', '_blank');
+    }
 
     // Add this to handle manual search
     $('input[type="search"]').on('keyup', function () {
