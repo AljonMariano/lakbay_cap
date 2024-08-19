@@ -51,7 +51,8 @@ class ReservationsController extends Controller
             })
             ->addColumn('vehicle_name', function ($reservation) {
                 return $reservation->reservation_vehicles->map(function ($rv) {
-                    return $rv->vehicles->vh_plate ?? 'N/A';
+                    $vehicle = $rv->vehicles;
+                    return $vehicle ? "{$vehicle->vh_brand} - {$vehicle->vh_type} ({$vehicle->vh_plate})" : 'N/A';
                 })->filter()->implode(', ') ?: 'N/A';
             })
             ->addColumn('driver_name', function ($reservation) {
