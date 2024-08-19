@@ -157,6 +157,12 @@ $(document).ready(function() {
             if (item.is_reserved === 1) {
                 option.prop('disabled', true);
                 option.text(item.text + ' (Already Reserved)');
+            } else if (item.vh_status === 'Not Available') {
+                option.prop('disabled', true);
+                option.text(item.text + ' (Not Available)');
+            } else if (item.vh_status === 'For Maintenance') {
+                option.prop('disabled', true);
+                option.text(item.text + ' (For Maintenance)');
             }
             
             select.append(option);

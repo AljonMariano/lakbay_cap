@@ -710,9 +710,12 @@ class ReservationsController extends Controller
             ->addSelect(DB::raw('CASE WHEN driver_id IN (' . implode(',', $reservedDriverIds ?: [0]) . ') THEN 1 ELSE 0 END as is_reserved'))
             ->get();
 
-        $vehicles = Vehicles::select('vehicle_id as id', DB::raw("CONCAT(vh_brand, ' (', vh_plate, ')') as text"))
-            ->addSelect(DB::raw('CASE WHEN vehicle_id IN (' . implode(',', $reservedVehicleIds ?: [0]) . ') THEN 1 ELSE 0 END as is_reserved'))
-            ->get();
+        $vehicles = Vehicles::select('vehicle_id as id', DB::raw("CONCAT(vh_brand, ' (', vh_plate, ')') as text"), 'vh_status')
+            ->get()
+            ->map(function ($vehicle) use ($reservedVehicleIds) {
+                $vehicle->is_reserved = in_array($vehicle->id, $reservedVehicleIds) ? 1 : 0;
+                return $vehicle;
+            });
 
         return response()->json([
             'drivers' => $drivers,
