@@ -256,6 +256,7 @@ $(document).ready(function() {
 
     // Function to populate edit form
     function populateEditForm(data) {
+        console.log('Populating edit form with data:', data);
         if (data && data.reservation) {
             var reservation = data.reservation;
             $('#edit_reservation_form #edit_reservation_id').val(reservation.reservation_id);
@@ -308,10 +309,11 @@ $(document).ready(function() {
             setTimeout(function() {
                 var driverIds = reservation.reservation_vehicles.map(rv => rv.driver_id.toString());
                 var vehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id.toString());
-                
+                console.log('Driver IDs:', driverIds);
+                console.log('Vehicle IDs:', vehicleIds);
                 $('#edit_reservation_form #driver_id_edit').val(driverIds).trigger('change');
                 $('#edit_reservation_form #vehicle_id_edit').val(vehicleIds).trigger('change');
-            }, 500);
+            }, 1000);
 
             $('#edit_reservation_modal').modal('show');
         } else {
