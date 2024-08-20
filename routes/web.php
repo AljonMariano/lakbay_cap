@@ -48,7 +48,7 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
     Route::post('/reservations/{id}', [ReservationsController::class, 'update'])->name('reservations.update');
     Route::get('/reservations/{id}/edit', [ReservationsController::class, 'edit'])->name('reservations.edit');
     Route::post('/reservations/{id}/done', [ReservationsController::class, 'markAsDone'])->name('reservations.done');
-    Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', function () {
         return view('admin.profile.show');
