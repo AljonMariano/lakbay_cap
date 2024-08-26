@@ -322,6 +322,8 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
     Route::get('/test-select', [ReservationsController::class, 'test_select'])->name('reservations.testSelect');
     Route::get('/test-return', [ReservationsController::class, 'test_return'])->name('reservations.testReturn');
 
+
+
 });
 
 
@@ -384,3 +386,9 @@ Route::get('/test-log', function() {
 Route::get('/admin/test-print', function() {
     return response()->json(['message' => 'Test print route works']);
 })->middleware(['role:admin', 'auth']);
+
+// API Routes
+Route::get('/api/reservations-per-month', [DashboardController::class, 'getReservationsPerMonth']);
+Route::get('/api/travel-types', [DashboardController::class, 'getTravelTypes']);
+Route::get('/api/available-drivers', [DashboardController::class, 'getAvailableDrivers']);
+Route::get('/api/available-vehicles', [DashboardController::class, 'getAvailableVehicles']);

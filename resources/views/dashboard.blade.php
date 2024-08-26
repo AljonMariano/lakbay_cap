@@ -83,6 +83,29 @@
                     </div>
                 </div>
             </div>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h6 class="text-uppercase">Reservations per Month</h6>
+                    <canvas id="reservationsChart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-uppercase">Travel Types</h6>
+                    <canvas id="travelTypesChart"></canvas>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h6 class="text-uppercase">Available Drivers</h6>
+                    <div id="availableDriversTable"></div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-uppercase">Available Vehicles</h6>
+                    <div id="availableVehiclesTable"></div>
+                </div>
+            </div>
         </div>
     </div>
 @include("includes/footer");
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ asset('js/dashboard-charts.js') }}"></script>

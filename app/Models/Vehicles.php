@@ -30,7 +30,7 @@ class Vehicles extends Model
     // Define relationships
     public function reservations(): HasMany
     {
-        return $this->belongsToMany(Reservations::class, 'reservation_vehicle', 'vehicle_id', 'reservation_id');
+        return $this->belongsToMany(Reservations::class, 'reservation_vehicles', 'vehicle_id', 'reservation_id');
     }
 
     // Define fuel types as constants

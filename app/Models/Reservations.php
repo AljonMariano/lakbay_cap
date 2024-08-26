@@ -42,13 +42,13 @@ class Reservations extends Model
 
    
 
-    public function vehicles()
-    {
-        return $this->belongsToMany(Vehicles::class, 'reservation_vehicle', 'reservation_id', 'vehicle_id');
-    }
-
     public function drivers()
     {
-        return $this->belongsToMany(Drivers::class, 'reservation_vehicle', 'reservation_id', 'driver_id');
+        return $this->belongsToMany(Drivers::class, 'reservation_vehicles', 'reservation_id', 'driver_id');
+    }
+
+    public function vehicles()
+    {
+        return $this->belongsToMany(Vehicles::class, 'reservation_vehicles', 'reservation_id', 'vehicle_id');
     }
 }

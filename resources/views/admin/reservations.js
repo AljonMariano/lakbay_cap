@@ -492,7 +492,14 @@ $(document).ready(function() {
         };
     }
 
-    $(document).on('click', '.approve-btn', function() {
+    // Add this near other similar event handlers
+    $(document).on('click', '.approve', function() {
+        var reservationId = $(this).data('id');
+        $('#approvalModal').modal('show');
+        $('#confirmApproval').data('id', reservationId);
+    });
+
+    $('#confirmApproval').on('click', function() {
         var reservationId = $(this).data('id');
         $.ajax({
             url: routes.approve.replace(':id', reservationId),
@@ -501,6 +508,7 @@ $(document).ready(function() {
                 _token: $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
+                $('#approvalModal').modal('hide');
                 showSuccessMessage(response.success);
                 table.ajax.reload();
             },

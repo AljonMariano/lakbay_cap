@@ -17,7 +17,9 @@ class Drivers extends Model
     protected $fillable = [
         'driver_id',
         'dr_emp_id',
-        'dr_name',
+        'dr_fname',
+        'dr_mname',
+        'dr_lname',
         'off_id',
         'dr_status',
     ];
@@ -28,8 +30,6 @@ class Drivers extends Model
 
     public function reservations()
     {
-        return $this->belongsToMany(Reservations::class, 'reservation_vehicle', 'driver_id', 'reservation_id');
+        return $this->belongsToMany(Reservations::class, 'reservation_vehicles', 'driver_id', 'reservation_id');
     }
 }
-
-
