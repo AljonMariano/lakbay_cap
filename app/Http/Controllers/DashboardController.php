@@ -23,7 +23,7 @@ class DashboardController extends Controller
             'approved_reservations' => Reservations::where('rs_approval_status', 'Approved')->count(),
             'rejected_reservations' => Reservations::where('rs_approval_status', 'Rejected')->count(),
             'daily_transport_requests' => Reservations::where('rs_travel_type', 'Daily Transport')->count(),
-            'outside_province_travel' => Reservations::where('is_outsider', true)->count(),
+            'outside_province_travel' => Reservations::where('rs_travel_type', 'Outside Province Transport')->count(),
             'events_count' => \App\Models\Events::count(),
             'drivers_count' => Drivers::count(),
             'vehicles_count' => Vehicles::count(),
@@ -58,12 +58,14 @@ class DashboardController extends Controller
 
     public function getTravelTypes()
     {
-        $outside = DB::table('reservations')->where('is_outsider', 1)->count();
-        $inside = DB::table('reservations')->where('is_outsider', 0)->count();
+        $daily = DB::table('reservations')->where('rs_travel_type', 'Daily Transport')->count();
+        $outside = DB::table('reservations')->where('rs_travel_type', 'Outside Province Transport')->count();
+        $within = DB::table('reservations')->where('rs_travel_type', 'Within Province Transport')->count();
 
         return response()->json([
+            'daily' => $daily,
             'outside' => $outside,
-            'inside' => $inside
+            'within' => $within
         ]);
     }
 

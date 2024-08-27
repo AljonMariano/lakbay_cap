@@ -1,72 +1,181 @@
-<p style="margin-top:0pt; margin-bottom:8pt; text-align:center; line-height:108%; font-size:16pt;"><span style="line-height:108%; font-size:11pt;"><img src="data:image/png;base64,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" alt="" style="width: 63px; height: 67.4366px;" width="63" height="67.4366">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Republic of the Philippines &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<img src="https://myfiles.space/user_files/232161_a11d927ab86e8813/232161_custom_files/img1723470640.png" alt="File:Bagong Pilipinas logo.png - Wikipedia" style="width: 65px; height: 54.1667px;" width="65" height="54.1667">&nbsp;</span><br><strong><span style="font-family:'Arial Black';">&nbsp; &nbsp; &nbsp; &nbsp; Province of Benguet &nbsp; &nbsp; &nbsp; &nbsp;</span></strong><br><strong><span style="line-height:108%; font-family:'Arial Black'; font-size:10pt;">&nbsp;OFFICE of THE GOVERNOR</span></strong></p>
-<p style="margin-top:0pt; margin-bottom:8pt; text-align:center;">&nbsp;</p>
-<p style="margin-top:0pt; margin-bottom:8pt; text-align:center;"><strong><span style="font-family:'Arial Black';">REQUEST FOR TRANSPORT VEHICLE</span></strong></p>
-<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-    <tbody>
-        <tr style="height:16.6pt;">
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial; font-size:10pt;">Requesting Party:&nbsp;</span><strong><u><span style="font-family:Arial; font-size:10pt;"></span></strong><u><span style="font-size:10pt;">______________________</span></p>
-            </td>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-size: 10pt;">Date:&nbsp;</span><strong><u><span style="font-family:Arial; font-size:10pt;">_</span></u></strong><u><span style="font-size:10pt;">___________________________</span></u><strong><u><span style="font-family:Arial;">_</span></u></strong></p>
-            </td>
-        </tr>
-        <tr>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial; font-size:10pt;">Inclusive Dates:&nbsp;</span><strong><u><span style="font-family:Arial; font-size:10pt;">_</span></u></strong><u><span style="font-size:10pt;">From $rs_date_start To $rs_date_end</span></u><strong><u><span style="font-family:Arial;">_</span></u></strong></p>
-            </td>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial; font-size:10pt;">Contact No.:&nbsp;</span><strong><u><span style="font-family:Arial; font-size:10pt;">__________________________</span></u></strong><strong><u><span style="font-family:Arial;">_</span></u></strong></p>
-            </td>
-        </tr>
-        <tr>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial; font-size:10pt;">Destination:&nbsp;</span><strong><u><span style="font-family:Arial; font-size:10pt;"></span></u></strong><u><span style="font-size:10pt;">$destination</span></u><strong><u><span style="font-family:Arial;"></span></u></strong></p>
-            </td>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial; font-size:10pt;">Fuel &amp; Oil Charge to:&nbsp;</span><strong><u><span style="font-family:Arial; font-size:10pt;">___________________</span></u></strong><strong><u><span style="font-family:Arial;">_</span></u></strong></p>
-            </td>
-        </tr>
-        <tr>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial; font-size:10pt;">Purpose:&nbsp;</span><strong><u><span style="font-family:Arial; font-size:10pt;"></span></u></strong><u><span style="font-size:10pt;">$purpose</span></u><strong><u><span style="font-family:Arial;"></span></u></strong></p>
-            </td>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial; font-size:10pt;">Name of Driver:&nbsp;</span><strong><u><span style="font-family:Arial; font-size:10pt;"></span></u></strong><u><span style="font-size:10pt;">$dr_fname $dr_lname</span></u><strong><u><span style="font-family:Arial;"></span></u></strong></p>
-            </td>
-        </tr>
-        <tr>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial; font-size:10pt;">Vehicle/Plate No.:&nbsp;</span><strong><u><span style="font-family:Arial; font-size:10pt;"></span></u></strong><u><span style="font-size:10pt;">$vh_brand - $vh_plate</span></u><strong><u><span style="font-family:Arial;"></span></u></strong></p>
-            </td>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:'Arial Black';">&nbsp;</span></p>
-            </td>
-        </tr>
-        <tr>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:10pt;"><span style="font-family:Arial;">Number and Name of Passenger(s):&nbsp;</span></p>
-            </td>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:'Arial Black';">&nbsp;</span></p>
-            </td>
-        </tr>
-        <tr style="height:17.05pt;">
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial;">1.</span><strong><span style="font-family:Arial;">&nbsp;__________________________________</span></strong></p>
-            </td>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial;">2.</span><strong><span style="font-family:Arial;">&nbsp;__________________________________</span></strong></p>
-            </td>
-        </tr>
-        <tr style="height:17.05pt;">
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial;">3.</span><strong><span style="font-family:Arial;">&nbsp;__________________________________</span></strong></p>
-            </td>
-            <td style="width:258.95pt; padding-right:5.4pt; padding-left:5.4pt; vertical-align:top;">
-                <p style="margin-top:0pt; margin-bottom:0pt; font-size:11pt;"><span style="font-family:Arial;">4.</span><strong><span style="font-family:Arial;">&nbsp;__________________________________</span></strong></p>
-            </td>
-        </tr>
-    </tbody>
-</table>
-<p style="margin-top:0pt; margin-bottom:8pt;"><br><br><strong><span style="font-family:Arial;">________________________________</span></strong><br><strong><span style="font-family:Arial;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></strong><span style="line-height:108%; font-family:Arial; font-size:7pt;">Requesting Party</span><br><span style="line-height:108%; font-family:Arial; font-size:8pt;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="line-height:108%; font-family:Arial; font-size:7pt;">Signature Over Printed Name</span><span style="width:9.28pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="line-height:108%; font-family:Arial; font-size:8pt;">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="line-height:108%; font-family:Arial; font-size:8pt;">Approved:</span><br><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><strong><span style="line-height:108%; font-family:Arial; font-size:10pt;">MELCHOR D. DICLAS, MD</span></strong><br><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="width:36pt; line-height:108%; font-family:Arial; font-size:8pt; display:inline-block;">&nbsp;</span><span style="line-height:108%; font-family:Arial; font-size:8pt;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="line-height:108%; font-family:Arial; font-size:8pt;">Provincial Governor</span></p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver's Trip Ticket and Gas Slip</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 840px; margin: 0 auto; font-size: 12px; line-height: 1.3; }
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            width: 60px;
+            height: auto;
+        }
+        .center-text {
+            flex-grow: 1;
+            padding: 0 10px;
+        }
+        h2, h3, h4, h5 { margin: 6px 0; }
+        h2 { text-align: center; text-decoration: underline; }
+        .form-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .form-group { margin-bottom: 12px; }
+        .signature { text-align: right; margin-top: 12px; }
+        .signature-line { border-top: 1px solid black; width: 180px; display: inline-block; }
+        .signature-text { font-size: 0.9em; line-height: 1.2; }
+        .page-break { page-break-before: always; }
+        .underline { border-bottom: 1px solid black; display: inline-block; width: 180px; }
+        ol, ul { margin: 6px 0; padding-left: 24px; }
+        li { margin-bottom: 4px; white-space: pre; } /* Added white-space: pre; */
+        h5 {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.2;
+        }
+        .title {
+            text-align: center;
+            margin-top: 5px;
+        }
+        .form-group p {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .form-group p span:first-child {
+            flex-shrink: 0;
+            margin-right: 10px;
+        }
+        .underline {
+            flex-grow: 1;
+            text-align: right;
+            border-bottom: 1px solid black;
+        }
+        .indent {
+            margin-left: 20px;
+        }
+        .underline-short {
+            display: inline-block;
+            width: 100px;
+            border-bottom: 1px solid black;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page 1: Driver's Trip Ticket -->
+    <div class="header">
+        <img src="/images/BAGO.png" alt="Bagong Pilipinas Logo" class="logo" style="width: 80px;">
+        <div class="center-text">
+            <h5>Republic of the Philippines<br>PROVINCE OF BENGUET<br>La Trinidad<br>OFFICE OF THE PROVINCIAL GOVERNOR</h5>
+        </div>
+        <img src="/images/PGO_LOGO.png" alt="Province of Benguet Logo" class="logo" style="width: 80px;">
+    </div>
+
+    <h4 class="title">DRIVER'S TRIP TICKET</h4>
+    
+    <div class="form-row">
+        <span>CONTROL NO. _________________</span>
+        <span>Date: _______________</span>
+    </div>
+
+    <div class="form-group">
+        <h4>A. TO BE FILLED UP BY THE ACTIVE OFFICIAL AUTHORIZING THE TRAVEL</h4>
+        <ol>
+            <li>Name of driver/operator of the vehicle: <b> <u> $dr_fname $dr_lname</u></b></li>
+            <li>Government car to be used with plate number: <b> <u>$vh_plate</u></b></li>
+            <li>Name of authorized passengers:   __________________________________________</li>
+            <li>Places to be visited/inspected: <b>   <u>  $destination</u></b></li>
+            <li>Inclusive dates of travel: <b>  <u>      $rs_date_start - $rs_date_end</u></b></li>
+            <li>Purpose: <b>  <u>  $purpose</u></b></li>
+        </ol>
+    </div>
+
+    <div class="signature">
+        <p class="signature-text">JENNETTE MARIE G. BANGAO<br>
+        Assistant Provincial Administrator<br>
+        (Department Head/Authorized Representative)</p>
+    </div>
+
+    <div class="form-group">
+        <h4>B. TO BE FILLED OUT BY THE DRIVER</h4>
+        <ol>
+            <li>Time of departure from office/garage/station:                                    _____ am _____ pm</li>
+            <li>Time of Arrival at Destination:                                                            _____ am _____ pm</li>
+            <li>Time of Departure from Destination:                                                  _____ am _____ pm</li>
+            <li>Time of Arrival (BACK TO STATION):                                                 _____ am _____ pm</li>
+            <li>Approximate Distance Travelled(to and from stations):                      ______________ km</li>
+            <li>Gasoline issued, purchased and consumed:             
+                    <li>    a. Balance in Tank:                                               ______________ liters</li>
+                    <li>    c. ADD: Purchased during the trip:                      ______________ liters</li>
+                    <li>TOTAL:                                                              ______________ LITERS</li>
+                    <li>d. LESS: Used during the trip:            ______________ liters</li>
+                    <li>e. Balance in tank after the trip:        ______________ liters</li>
+                </ul>
+            </li>
+            <li>Gear oil used or issued:              ______________ gals/qts</li>
+            <li>Lubricating oil used or issued:       ______________ gals/qts</li>
+            <li>Grease issued:                        ______________ gals/qts</li>
+            <li>Speedometer Reading: At the start of trip: ______________ km, </li>
+            <li>Speedometer Reading: At the end of trip: ______________ km</li>
+            <li>REMARKS: _________________________________________________________________________</li>
+        </ol>
+    </div>
+
+    <h4 style="text-align: center; margin-top: 20px;">CERTIFICATION</h4>
+
+    <div class="form-group">
+        <p>I HEREBY CERTIFY to the correctness of the above statement</p>
+        <div class="signature">
+            <span class="signature-line">Driver</span>
+        </div>
+        <p>I/WE HEREBY CERTIFY that I/we used this car for OFFICIAL BUSINESS as stated above.</p>
+        <br>
+        <br>
+        <div style="display: flex; justify-content: space-between;">
+            <span class="signature-line">Passenger</span>
+            <span class="signature-line">Passenger</span>
+            <span class="signature-line">Passenger</span>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+    
+    <div class="header">
+        
+            <img src="/images/BAGO.png" alt="Bagong Pilipinas Logo" class="logo" style="width: 80px; height: auto;">
+            <div class="center-text">
+                <h5>Republic of the Philippines<br>PROVINCE OF BENGUET<br>La Trinidad<br>OFFICE OF THE PROVINCIAL GOVERNOR</h5>
+            </div>
+            <img src="/images/PGO_LOGO.png" alt="Province of Benguet Logo" class="logo" style="width: 80px; height: auto;">
+        
+    </div>
+
+    <h4 style="text-align: center; margin-top: 10px;">GAS SLIP</h4>
+
+    <h3 style="text-align: left;"><u>HIGHLAND PETRON SERVICENTER</u></h3>
+    
+    <div class="form-group">
+        <p>Date: <span class="underline"></span> </p>
+        <p>CONTROL NUMBER: <span class="underline"></span></p>
+        <p>Driver / Operator: <b> <u> $dr_fname $dr_lname</u></b></p>
+        <p>Government Vehicle/Equipment: <b> <u> $vh_plate</u></b></p>
+        <p>Inclusive Date/s of Travel: <b> <u> $rs_date_start - $rs_date_end</u></b></p>
+        <p>Place/Destination of Travel: <b> <u> $destination</u></b></p>
+        <p>Purpose: <b> <u> $purpose</u></b></p>
+        <p>You are authorized to draw _______________________ liters of gasoline/diesel</p>
+        <p >                        _____________________</span> Motor Oil</p>
+    </div>
+
+    <p><strong>"NO ADDITIONAL/EXTRA CONTAINER"</strong></p>
+
+    <div class="signature">
+        <p>JENNETTE MARIE G. BANGAO<br>
+        Assistant Provincial Administrator</p>
+    </div>
+</body>
+</html>

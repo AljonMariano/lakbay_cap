@@ -88,10 +88,10 @@ function createTravelTypesChart(data) {
     new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: ['Outside Benguet', 'Inside Benguet'],
+            labels: ['Daily Transport', 'Outside Province Transport', 'Within Province Transport'],
             datasets: [{
-                data: [data.outside, data.inside],
-                backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)']
+                data: [data.daily, data.outside, data.within],
+                backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(75, 192, 192, 0.6)']
             }]
         }
     });

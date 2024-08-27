@@ -625,8 +625,72 @@ $(document).ready(function() {
     }
     
     function printReservation(reservationId) {
-        console.log('Attempting to print reservation:', reservationId);
-        window.open('/admin/reservations/' + reservationId + '/print', '_blank');
+        console.log('Printing reservation:', reservationId);
+        $.ajax({
+            url: routes.edit.replace(':id', reservationId),
+            method: 'GET',
+            success: function(response) {
+                let reservation = response.reservation;
+                let printWindow = window.open('/admin/reservations/' + reservationId + '/print', '_blank');
+                
+                printWindow.onload = function() {
+                    let doc = printWindow.document;
+                    
+                    // Populate existing fields
+                    doc.getElementById('dr_fname').textContent = reservation.driver ? reservation.driver.dr_fname : '';
+                    doc.getElementById('dr_lname').textContent = reservation.driver ? reservation.driver.dr_lname : '';
+                    doc.getElementById('vh_plate').textContent = reservation.vehicle ? reservation.vehicle.vh_plate : '';
+                    doc.getElementById('rs_date_start').textContent = reservation.rs_date_start;
+                    doc.getElementById('rs_date_end').textContent = reservation.rs_date_end;
+                    doc.getElementById('destination_activity').textContent = reservation.destination_activity;
+                    doc.getElementById('rs_purpose').textContent = reservation.rs_purpose;
+                    
+                    // Populate destination_activity and rs_purpose
+                    let destinationElement = doc.querySelector('p:contains("Place/Destination of Travel:")');
+                    if (destinationElement) {
+                        destinationElement.innerHTML = `Place/Destination of Travel: <b> <u> ${reservation.destination_activity}</u></b>`;
+                    }
+
+                    let purposeElement = doc.querySelector('p:contains("Purpose:")');
+                    if (purposeElement) {
+                        purposeElement.innerHTML = `Purpose: <b> <u> ${reservation.rs_purpose}</u></b>`;
+                    }
+
+                    // Populate new fields
+                    doc.querySelector('input[name="control_number"]').value = reservation.rs_id;
+                    doc.querySelector('input[name="date"]').value = new Date().toISOString().split('T')[0];
+                    doc.querySelector('input[name="rs_from"]').value = reservation.rs_from;
+                    doc.querySelector('input[name="rs_time_start"]').value = reservation.rs_time_start;
+                    doc.querySelector('input[name="rs_time_end"]').value = reservation.rs_time_end;
+                    
+                    // Populate office
+                    let officeElement = doc.querySelector('input[name="office"]');
+                    if (officeElement) {
+                        officeElement.value = reservation.office ? reservation.office.off_name : '';
+                    }
+
+                    // Populate requestor
+                    let requestorElement = doc.querySelector('input[name="requestor"]');
+                    if (requestorElement) {
+                        requestorElement.value = reservation.requestor ? reservation.requestor.rq_full_name : '';
+                    }
+
+                    // Populate passengers
+                    let passengersElement = doc.querySelector('input[name="passengers"]');
+                    if (passengersElement) {
+                        passengersElement.value = reservation.rs_passengers;
+                    }
+
+                    // You may need to add more fields here depending on your Gas_Slip.html structure
+
+                    printWindow.print();
+                };
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching reservation data:', error);
+                alert('Error fetching reservation data. Please try again.');
+            }
+        });
     }
 
     // Add this to handle manual search
