@@ -8,10 +8,11 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, HasProfilePhoto, Notifiable, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, HasProfilePhoto, Notifiable, TwoFactorAuthenticatable, HasRoles;
 
     const ROLE_ADMIN = 'admin';
     const ROLE_USER = 'user';
@@ -76,5 +77,18 @@ class User extends Authenticatable
     public function isUser()
     {
         return $this->role === self::ROLE_USER;
+    }
+
+    /**
+     * Check if the user has a specific role.
+     *
+     * @param string $role
+     * @return bool
+     */
+    public function hasRole($role)
+    {
+        // Implement your role checking logic here
+        // For example, if you have a 'role' column in your users table:
+        return $this->role === $role;
     }
 }

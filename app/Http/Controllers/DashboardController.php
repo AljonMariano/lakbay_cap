@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Drivers;
 use App\Models\Vehicles;
 use App\Models\Reservations;
@@ -15,6 +16,15 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        if (Auth::user()->hasRole('admin')) {
+            return $this->adminDashboard();
+        } else {
+            return $this->userDashboard();
+        }
+    }
+
+    private function adminDashboard()
+    {
         $data = [
             'total_reservations' => Reservations::count(),
             'ongoing_travel' => Reservations::where('rs_status', 'On-going')->count(),
@@ -25,14 +35,40 @@ class DashboardController extends Controller
             'daily_transport_requests' => Reservations::where('rs_travel_type', 'Daily Transport')->count(),
             'outside_province_travel' => Reservations::where('rs_travel_type', 'Outside Province Transport')->count(),
             'events_count' => \App\Models\Events::count(),
+            'events_count' => Events::count(),
             'drivers_count' => Drivers::count(),
             'vehicles_count' => Vehicles::count(),
+            'requestors_count' => \App\Models\Requestors::count(),
             'requestors_count' => \App\Models\Requestors::count(),
         ];
 
         return view('admin.dashboard', $data);
     }
 
+    private function userDashboard()
+    {
+        $user = Auth::user();
+        $data = [
+            'total_reservations' => Reservations::count(),
+            'ongoing_travel' => Reservations::where('rs_status', 'On-going')->count(),
+            'queued_for_travel' => Reservations::where('rs_status', 'Pending')->count(),
+            'finished_reservations' => Reservations::where('rs_status', 'Done')->count(),
+            'approved_reservations' => Reservations::where('rs_approval_status', 'Approved')->count(),
+            'rejected_reservations' => Reservations::where('rs_approval_status', 'Rejected')->count(),
+            'daily_transport_requests' => Reservations::where('rs_travel_type', 'Daily Transport')->count(),
+            'outside_province_travel' => Reservations::where('rs_travel_type', 'Outside Province Transport')->count(),
+            'events_count' => \App\Models\Events::count(),
+            'events_count' => Events::count(),
+            'drivers_count' => Drivers::count(),
+            'vehicles_count' => Vehicles::count(),
+            'requestors_count' => \App\Models\Requestors::count(),
+            'requestors_count' => \App\Models\Requestors::count(),
+        ];
+
+        return view('users.dashboard', $data);
+    }
+
+    // Keep your existing methods for API routes
     public function getReservationsPerMonth()
     {
         $reservations = DB::table('reservations')

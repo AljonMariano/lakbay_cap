@@ -12,12 +12,12 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
-            // Check if 'is_admin' checkbox is checked
-            if ($request->has('is_admin')) {
-                // Redirect to admin dashboard
+            $user = Auth::user();
+            
+            // Check if the user has the admin role
+            if ($user->hasRole('admin')) {
                 return redirect()->intended('/admin/dashboard');
             } else {
-                // Redirect to user dashboard
                 return redirect()->intended('/users/dashboard');
             }
         }

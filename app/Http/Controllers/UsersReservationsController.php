@@ -2,188 +2,184 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\Drivers;
 use App\Models\Offices;
-use App\Models\Events;
 use App\Models\Vehicles;
 use App\Models\Reservations;
 use App\Models\ReservationVehicle;
-use Illuminate\Support\Facades\Validator;
 use App\Models\Requestors;
 use Yajra\DataTables\DataTables;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class UsersReservationsController extends Controller
 {
-    public function show(Request $request)
+    public function index()
     {
-        try {
-            \Log::info("UsersReservationsController@show called");
+        $offices = Offices::all();
+        $requestors = Requestors::all();
+        return view('users.reservations', compact('offices', 'requestors'));
+    }
 
-            if ($request->ajax()) {
-                \Log::info("Processing AJAX request");
-                $reservations = Reservations::with(['events', 'requestors', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers', 'office'])
-                    ->select('reservations.*')
-                    ->get();
+    public function getData()
+    {
+        $reservations = Reservations::with(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers'])
+            ->where('rs_status', '!=', 'Deleted')
+            ->select('reservations.*');
 
-                \Log::info("Fetched " . $reservations->count() . " reservations");
+        return DataTables::of($reservations)
+            ->addColumn('requestor', function ($reservation) {
+                return $reservation->is_outsider ? ($reservation->outside_requestor ?? 'N/A') : ($reservation->requestors->rq_full_name ?? 'N/A');
+            })
+            ->addColumn('office', function ($reservation) {
+                return $reservation->is_outsider ? ($reservation->outside_office ?? 'N/A') : ($reservation->office->off_name ?? 'N/A');
+            })
+            ->addColumn('vehicle_name', function ($reservation) {
+                return $reservation->reservation_vehicles->map(function ($rv) {
+                    $vehicle = $rv->vehicles;
+                    return $vehicle ? "{$vehicle->vh_brand} - {$vehicle->vh_type} ({$vehicle->vh_plate})" : 'N/A';
+                })->filter()->implode(', ') ?: 'N/A';
+            })
+            ->addColumn('driver_name', function ($reservation) {
+                return $reservation->reservation_vehicles->map(function ($rv) {
+                    return $rv->drivers ? ($rv->drivers->dr_fname . ' ' . $rv->drivers->dr_lname) : 'N/A';
+                })->filter()->implode(', ') ?: 'N/A';
+            })
+            ->addColumn('action', function ($reservation) {
+                // Add buttons for user actions (e.g., view details)
+                return '<button class="btn btn-sm btn-primary view-btn" data-id="'.$reservation->reservation_id.'">View</button>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
 
-                if ($reservations->isEmpty()) {
-                    \Log::info("No reservations found");
-                } else {
-                    \Log::info("First reservation: " . json_encode($reservations->first()));
-                }
+    public function getDriversAndVehicles(Request $request)
+    {
+        $startDateTime = $request->input('start_date') . ' ' . $request->input('start_time');
+        $endDateTime = $request->input('end_date') . ' ' . $request->input('end_time');
+        $currentReservationId = $request->input('current_reservation_id');
 
-                return DataTables::of($reservations)
-                    ->addColumn('ev_name', function ($reservation) {
-                        return $reservation->events ? $reservation->events->ev_name : 'N/A';
-                    })
-                    ->addColumn('vehicles', function ($reservation) {
-                        return $reservation->reservation_vehicles->map(function ($rv) {
-                            return $rv->vehicles ? $rv->vehicles->vh_plate : 'N/A';
-                        })->implode(', ');
-                    })
-                    ->addColumn('drivers', function ($reservation) {
-                        return $reservation->reservation_vehicles->map(function ($rv) {
-                            return $rv->drivers ? $rv->drivers->dr_fname . ' ' . $rv->drivers->dr_lname : 'N/A';
-                        })->implode(', ');
-                    })
-                    ->addColumn('requestor', function ($reservation) {
-                        return $reservation->requestors ? $reservation->requestors->rq_full_name : 'N/A';
-                    })
-                    ->rawColumns(['vehicles', 'drivers'])
-                    ->make(true);
-            }
+        \Log::info('Checking availability for: ' . $startDateTime . ' to ' . $endDateTime);
+        \Log::info('Current Reservation ID: ' . $currentReservationId);
 
-            $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
-                ->orderBy('dr_fname')
-                ->get();
+        $conflictingReservations = Reservations::with(['reservation_vehicles'])
+            ->where(function ($query) use ($startDateTime, $endDateTime, $currentReservationId) {
+                $query->where(function ($q) use ($startDateTime, $endDateTime) {
+                    $q->where(function ($innerQ) use ($startDateTime, $endDateTime) {
+                        $innerQ->whereRaw("CONCAT(rs_date_start, ' ', rs_time_start) < ?", [$endDateTime])
+                               ->whereRaw("CONCAT(rs_date_end, ' ', rs_time_end) > ?", [$startDateTime]);
+                    });
+                })
+                ->when($currentReservationId, function ($q) use ($currentReservationId) {
+                    return $q->where('reservation_id', '!=', $currentReservationId);
+                });
+            })
+            ->whereIn('rs_status', ['Pending', 'Approved', 'On-Going'])
+            ->get();
 
-            $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
-                ->orderBy('vh_brand')
-                ->get();
+        \Log::info('Conflicting Reservations: ' . $conflictingReservations->toJson());
 
-            $offices = Offices::select('off_id', 'off_acr', 'off_name')->get();
+        $reservedDriverIds = $conflictingReservations->flatMap(function ($reservation) {
+            return $reservation->reservation_vehicles->pluck('driver_id');
+        })->unique()->values()->toArray();
 
-            // Add this line to fetch requestors
-            $requestors = Requestors::all();
+        $reservedVehicleIds = $conflictingReservations->flatMap(function ($reservation) {
+            return $reservation->reservation_vehicles->pluck('vehicle_id');
+        })->unique()->values()->toArray();
 
-            return view('users.reservations', compact('drivers', 'vehicles', 'offices', 'requestors'));
-        } catch (\Exception $e) {
-            \Log::error('Error in UsersReservationsController@show: ' . $e->getMessage());
-            \Log::error($e->getTraceAsString());
-            return response()->json(['error' => 'An error occurred while processing your request.'], 500);
-        }
+        \Log::info('Reserved Driver IDs: ' . implode(', ', $reservedDriverIds));
+        \Log::info('Reserved Vehicle IDs: ' . implode(', ', $reservedVehicleIds));
+
+        $drivers = Drivers::select('driver_id as id', DB::raw("CONCAT(dr_fname, ' ', dr_lname) as text"))
+            ->addSelect(DB::raw('CASE WHEN driver_id IN (' . implode(',', $reservedDriverIds ?: [0]) . ') THEN 1 ELSE 0 END as is_reserved'))
+            ->get();
+
+        $vehicles = Vehicles::select('vehicle_id as id', DB::raw("CONCAT(vh_brand, ' (', vh_plate, ')') as text"), 'vh_status')
+            ->get()
+            ->map(function ($vehicle) use ($reservedVehicleIds) {
+                $vehicle->is_reserved = in_array($vehicle->id, $reservedVehicleIds) || $vehicle->vh_status !== 'Available' ? 1 : 0;
+                return $vehicle;
+            });
+
+        return response()->json([
+            'drivers' => $drivers,
+            'vehicles' => $vehicles
+        ]);
     }
 
     public function store(Request $request)
     {
+        Log::info('Reservation store request:', $request->all());
+
         try {
-            \Log::info('Incoming reservation request data:', $request->all());
-
-            // Validate the request data
-            $validator = Validator::make($request->all(), [
-                'event_name' => 'required|string|max:255',
-                'rs_from' => 'required|string|max:255',
-                'rs_date_start' => 'required|date',
-                'rs_time_start' => 'required',
-                'rs_date_end' => 'required|date|after_or_equal:rs_date_start',
-                'rs_time_end' => 'required',
-                'off_id' => 'required|exists:offices,off_id',
-                'rs_passengers' => 'required|integer|min:1',
-                'rs_travel_type' => 'required|string',
-                'rs_voucher' => 'required|string|max:255',
-                'driver_id' => 'required|array',
-                'driver_id.*' => 'exists:drivers,driver_id',
-                'vehicle_id' => 'required|array',
-                'vehicle_id.*' => 'exists:vehicles,vehicle_id',
-                'requestor_id' => 'required|exists:requestors,requestor_id',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json(['error' => $validator->errors()], 422);
-            }
-
             DB::beginTransaction();
 
-            // Use the selected requestor_id from the form instead of the authenticated user
-            $requestorId = $request->input('requestor_id');
-            
-            $eventData = [
-                'ev_name' => $request->input('event_name'),
-                'ev_venue' => $request->input('rs_from'),
-                'ev_date_start' => $request->input('rs_date_start'),
-                'ev_date_end' => $request->input('rs_date_end'),
-                'ev_time_start' => $request->input('rs_time_start'),
-                'ev_time_end' => $request->input('rs_time_end'),
-            ];
+            $reservationData = $request->all();
 
-            \Log::info('Event data to be saved:', $eventData);
-            $event = Events::create($eventData);
+            // Convert time to 24-hour format
+            $reservationData['rs_time_start'] = $this->convertTo24HourFormat($request->rs_time_start);
+            $reservationData['rs_time_end'] = $this->convertTo24HourFormat($request->rs_time_end);
 
-            $reservationData = [
-                'event_id' => $event->event_id,
-                'requestor_id' => $requestorId, // Use the selected requestor_id
-                'off_id' => $request->input('off_id'),
-                'rs_from' => $request->input('rs_from'),
-                'rs_date_start' => $request->input('rs_date_start'),
-                'rs_time_start' => $request->input('rs_time_start'),
-                'rs_date_end' => $request->input('rs_date_end'),
-                'rs_time_end' => $request->input('rs_time_end'),
-                'rs_passengers' => $request->input('rs_passengers'),
-                'rs_travel_type' => $request->input('rs_travel_type'),
-                'rs_voucher' => $request->input('rs_voucher'),
-                'rs_approval_status' => 'Pending',
-                'rs_status' => 'Active',
-            ];
+            // Set default status values
+            $reservationData['rs_approval_status'] = 'Pending';
+            $reservationData['rs_status'] = 'Pending';
 
-            \Log::info('Reservation data to be saved:', $reservationData);
+            Log::info('Reservation data after conversion:', $reservationData);
+
             $reservation = Reservations::create($reservationData);
 
-            foreach ($request->driver_id as $index => $driverId) {
-                ReservationVehicle::create([
-                    'reservation_id' => $reservation->reservation_id,
-                    'driver_id' => $driverId,
-                    'vehicle_id' => $request->vehicle_id[$index] ?? null,
-                ]);
+            Log::info('New reservation created:', $reservation->toArray());
+
+            // Handle driver and vehicle assignments
+            if ($request->has('driver_id') && $request->has('vehicle_id')) {
+                $driverIds = $request->input('driver_id');
+                $vehicleIds = $request->input('vehicle_id');
+                $count = min(count($driverIds), count($vehicleIds));
+
+                for ($i = 0; $i < $count; $i++) {
+                    DB::table('reservation_vehicles')->insert([
+                        'reservation_id' => $reservation->reservation_id,
+                        'driver_id' => $driverIds[$i],
+                        'vehicle_id' => $vehicleIds[$i],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
             }
 
             DB::commit();
 
-            return response()->json(['success' => 'Reservation created successfully', 'reservation' => $reservation]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Reservation created successfully',
+                'reservation' => $reservation
+            ]);
         } catch (\Exception $e) {
-            DB::rollback();
-            \Log::error('Error in UsersReservationsController@store: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            return response()->json(['error' => 'An error occurred while creating the reservation: ' . $e->getMessage()], 500);
+            DB::rollBack();
+            Log::error('Error creating reservation: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating reservation: ' . $e->getMessage()
+            ], 500);
         }
     }
 
-    public function getDriversAndVehicles()
+    private function convertTo24HourFormat($time)
     {
+        if (empty($time)) {
+            return null;
+        }
+
         try {
-            $drivers = Drivers::select('driver_id', 'dr_fname', 'dr_mname', 'dr_lname')
-                ->orderBy('dr_fname')
-                ->get();
-
-            $vehicles = Vehicles::select('vehicle_id', 'vh_plate', 'vh_brand', 'vh_type', 'vh_capacity')
-                ->orderBy('vh_brand')
-                ->get();
-
-            return response()->json([
-                'drivers' => $drivers->map(function($driver) {
-                    return ['id' => $driver->driver_id, 'name' => $driver->dr_fname . ' ' . $driver->dr_lname];
-                }),
-                'vehicles' => $vehicles->map(function($vehicle) {
-                    return ['id' => $vehicle->vehicle_id, 'name' => $vehicle->vh_brand . ' - ' . $vehicle->vh_plate];
-                })
-            ]);
+            return Carbon::createFromFormat('h:i A', $time)->format('H:i:s');
         } catch (\Exception $e) {
-            \Log::error('Error fetching drivers and vehicles: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to fetch drivers and vehicles'], 500);
+            Log::error('Error converting time format: ' . $e->getMessage());
+            return null;
         }
     }
 }
+
+
+

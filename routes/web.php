@@ -24,7 +24,6 @@ use Illuminate\Support\Facades\Log;
 
 
 
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -149,7 +148,7 @@ Route::prefix('admin')->middleware(['role:admin', 'auth'])->group(function () {
 Route::middleware(['auth'])->prefix('users')->group(function () {
   
 
-        // Route::get('/user/dashboard', [DashboardController::class, 'dashboard'])->name('user.dashboard');
+        Route::get('/user/dashboard', [DashboardController::class, 'dashboard'])->name('user.dashboard');
         // Route::get('/user/compute', [UserPageController::class, 'compute'])->name('user.compute');        
         // Route::get('/user/drivers_schedule', [UserPageController::class, 'drivers_schedule'])->name('user.drivers_schedule');
         // Route::get('/user/drivers', [UserPageController::class, 'drivers'])->name('user.drivers');
@@ -221,22 +220,23 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
     
     
         // Reservation Section
-        Route::get('/reservations', [UsersReservationsController::class, 'show'])->name('users.reservations.show');
+        Route::get('/reservations', [UsersReservationsController::class, 'index'])->name('users.reservations.show');
+        Route::get('/reservations/data', [UsersReservationsController::class, 'getData'])->name('users.reservations.getData');
         Route::get('/event-calendar', [UsersReservationsController::class, 'users.event_calendar']);
         Route::get('/driver-schedules', [UsersReservationsController::class, 'users.drivers_schedules']);
         Route::get('/get-events', [UsersReservationsController::class, 'events'])->name('users.reservations.getEvents');
         Route::get('/get-edit-events', [UsersReservationsController::class, 'events_edit'])->name('users.reservations.getEditEvents');
-        Route::get('/reservations-archive', [UsersReservationsController::class, 'reservations_archive']);
-        Route::get('/reservations-word', [UsersReservationsController::class, 'reservations_word']);
-        Route::get('/reservations-excel', [UsersReservationsController::class, 'reservations_excel']);
-        Route::get('/reservations-pdf', [UsersReservationsController::class, 'reservations_pdf']);
+        Route::get('/get-drivers-vehicles', [UsersReservationsController::class, 'getDriversAndVehicles'])->name('users.reservations.getDriversAndVehicles');
         Route::post('/insert-reservation', [UsersReservationsController::class, 'stores']);
-        Route::post('/update-reservation', [UsersReservationsController::class, 'update']);
-        Route::get('/edit-reservation/{reservation_id}', [UsersReservationsController::class, 'edit']);
-        Route::get('/cancel-reservation/{reservation_id}', [UsersReservationsController::class, 'cancel']);
-        Route::get('/delete-reservation/{reservation_id}', [UsersReservationsController::class, 'delete']);
+        Route::get('/users/reservations/get-drivers-vehicles', [UsersReservationsController::class, 'getDriversAndVehicles'])->name('users.reservations.getDriversAndVehicles');
+
         Route::post('/user/reservations', [UsersReservationsController::class, 'store'])->name('users.reservations.store');
-    
+        Route::get('/users/reservations/data', [UsersReservationsController::class, 'getData'])->name('users.reservations.getData');
+        Route::get('/users/reservations/getDriversAndVehicles', [UsersReservationsController::class, 'getDriversAndVehicles'])->name('users.reservations.getDriversAndVehicles');
+        Route::post('/users/reservations', [UsersReservationsController::class, 'store'])->name('users.reservations.store');
+
+
+        
         // Test Section
         Route::get('/test-select', [UsersReservationsController::class, 'test_select'])->name('user.reservations.testSelect');
         Route::get('/test-return', [UsersReservationsController::class, 'test_return'])->name('user.reservations.testReturn');
@@ -376,6 +376,13 @@ Route::get('/js/admin/reservations.js', function () {
 Route::get('/test-log', function() {
     \Log::info('Test log entry');
     return 'Log test complete';
+
+    
+});
+Route::get('js/users/reservations.js', function () {
+    return response()->file(resource_path('views/users/reservations.js'), [
+        'Content-Type' => 'application/javascript'
+    ]);
 });
 
 // Route::any('{any}', function($any) {

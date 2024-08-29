@@ -4,14 +4,188 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Reservations</title>
     <?php $title_page = 'Reservations';?>
     @include('includes.user_header')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
-    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <style>
+        input[type="date"], input[type="time"] {
+            position: relative;
+            z-index: 1;
+        }
+        .select2-container--bootstrap-5 .select2-selection--multiple {
+            min-height: 38px;
+            height: auto;
+            overflow: hidden;
+            padding: 2px 6px;
+        }
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            padding: 2px 5px;
+            margin: 2px;
+            font-size: 0.875rem;
+            max-width: calc(100% - 4px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .select2-container--bootstrap-5 .select2-search--inline .select2-search__field {
+            margin: 0;
+            padding: 0;
+            min-height: 30px;
+        }
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+            margin-right: 3px;
+        }
+        .table-responsive {
+            max-width: 95%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #reservations-table {
+            width: 100% !important;
+        }
+        .container, .container-fluid {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            max-width: 100% !important;
+        }
+        
+        #reservations-table_wrapper {
+            margin-left: -15px !important;
+            width: calc(100% + 30px) !important;
+        }
+        
+        #reservations-table {
+            width: 100% !important;
+        }
+        
+        .dataTables_wrapper .row {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
+        }
+        
+        #reservations-table th,
+        #reservations-table td {
+            padding-left: 15px !important;
+        }
+        
+        .dataTables_filter, .dataTables_length {
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+
+        /* New styles to adjust table positioning */
+        .cover-container {
+            max-width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .container, .container-fluid {
+            max-width: 100% !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+
+        #reservations-table_wrapper {
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        #reservations-table {
+            width: 100% !important;
+        }
+
+        .dataTables_wrapper .row {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
+        }
+
+        .dataTables_filter {
+            text-align: right !important;
+        }
+
+        @media (min-width: 768px) {
+            .container, .container-fluid {
+                padding-left: 30px !important;
+                padding-right: 30px !important;
+            }
+        }
+
+        .select2-container {
+            width: 100% !important;
+        }
+        .select2-selection--multiple {
+            overflow: hidden !important;
+            height: auto !important;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+        #reservations-table {
+            width: 100% !important;
+            border-collapse: collapse;
+        }
+        #reservations-table th, #reservations-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        #reservations-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        #reservations-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        #reservations-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .action-buttons button {
+            margin: 2px;
+        }
+
+        #alert-container {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        #success-message, #error-message {
+            margin-bottom: 0;
+        }
+
+        .select2-results__option[aria-disabled=true] {
+            opacity: 0.6;
+        }
+        .select2-results__option[aria-disabled=true]:hover {
+            cursor: not-allowed;
+        }
+        .select2-selection__choice__remove {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
     <div class="row">
@@ -21,28 +195,24 @@
     </div>
     <div class="row mb-3">
         <div class="col">
-            <button type="button" class="btn btn-lg btn-success" data-bs-toggle="modal" data-bs-target="#insertModal">
-                Reserve
-            </button>
-
-            <div class="modal fade" id="insertModal" tabindex="-1" aria-labelledby="insertModalLabel" aria-hidden="true">
+            <a href="" role="button" class="btn btn-lg btn-success" id="insertBtn" data-bs-toggle="modal">Reserve</a>
+            <div id="insertModal" class="modal fade" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="insertModalLabel">Reservation Form</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <h5 class="modal-title">Reservation Form</h5>
+                            <button type="button" class="btn-close" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <form action="{{ route('users.reservations.store') }}" method="POST" class="reservations-form" id="reservations-form" name="reservations-form">
                                 @csrf
                                 <div class="card rounded-0">
                                     <div class="card-body">
-                                        <input type="hidden" name="reservation_id" value="">
+                                        <input type="hidden" name="reservation_id" id="edit_reservation_id" value="">
 
                                         <div class="mb-2">
-                                            <label for="event_name" class="form-label mb-0">Destination/ Activity</label>
-                                            <input type="text" class="form-control rounded-1" name="event_name" id="event_name" placeholder="Enter Destination/Activity" required>
-                                            <span id="event_name_error"></span>
+                                            <label for="destination_activity" class="form-label mb-0">Destination/Activity</label>
+                                            <input type="text" class="form-control rounded-1" id="destination_activity" name="destination_activity" placeholder="Enter Destination/Activity" required>
                                         </div>
 
                                         <div class="mb-2">
@@ -53,66 +223,73 @@
 
                                         <div class="mb-2">
                                             <label for="rs_date_start" class="form-label mb-0">Start Date</label>
-                                            <input type="date" class="form-control rounded-1" name="rs_date_start" id="rs_date_start" required>
-                                            <span id="rs_date_start_error"></span>
+                                            <input type="text" id="rs_date_start" name="rs_date_start" class="form-control rounded-1 datepicker" placeholder="Select Start Date" required>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="rs_time_start" class="form-label mb-0">Start Time</label>
-                                            <input type="time" class="form-control rounded-1" name="rs_time_start" id="rs_time_start" required>
-                                            <span id="rs_time_start_display"></span>
-                                            <span id="rs_time_start_error"></span>
+                                            <input type="text" id="rs_time_start" name="rs_time_start" class="form-control rounded-1 timepicker" placeholder="Select Start Time" required>
+                                            <button type="button" class="btn btn-sm btn-secondary mt-1" onclick="setCurrentTime('rs_time_start')">Set Current Time</button>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="rs_date_end" class="form-label mb-0">End Date</label>
-                                            <input type="date" class="form-control rounded-1" name="rs_date_end" id="rs_date_end" required>
-                                            <span id="rs_date_end_error"></span>
+                                            <input type="text" id="rs_date_end" name="rs_date_end" class="form-control rounded-1 datepicker" placeholder="Select End Date" required>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="rs_time_end" class="form-label mb-0">End Time</label>
-                                            <input type="time" class="form-control rounded-1" name="rs_time_end" id="rs_time_end" required>
-                                            <span id="rs_time_end_display"></span>
-                                            <span id="rs_time_end_error"></span>
+                                            <input type="text" id="rs_time_end" name="rs_time_end" class="form-control rounded-1 timepicker" placeholder="Select End Time" required>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="driver_id" class="form-label mb-0">Driver</label>
-                                            <select class="form-select driver-select" name="driver_id[]" id="driver_id" multiple>
-                                                <option value="" disabled>Select Driver(s)</option>
-                                                @foreach ($drivers as $driver)
-                                                <option value="{{$driver->driver_id}}">{{ $driver->dr_fname }} {{ $driver->dr_mname }} {{ $driver->dr_lname }}</option>
-                                                @endforeach
+                                            <select class="form-control" id="driver_id" name="driver_id[]" multiple required>
                                             </select>
                                             <span id="driver_id_error"></span>
                                         </div>
 
                                         <div class="mb-2">
                                             <label for="vehicle_id" class="form-label mb-0">Vehicle</label>
-                                            <select class="form-select vehicle-select" name="vehicle_id[]" id="vehicle_id" multiple>
-                                                <option value="" disabled>Select Vehicle(s)</option>
-                                                @foreach ($vehicles as $vehicle)
-                                                <option value="{{ $vehicle->vehicle_id }}">{{ $vehicle->vh_brand }} - {{ $vehicle->vh_type }} - {{ $vehicle->vh_plate }} - {{$vehicle->vh_capacity}}</option>
-                                                @endforeach
+                                            <select class="form-control" id="vehicle_id" name="vehicle_id[]" multiple required>
                                             </select>
                                             <span id="vehicle_id_error"></span>
                                         </div>
 
+
                                         <div class="mb-2">
-                                            <label for="office" class="form-label mb-0">Office</label>
-                                            <select class="form-select" name="off_id" id="off_id" required>
-                                                <option value="">Select Office</option>
-                                                @foreach ($offices as $office)
-                                                <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <span id="office_error"></span>
+                                            <label for="is_outsider">
+                                                <input type="checkbox" id="is_outsider" name="is_outsider" value="1"> Outside of Capitol?
+                                            </label>
                                         </div>
 
                                         <div class="mb-2">
+                                            <label for="off_id">Office</label>
+                                            <select class="form-control" id="off_id" name="off_id">
+                                                <option value="" disabled selected>Select Office</option>
+                                                @foreach ($offices as $office)
+                                                    <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="text" class="form-control d-none" id="outside_office" name="outside_office" placeholder="Enter outside office">
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label for="requestor_id">Requestor</label>
+                                            <select class="form-control" id="requestor_id" name="requestor_id">
+                                                <option value="" disabled selected>Select Requestor</option>
+                                                @foreach($requestors as $requestor)
+                                                    <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="text" class="form-control d-none" id="outside_requestor" name="outside_requestor" placeholder="Enter outside requestor">
+                                            <span id="requestor_id_error"></span>
+                                        </div>
+
+                                       
+                                        <div class="mb-2">
                                             <label for="rs_passengers" class="form-label mb-0">Passengers</label>
-                                            <input type="number" class="form-control rounded-1" name="rs_passengers" placeholder="Enter Number of Passengers" id="rs_passengers" value="">
+                                            <input type="number" class="form-control rounded-1" name="rs_passengers" id="rs_passengers" placeholder="Enter Number of Passengers" required>
                                             <span id="rs_passengers_error"></span>
                                         </div>
                                         
@@ -128,20 +305,9 @@
                                         </div>
 
                                         <div class="mb-2">
-                                            <label for="rs_voucher" class="form-label mb-0">Trip Ticket No.</label>
-                                            <input type="text" class="form-control rounded-1" name="rs_voucher" placeholder="Enter Voucher code" id="rs_voucher" value="">
-                                            <span id="rs_voucher_error"></span>
-                                        </div>
-
-                                        <div class="mb-2">
-                                            <label for="requestor_id" class="form-label mb-0">Requestor</label>
-                                            <select class="form-control rounded-1" name="requestor_id" id="requestor_id" required>
-                                                <option value="">Select Requestor</option>
-                                                @foreach ($requestors as $requestor)
-                                                <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <span id="requestor_id_error"></span>
+                                            <label for="rs_purpose" class="form-label mb-0">Purpose</label>
+                                            <input type="text" class="form-control rounded-1" name="rs_purpose" placeholder="Enter Purpose" id="rs_purpose" required>
+                                            <span id="rs_purpose_error"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -157,277 +323,125 @@
         </div>
     </div>
 
+    <!-- Add the alerts here, just above the table -->
+    <div id="alert-container" class="mb-3">
+        <div id="success-message" class="alert alert-success d-none" role="alert"></div>
+        <div id="error-message" class="alert alert-danger d-none" role="alert"></div>
+    </div>
 
     <span id="form_result"></span>
-    <div class="container">
-        <div class="row">
-            <div class="col">
-                <table class="table table-bordered table-hover reservations-table" id="reservations-table" name="reservations-table">
-                    <thead>
-                        <tr>
-                            <td>ID</td>
-                            <td>Event</td>
-                            <td>From</td>
-                            <td>Start Date</td>
-                            <td>Start Time</td>
-                            <td>End Date</td>
-                            <td>End Time</td>
-                            <td>Vehicle</td>
-                            <td>Driver</td>
-                            <td>Requestor</td>
-                            <td>Passengers</td>
-                            <td>Travel Type</td>
-                            <td>Voucher</td>
-                            <td>Approval</td>
-                            <td>Status</td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="table-responsive">
+        <table id="reservations-table" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Destination/Activity</th>
+                    <th>From</th>
+                    <th>Start Date</th>
+                    <th>Start Time</th>
+                    <th>End Date</th>
+                    <th>End Time</th>
+                    <th>Requestor</th>
+                    <th>Office</th>
+                    <th>Driver</th>
+                    <th>Vehicle</th>
+                    <th>Purpose</th>
+                    <th>Passengers</th>
+                    <th>Travel Type</th>
+                    <th>Reserved on</th>
+                    <th>Approval Status</th>
+                    <th>Status</th>
+                    
+                </tr>
+            </thead>
+        </table>
     </div>
-</body>
 
+    <script>
+        var reservationsDataUrl = "{{ route('users.reservations.getData') }}";
+    </script>
+    <script>
+        window.appRoutes = {
+            getDrivers: "{{ route('get.drivers') }}",
+            getVehicles: "{{ route('get.vehicles') }}",
+            approve: "{{ route('reservations.approve', ':id') }}",
+            reject: "{{ route('reservations.reject', ':id') }}",
+            cancel: "{{ route('reservations.cancel', ':id') }}",            
+            update: "{{ route('reservations.update', ':id') }}",
+            edit: "{{ route('reservations.edit', ':id') }}",
+            done: "{{ route('reservations.done', ':id') }}",
+            destroy: "{{ route('reservations.destroy', ':id') }}",
+            getDriversAndVehicles: "{{ route('get.drivers.vehicles') }}",
+            getDriversAndVehicles: "{{ route('users.reservations.getDriversAndVehicles') }}",
+        };
+    </script>
+    <script src="{{ asset('js/user_reservations.js') }}"></script>
+    
+    <script>
+        console.log('Reservations.js loaded and executed');
 
+      
+        $(document).ready(function() {
+            console.log('Document ready in reservations.js');
+        });
 
-<script type="text/javascript">
-$(document).ready(function() {
-    // Initialize DataTable
-    var table = $('#reservations-table').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: "{{ route('users.reservations.show') }}",
-            error: function (xhr, error, thrown) {
-                console.error('DataTables error:', error, thrown);
-            }
-        },
-        columns: [
-            {data: 'reservation_id', name: 'reservation_id', title: 'ID'},
-            {data: 'ev_name', name: 'ev_name', title: 'Event'},
-            {data: 'rs_from', name: 'rs_from', title: 'From'},
-            {data: 'rs_date_start', name: 'rs_date_start', title: 'Start Date'},
-            {data: 'rs_time_start', name: 'rs_time_start', title: 'Start Time', render: function(data) {
-                return formatTime(data);
-            }},
-            {data: 'rs_date_end', name: 'rs_date_end', title: 'End Date'},
-            {data: 'rs_time_end', name: 'rs_time_end', title: 'End Time', render: function(data) {
-                return formatTime(data);
-            }},
-            {data: 'vehicles', name: 'vehicles', title: 'Vehicle'},
-            {data: 'drivers', name: 'drivers', title: 'Driver'},
-            {data: 'requestor', name: 'requestor', title: 'Requestor'},
-            {data: 'rs_passengers', name: 'rs_passengers', title: 'Passengers'},
-            {data: 'rs_travel_type', name: 'rs_travel_type', title: 'Travel Type'},
-            {data: 'rs_voucher', name: 'rs_voucher', title: 'Voucher'},
-            {data: 'rs_approval_status', name: 'rs_approval_status', title: 'Approval'},
-            {data: 'rs_status', name: 'rs_status', title: 'Status'},
-        ],
-        order: [[0, 'desc']],
-    });
-
-    // Initialize select2 for multiple selections with search
-    $('#driver_id, #vehicle_id').select2({
-        theme: 'bootstrap-5',
-        width: '100%',
-        placeholder: 'Select option(s)',
-        allowClear: true,
-        closeOnSelect: false,
-        dropdownParent: $('#insertModal')
-    });
-
-    // Handle removal of selections
-    $('#driver_id, #vehicle_id').on('select2:unselecting', function (e) {
-        e.preventDefault();
-        var element = $(this);
+       
         setTimeout(function() {
-            element.val(element.val().filter(function(value) {
-                return value != e.params.args.data.id;
-            })).trigger('change');
-        }, 0);
-    });
-
-    // Prevent modal from closing when clicking inside the Select2 dropdown
-    $(document).on('click', '.select2-container--open .select2-search__field, .select2-container--open .select2-results__option', function (e) {
-        e.stopPropagation();
-    });
-
-    // Handle form submission
-    $('#reservations-form').submit(function(e) {
-        e.preventDefault();
-        var formData = $(this).serialize();
-        console.log('Form data being sent:', formData);
-
-        $.ajax({
-            url: "{{ route('users.reservations.store') }}",
-            method: 'POST',
-            data: formData,
-            success: function(response) {
-                console.log('Success response:', response);
-                if(response.success) {
-                    // Clear the form
-                    $('#reservations-form')[0].reset();
-                    $('.driver-select, .vehicle-select').val(null).trigger('change');
-                    
-                    // Close the modal
-                    $('#insertModal').modal('hide');
-                    
-                    // Reload the DataTable
-                    $('#reservations-table').DataTable().ajax.reload();
-                    
-                    // Show success message using the existing script
-                    $('#form_result').html('<div class="alert alert-success">' + response.success + '</div>');
-                    
-                    // Optionally, you can make the success message disappear after a few seconds
-                    setTimeout(function() {
-                        $('#form_result').html('');
-                    }, 5000); // 5000 milliseconds = 5 seconds
-                } else {
-                    console.error('Unexpected response structure:', response);
-                    $('#form_result').html('<div class="alert alert-danger">Error: Unexpected response from server</div>');
-                }
-            },
-            error: function(xhr) {
-                console.error('Error response:', xhr.responseText);
-                var errorMessage = 'Error creating reservation';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    if (typeof xhr.responseJSON.error === 'object') {
-                        // Handle validation errors
-                        errorMessage = 'Validation errors:';
-                        for (var field in xhr.responseJSON.error) {
-                            errorMessage += '\n- ' + xhr.responseJSON.error[field].join(', ');
-                        }
-                    } else {
-                        errorMessage += ': ' + xhr.responseJSON.error;
-                    }
-                }
-                $('#form_result').html('<div class="alert alert-danger">' + errorMessage + '</div>');
-            }
-        });
-    });
-
-    // Load drivers and vehicles
-    $.ajax({
-        url: "{{ route('users.get.drivers.vehicles') }}",
-        method: 'GET',
-        success: function(response) {
-            var driverSelect = $('#driver_id');
-            var vehicleSelect = $('#vehicle_id');
-
-            // Clear existing options
-            driverSelect.empty().append('<option value="" disabled>Select Driver(s)</option>');
-            vehicleSelect.empty().append('<option value="" disabled>Select Vehicle(s)</option>');
-
-            $.each(response.drivers, function(index, driver) {
-                driverSelect.append($('<option>', {
-                    value: driver.id,
-                    text: driver.name
-                }));
+            console.log('Delayed log from reservations.js');
+        }, 1000);
+    </script>
+    <script>
+        if (typeof jQuery != 'undefined') {
+            console.log('jQuery is loaded');
+        } else {
+            console.log('jQuery is not loaded');
+        }
+    </script>
+    <script>
+        console.log('Inline script in reservations.blade.php executed');
+    </script>
+    <script>
+        // Add this to your existing JavaScript file or in a <script> tag at the end of your blade file
+        $(document).ready(function() {
+            // Initialize datepicker
+            $(".datepicker").flatpickr({
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                clickOpens: true
             });
 
-            $.each(response.vehicles, function(index, vehicle) {
-                vehicleSelect.append($('<option>', {
-                    value: vehicle.id,
-                    text: vehicle.name
-                }));
+            // Initialize timepicker
+            $(".timepicker").flatpickr({
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "h:i K",
+                time_24hr: false,
+                allowInput: true,
+                clickOpens: true
             });
-
-            // Trigger change to update Select2
-            driverSelect.trigger('change');
-            vehicleSelect.trigger('change');
-        },
-        error: function(xhr) {
-            console.error('Error loading drivers and vehicles:', xhr.responseText);
-        }
-    });
-
-    function formatTime(time) {
-        if (!time) return '';
-        let [hours, minutes] = time.split(':');
-        let ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        hours = hours ? hours : 12; // the hour '0' should be '12'
-        return (hours < 10 ? '0' : '') + hours + ':' + minutes + ' ' + ampm;
-    }
-
-    function updateTimeDisplay() {
-        let startTime = $('#rs_time_start').val();
-        let endTime = $('#rs_time_end').val();
-
-        if (startTime) {
-            $('#rs_time_start_display').text(formatTime(startTime));
-        }
-        if (endTime) {
-            $('#rs_time_end_display').text(formatTime(endTime));
-        }
-    }
-
-    // Add event listeners to update display when time changes
-    $('#rs_time_start, #rs_time_end').on('change', updateTimeDisplay);
-
-    // Initial update
-    updateTimeDisplay();
-
-    // Modal initialization
-    var myModal = new bootstrap.Modal(document.getElementById('insertModal'), {
-        keyboard: false,
-        backdrop: 'static'
-    });
-
-    // Reinitialize Select2 when modal is shown
-    $('#insertModal').on('shown.bs.modal', function () {
-        $('#driver_id, #vehicle_id').select2({
-            theme: 'bootstrap-5',
-            width: '100%',
-            placeholder: 'Select option(s)',
-            allowClear: true,
-            closeOnSelect: false,
-            dropdownParent: $('#insertModal')
         });
-    });
-});
-</script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var myModal = new bootstrap.Modal(document.getElementById('insertModal'), {
-        keyboard: false
-    });
-});
-</script>
-
-
-
-<style>
-    input[type="date"], input[type="time"] {
-        position: relative;
-        z-index: 1;
-    }
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Ensure date and time inputs are clickable
-    const dateInputs = document.querySelectorAll('input[type="date"]');
-    const timeInputs = document.querySelectorAll('input[type="time"]');
-
-    dateInputs.forEach(input => {
-        input.addEventListener('click', function(e) {
-            e.preventDefault();
-            this.showPicker();
-        });
-    });
-
-    timeInputs.forEach(input => {
-        input.addEventListener('click', function(e) {
-            e.preventDefault();
-            this.showPicker();
-        });
-    });
-});
-</script>
-
-@include('includes.footer');
+        // Define the setCurrentTime function
+        function setCurrentTime(inputId) {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const currentTime = `${hours}:${minutes}`;
+            
+            const input = document.getElementById(inputId);
+            input.value = currentTime;
+            
+            // Trigger the change event to update flatpickr
+            const event = new Event('input', { bubbles: true });
+            input.dispatchEvent(event);
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
+
+
+
+
+
+
