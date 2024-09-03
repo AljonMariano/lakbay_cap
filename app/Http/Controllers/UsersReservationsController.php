@@ -48,7 +48,7 @@ class UsersReservationsController extends Controller
                 })->filter()->implode(', ') ?: 'N/A';
             })
             ->addColumn('action', function ($reservation) {
-                // Add buttons for user actions (e.g., view details)
+                
                 return '<button class="btn btn-sm btn-primary view-btn" data-id="'.$reservation->reservation_id.'">View</button>';
             })
             ->rawColumns(['action'])

@@ -401,7 +401,7 @@
         console.log('Inline script in reservations.blade.php executed');
     </script>
     <script>
-        // Add this to your existing JavaScript file or in a <script> tag at the end of your blade file
+        
         $(document).ready(function() {
             // Initialize datepicker
             $(".datepicker").flatpickr({

@@ -492,7 +492,7 @@ $(document).ready(function() {
         };
     }
 
-    // Add this near other similar event handlers
+   
     $(document).on('click', '.approve', function() {
         var reservationId = $(this).data('id');
         $('#approvalModal').modal('show');
@@ -693,7 +693,7 @@ $(document).ready(function() {
         });
     }
 
-    // Add this to handle manual search
+    
     $('input[type="search"]').on('keyup', function () {
         table.search(this.value).draw();
     });
@@ -858,7 +858,7 @@ $(document).ready(function() {
         placeholder: "Select Time"
     });
 
-    // Add this function to handle time selection
+   
     function setCurrentTime(inputId) {
         const now = new Date();
         const hours = String(now.getHours()).padStart(2, '0');

@@ -399,7 +399,7 @@
         console.log('Inline script in reservations.blade.php executed');
     </script>
     <script>
-        // Add this to your existing JavaScript file or in a <script> tag at the end of your blade file
+       
         $(document).ready(function() {
             // Initialize datepicker
             $(".datepicker").flatpickr({
@@ -412,7 +412,7 @@
             $(".timepicker").flatpickr({
                 enableTime: true,
                 noCalendar: true,
-                dateFormat: "h:i K", // This will display time in 12-hour format with AM/PM
+                dateFormat: "h:i K", 
                 time_24hr: false,
                 allowInput: true,
                 clickOpens: true
