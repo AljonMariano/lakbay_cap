@@ -374,7 +374,7 @@
         };
     </script>
     <script src="{{ asset('js/admin/reservations.js') }}"></script>
-    <script src="{{ asset('js/reservation-print.js') }}"></script>
+    <script src="{{ asset('js/admin/reservation-print.js') }}"></script>
     <script>
         console.log('Reservations.js loaded and executed');
 
@@ -434,6 +434,231 @@
             input.dispatchEvent(event);
         }
     </script>
+
+    <div class="modal fade" id="approvalModal" tabindex="-1" aria-labelledby="approvalModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="approvalModalLabel">Confirm Approval</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to approve this reservation?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmApproval">Approve</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="rejectionModal" tabindex="-1" aria-labelledby="rejectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectionModalLabel">Reject Reservation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="rejectionForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="rejectionReason" class="form-label">Reason for Rejection</label>
+                            <textarea class="form-control" id="rejectionReason" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Reject</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="cancellationModal" tabindex="-1" aria-labelledby="cancellationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancellationModalLabel">Cancel Reservation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="cancellationForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="cancellationReason" class="form-label">Reason for Cancellation</label>
+                            <textarea class="form-control" id="cancellationReason" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-warning">Cancel Reservation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="printConfirmationModal" tabindex="-1" aria-labelledby="printConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="printConfirmationModalLabel">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure?</p>
+                    <p>Would you like to print it?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmDone">Yes</button>
+                    <button type="button" class="btn btn-info" id="confirmPrint">Print</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this reservation?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="edit_reservation_modal" tabindex="-1" aria-labelledby="editReservationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editReservationModalLabel">Edit Reservation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="edit_reservation_form" method="POST">
+                    @csrf
+                    @method('POST')
+                    <input type="hidden" name="reservation_id" id="edit_reservation_id">
+                    <div class="modal-body">
+                        <div class="card rounded-0">
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <label for="destination_activity_edit" class="form-label mb-0">Destination/Activity</label>
+                                    <input type="text" class="form-control rounded-1" id="destination_activity_edit" name="destination_activity" placeholder="Enter Destination/Activity" required>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="rs_from_edit" class="form-label mb-0">From</label>
+                                    <input type="text" class="form-control rounded-1" id="rs_from_edit" name="rs_from" placeholder="Enter From" required>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <label for="rs_date_start_edit" class="form-label mb-0">Start Date</label>
+                                        <input type="date" class="form-control rounded-1 datepicker" id="rs_date_start_edit" name="rs_date_start" required>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label for="rs_time_start_edit" class="form-label mb-0">Start Time</label>
+                                        <input type="time" class="form-control rounded-1 timepicker" id="rs_time_start_edit" name="rs_time_start" required>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <label for="rs_date_end_edit" class="form-label mb-0">End Date</label>
+                                        <input type="date" class="form-control rounded-1 datepicker" id="rs_date_end_edit" name="rs_date_end" required>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label for="rs_time_end_edit" class="form-label mb-0">End Time</label>
+                                        <input type="time" class="form-control rounded-1 timepicker" id="rs_time_end_edit" name="rs_time_end" required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="driver_id_edit" class="form-label mb-0">Driver</label>
+                                    <select class="form-control" id="driver_id_edit" name="driver_id[]" multiple required>
+                                    </select>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="vehicle_id_edit" class="form-label mb-0">Vehicle</label>
+                                    <select class="form-control" id="vehicle_id_edit" name="vehicle_id[]" multiple required>
+                                    </select>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="is_outsider_edit">
+                                        <input type="checkbox" id="is_outsider_edit" name="is_outsider" value="1"> Outside of Capitol?
+                                    </label>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="off_id_edit">Office</label>
+                                    <select class="form-control" id="off_id_edit" name="off_id">
+                                        <option value="" disabled selected>Select Office</option>
+                                        @foreach ($offices as $office)
+                                            <option value="{{ $office->off_id }}">{{ $office->off_acr }} - {{ $office->off_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" class="form-control d-none" id="outside_office_edit" name="outside_office" placeholder="Enter outside office">
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="requestor_id_edit">Requestor</label>
+                                    <select class="form-control" id="requestor_id_edit" name="requestor_id">
+                                        <option value="" disabled selected>Select Requestor</option>
+                                        @foreach($requestors as $requestor)
+                                            <option value="{{ $requestor->requestor_id }}">{{ $requestor->rq_full_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" class="form-control d-none" id="outside_requestor_edit" name="outside_requestor" placeholder="Enter outside requestor">
+                                    <span id="requestor_id_edit_error"></span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="rs_passengers_edit" class="form-label mb-0">Passengers</label>
+                                    <input type="number" class="form-control rounded-1" name="rs_passengers" id="rs_passengers_edit" placeholder="Enter Number of Passengers" required>
+                                    <span id="rs_passengers_edit_error"></span>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <label for="rs_travel_type_edit" class="form-label mb-0">Travel Type</label>
+                                    <select class="form-select" name="rs_travel_type" id="rs_travel_type_edit">
+                                        <option value="" disabled selected>Select Travel Type</option>
+                                        <option value="Within Province Transport">Within Province Transport</option>
+                                        <option value="Outside Province Transport">Outside Province Transport</option>
+                                        <option value="Daily Transport">Daily Transport</option>
+                                    </select>
+                                    <span id="rs_travel_type_edit_error"></span>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label for="rs_purpose_edit" class="form-label mb-0">Purpose</label>
+                                    <input type="text" class="form-control rounded-1" name="rs_purpose" placeholder="Enter Purpose" id="rs_purpose_edit" required>
+                                    <span id="rs_purpose_edit_error"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Reservation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 

@@ -155,10 +155,13 @@ class ReservationsController extends Controller
     public function update(Request $request, $id)
     {
         \Log::info('Update method called for reservation ID: ' . $id);
+        \Log::info('Request data:', $request->all());
 
         try {
+            DB::beginTransaction();
+
             $reservation = Reservations::findOrFail($id);
-            
+
             $validatedData = $request->validate([
                 'destination_activity' => 'required|string',
                 'rs_from' => 'required|string',
@@ -179,28 +182,6 @@ class ReservationsController extends Controller
                 'rs_reason' => 'nullable|string',
             ]);
 
-            // Check for conflicting reservations
-            $conflictingReservations = Reservations::where(function ($query) use ($request, $id) {
-                $query->whereRaw("CONCAT(rs_date_start, ' ', rs_time_start) < ?", [$request->rs_date_end . ' ' . $request->rs_time_end])
-                      ->whereRaw("CONCAT(rs_date_end, ' ', rs_time_end) > ?", [$request->rs_date_start . ' ' . $request->rs_time_start]);
-                
-                if ($id) {
-                    $query->where('reservation_id', '!=', $id);
-                }
-            })
-            ->whereIn('rs_status', ['Pending', 'Approved', 'On-Going'])
-            ->whereHas('reservation_vehicles', function ($query) use ($request) {
-                $query->whereIn('driver_id', $request->driver_id)
-                      ->orWhereIn('vehicle_id', $request->vehicle_id);
-            })
-            ->exists();
-
-            if ($conflictingReservations) {
-                return response()->json(['error' => 'The selected driver(s) or vehicle(s) are not available for the specified time range.'], 422);
-            }
-
-            DB::beginTransaction();
-
             $validatedData['rs_time_start'] = $this->convertTo24HourFormat($request->rs_time_start);
             $validatedData['rs_time_end'] = $this->convertTo24HourFormat($request->rs_time_end);
 
@@ -215,26 +196,12 @@ class ReservationsController extends Controller
                 ]);
             }
 
-            DB::commit();
-
-            $updatedReservation = $reservation->fresh()->load('requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers');
-            
-            // Log the updated reservation data
-            Log::info('Updated reservation data', ['reservation' => $updatedReservation]);
-
             return response()->json([
                 'success' => true,
                 'message' => 'Reservation updated successfully',
-                'reservation' => $updatedReservation
+                'reservation' => $reservation->fresh()->load('requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers')
             ]);
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error updating reservation', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'id' => $id,
-                'request_data' => $request->all()
-            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while updating the reservation: ' . $e->getMessage()
@@ -599,7 +566,7 @@ class ReservationsController extends Controller
     {
         $reservation = Reservations::findOrFail($id);
         $reservation->rs_approval_status = 'Approved';
-        $reservation->rs_status = 'On-Going';
+        $reservation->rs_status = 'Approved'; // Update this as well
         $reservation->save();
 
         return response()->json(['success' => 'Reservation approved successfully']);

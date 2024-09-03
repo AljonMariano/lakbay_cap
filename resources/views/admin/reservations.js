@@ -241,11 +241,7 @@ $(document).ready(function() {
             success: function(response) {
                 console.log('Edit data received:', response);
                 populateEditForm(response);
-                var startDate = response.reservation.rs_date_start;
-                var startTime = response.reservation.rs_time_start;
-                var endDate = response.reservation.rs_date_end;
-                var endTime = response.reservation.rs_time_end;
-                loadDriversAndVehicles(startDate, startTime, endDate, endTime, reservationId);
+                $('#edit_reservation_modal').modal('show');
             },
             error: function(xhr, status, error) {
                 console.error('Error loading reservation data', error);
@@ -369,7 +365,6 @@ $(document).ready(function() {
         });
     }
 
-    // Update the event handlers for the action buttons
     $(document).on('click', '.edit-btn', function() {
         var reservationId = $(this).data('id');
         console.log('Edit button clicked for reservation ID:', reservationId);
@@ -398,7 +393,6 @@ $(document).ready(function() {
                 // Populate select fields
                 $('#requestor_id_edit').val(reservation.requestor_id).trigger('change');
                 $('#off_id_edit').val(reservation.off_id).trigger('change');
-
                 // Populate driver and vehicle fields (assuming they're multi-select)
                 var driverIds = reservation.reservation_vehicles.map(rv => rv.driver_id);
                 var vehicleIds = reservation.reservation_vehicles.map(rv => rv.vehicle_id);
@@ -426,6 +420,7 @@ $(document).ready(function() {
         });
     });
 
+
     $('#update_reservation_btn').on('click', function(e) {
         e.preventDefault();
         var form = $('#edit_reservation_form');
@@ -437,7 +432,7 @@ $(document).ready(function() {
         var isOutsider = form.find('#is_outsider_edit').is(':checked') ? '1' : '0';
         form.find('input[name="is_outsider"]').val(isOutsider);
 
-        console.log('Update button clicked for reservation ID:', reservationId);
+        console.log('Update URL:', url);
         console.log('Form data:', form.serialize());
 
         $.ajax({
@@ -447,10 +442,9 @@ $(document).ready(function() {
             success: function(response) {
                 console.log('AJAX response:', response);
                 if (response.success) {
+                    console.log('Reservation updated successfully:', response.reservation);
                     $('#edit_reservation_modal').modal('hide');
-                    showSuccessMessage(response.message);
-                    
-                    // Reload the entire table
+                    showSuccessMessage('Reservation updated successfully');
                     table.ajax.reload(null, false);
                 } else {
                     showErrorMessage(response.message || 'An error occurred while updating the reservation.');
@@ -493,14 +487,21 @@ $(document).ready(function() {
     }
 
    
-    $(document).on('click', '.approve', function() {
+    $(document).on('click', '.approve-btn', function() {
         var reservationId = $(this).data('id');
-        $('#approvalModal').modal('show');
-        $('#confirmApproval').data('id', reservationId);
+        showApprovalModal(reservationId);
     });
 
+    function showApprovalModal(reservationId) {
+        $('#approvalModal').data('reservation-id', reservationId).modal('show');
+    }
+
     $('#confirmApproval').on('click', function() {
-        var reservationId = $(this).data('id');
+        var reservationId = $('#approvalModal').data('reservation-id');
+        approveReservation(reservationId);
+    });
+
+    function approveReservation(reservationId) {
         $.ajax({
             url: routes.approve.replace(':id', reservationId),
             method: 'POST',
@@ -513,10 +514,10 @@ $(document).ready(function() {
                 table.ajax.reload();
             },
             error: function(xhr) {
-                showErrorMessage('Error approving reservation');
+                showErrorMessage('Error approving reservation: ' + (xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error'));
             }
         });
-    });
+    }
 
     $(document).on('click', '.reject-btn', function() {
         var reservationId = $(this).data('id');
@@ -545,66 +546,64 @@ $(document).ready(function() {
 
     $(document).on('click', '.cancel-btn', function() {
         var reservationId = $(this).data('id');
+        showCancellationModal(reservationId);
+    });
+
+    function showCancellationModal(reservationId) {
         $('#cancellationModal').modal('show');
         $('#cancellationForm').off('submit').on('submit', function(e) {
             e.preventDefault();
             var reason = $('#cancellationReason').val();
-            $.ajax({
-                url: routes.cancel.replace(':id', reservationId),
-                method: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    reason: reason
-                },
-                success: function(response) {
-                    $('#cancellationModal').modal('hide');
-                    showSuccessMessage(response.success);
-                    table.ajax.reload();
-                },
-                error: function(xhr) {
-                    showErrorMessage('Error cancelling reservation');
-                }
-            });
+            updateReservationStatus(reservationId, 'cancel', reason);
         });
-    });
+    }
 
     $(document).on('click', '.delete-btn', function() {
         var reservationId = $(this).data('id');
-        if (confirm('Are you sure you want to delete this reservation?')) {
-            $.ajax({
-                url: routes.destroy.replace(':id', reservationId),
-                method: 'DELETE',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    showSuccessMessage(response.success);
-                    table.ajax.reload();
-                },
-                error: function(xhr) {
-                    showErrorMessage('Error deleting reservation');
-                }
-            });
-        }
+        $('#deleteModal').data('reservation-id', reservationId).modal('show');
     });
+
+    $('#confirmDelete').on('click', function() {
+        var reservationId = $('#deleteModal').data('reservation-id');
+        deleteReservation(reservationId);
+    });
+
+    function deleteReservation(reservationId) {
+        $.ajax({
+            url: routes.destroy.replace(':id', reservationId),
+            method: 'DELETE',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                $('#deleteModal').modal('hide');
+                showSuccessMessage(response.success);
+                table.ajax.reload();
+            },
+            error: function(xhr) {
+                showErrorMessage('Error deleting reservation');
+            }
+        });
+    }
 
     $(document).on('click', '.done-btn', function() {
         console.log('Done button clicked');
         var reservationId = $(this).data('id');
         console.log('Reservation ID:', reservationId);
+        showDoneModal(reservationId);
+    });
+
+    function showDoneModal(reservationId) {
         $('#printConfirmationModal').modal('show');
-        $('#confirmPrint').data('reservationId', reservationId);
-    });
-    
-    $('#confirmPrint').on('click', function() {
-        console.log('Confirm Print clicked');
-        var reservationId = $(this).data('reservationId');
-        console.log('Reservation ID for printing:', reservationId);
-        markAsDoneAndPrint(reservationId);
-    });
-    
-    function markAsDoneAndPrint(reservationId) {
-        console.log('Marking as done and printing reservation:', reservationId);
+        $('#confirmDone').off('click').on('click', function() {
+            markAsDone(reservationId);
+        });
+        $('#confirmPrint').off('click').on('click', function() {
+            markAsDone(reservationId, true);
+        });
+    }
+
+    function markAsDone(reservationId, shouldPrint = false) {
         $.ajax({
             url: routes.done.replace(':id', reservationId),
             method: 'POST',
@@ -612,18 +611,19 @@ $(document).ready(function() {
                 _token: $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
-                console.log('Reservation marked as done:', response);
+                $('#printConfirmationModal').modal('hide');
                 showSuccessMessage(response.success);
                 table.ajax.reload();
-                printReservation(reservationId);
+                if (shouldPrint) {
+                    printReservation(reservationId);
+                }
             },
-            error: function(xhr, status, error) {
-                console.error('Error marking reservation as done:', error);
+            error: function(xhr) {
                 showErrorMessage('Error marking reservation as done');
             }
         });
     }
-    
+
     function printReservation(reservationId) {
         console.log('Printing reservation:', reservationId);
         $.ajax({
@@ -858,7 +858,7 @@ $(document).ready(function() {
         placeholder: "Select Time"
     });
 
-   
+    // Add this function to handle time selection
     function setCurrentTime(inputId) {
         const now = new Date();
         const hours = String(now.getHours()).padStart(2, '0');
@@ -977,6 +977,7 @@ function showErrorMessage(message) {
     // Implementation of showing error message
     console.error('Error:', message);
 }
+
 
 
 
