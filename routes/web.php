@@ -149,23 +149,7 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
   
 
         Route::get('/user/dashboard', [DashboardController::class, 'dashboard'])->name('user.dashboard');
-        // Route::get('/user/compute', [UserPageController::class, 'compute'])->name('user.compute');        
-        // Route::get('/user/drivers_schedule', [UserPageController::class, 'drivers_schedule'])->name('user.drivers_schedule');
-        // Route::get('/user/drivers', [UserPageController::class, 'drivers'])->name('user.drivers');
-        // Route::get('/user/event_calendar', [UserPageController::class, 'event_calendar'])->name('user.event_calendar');
-        // Route::get('/user/events', [UserPageController::class, 'events'])->name('user.events');   
-       //  Route::get('/user/vehicles', [UserPageController::class, 'vehicles'])->name('user.vehicles');     
-        // Route::get('/user/navigation-menu', [UserPageController::class, 'navigation_menu'])->name('user.navigation-menu');
-        // Route::get('/user/offices', [UserPageController::class, 'offices'])->name('user.offices');
-        // Route::get('/user/policy', [UserPageController::class, 'policy'])->name('user.policy');
-        // Route::get('/user/reservations', [UserPageController::class, 'reservations'])->name('user.reservations');
-        // Route::get('/user/statistics', [UserPageController::class, 'statistics'])->name('user.statistics');
-        // Route::get('/user/terms', [UserPageController::class, 'terms'])->name('user.terms');
-        // Route::get('/user/test_select', [UserPageController::class, 'test_select'])->name('user.test_select');
-        // Route::get('/user/test_word', [UserPageController::class, 'test_word'])->name('user.test_word');
-        // Route::get('/user/welcome', [UserPageController::class, 'welcome'])->name('user.welcome');
-        // Route::get('/user/worker', [UserPageController::class, 'worker'])->name('user.worker');
-        // Route::get('/user/requestors', [UserPageController::class, 'requestors'])->name('user.requestor.requestors');
+       
 
         Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
@@ -193,9 +177,7 @@ Route::middleware(['auth'])->prefix('users')->group(function () {
     
         // // Requestors
         Route::get('/requestors', [RequestorsController::class, 'index'])->name('requestor.requestors');
-       // Route::post('/store-requestor', [RequestorsController::class, 'store']->name('vehicles.index'));
-        //Route::post('/edit-requestor', [RequestorsController::class, 'edit'])->name('requestor.requestors');
-        //Route::post('/delete-requestor', [RequestorsController::class, 'destroy']->name('requestor.index'));
+
     
         // Driver Section
         Route::post('/insert-driver', [DriversController::class, 'store']);

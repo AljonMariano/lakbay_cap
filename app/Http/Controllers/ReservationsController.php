@@ -162,7 +162,7 @@ class ReservationsController extends Controller
 
             // Update related drivers and vehicles
             if ($request->has('driver_id') && $request->has('vehicle_id')) {
-                $reservation->reservation_vehicles()->delete(); // Remove existing relationships
+                $reservation->reservation_vehicles()->delete(); 
                 foreach ($request->driver_id as $index => $driverId) {
                     $reservation->reservation_vehicles()->create([
                         'driver_id' => $driverId,
@@ -185,26 +185,35 @@ class ReservationsController extends Controller
         }
     }
 
-    private function checkConflictingReservations($data, $excludeReservationId = null)
+    private function checkAvailability($data, $excludeReservationId = null)
     {
-        $startDateTime = $data['rs_date_start'] . ' ' . $data['rs_time_start'];
-        $endDateTime = $data['rs_date_end'] . ' ' . $data['rs_time_end'];
+        $startDateTime = Carbon::parse($data['rs_date_start'] . ' ' . $data['rs_time_start']);
+        $endDateTime = Carbon::parse($data['rs_date_end'] . ' ' . $data['rs_time_end']);
 
-        return Reservations::where(function ($query) use ($startDateTime, $endDateTime, $excludeReservationId) {
-            $query->where(function ($q) use ($startDateTime, $endDateTime) {
-                $q->where('rs_date_start', '<=', $endDateTime)
+        $query = Reservations::where(function ($q) use ($startDateTime, $endDateTime) {
+            $q->where(function ($q) use ($startDateTime, $endDateTime) {
+                $q->where('rs_date_start', '<=', $startDateTime)
                   ->where('rs_date_end', '>=', $startDateTime);
-            })
-            ->when($excludeReservationId, function ($q) use ($excludeReservationId) {
-                return $q->where('reservation_id', '!=', $excludeReservationId);
+            })->orWhere(function ($q) use ($startDateTime, $endDateTime) {
+                $q->where('rs_date_start', '<=', $endDateTime)
+                  ->where('rs_date_end', '>=', $endDateTime);
+            })->orWhere(function ($q) use ($startDateTime, $endDateTime) {
+                $q->where('rs_date_start', '>=', $startDateTime)
+                  ->where('rs_date_end', '<=', $endDateTime);
             });
-        })
-        ->whereIn('rs_status', ['Pending', 'Approved', 'On-Going'])
-        ->whereHas('reservation_vehicles', function ($query) use ($data) {
-            $query->whereIn('driver_id', $data['driver_id'])
-                  ->orWhereIn('vehicle_id', $data['vehicle_id']);
-        })
-        ->exists();
+        });
+
+        if ($excludeReservationId) {
+            $query->where('reservation_id', '!=', $excludeReservationId);
+        }
+
+        $query->whereIn('rs_status', ['Pending', 'Approved', 'On-Going'])
+              ->whereHas('reservation_vehicles', function ($query) use ($data) {
+                  $query->whereIn('driver_id', $data['driver_id'])
+                        ->orWhereIn('vehicle_id', $data['vehicle_id']);
+              });
+
+        return $query->exists();
     }
 
     public function store(Request $request)
@@ -222,20 +231,11 @@ class ReservationsController extends Controller
             $reservationData['rs_approval_status'] = 'Pending';
             $reservationData['rs_status'] = 'Pending';
 
-            // Check for conflicting reservations
-            $conflictingReservations = Reservations::where(function ($query) use ($request) {
-                $query->whereRaw("CONCAT(rs_date_start, ' ', rs_time_start) < ?", [$request->rs_date_end . ' ' . $request->rs_time_end])
-                      ->whereRaw("CONCAT(rs_date_end, ' ', rs_time_end) > ?", [$request->rs_date_start . ' ' . $request->rs_time_start]);
-            })
-            ->whereIn('rs_status', ['Pending', 'Approved', 'On-Going'])
-            ->whereHas('reservation_vehicles', function ($query) use ($request) {
-                $query->whereIn('driver_id', $request->driver_id)
-                      ->orWhereIn('vehicle_id', $request->vehicle_id);
-            })
-            ->exists();
-
-            if ($conflictingReservations) {
-                return response()->json(['error' => 'The selected driver(s) or vehicle(s) are not available for the specified time range.'], 422);
+            if ($this->checkAvailability($request->all())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected driver(s) or vehicle(s) are not available for the specified time range.'
+                ], 422);
             }
 
             $reservationData['rs_time_start'] = $this->convertTo24HourFormat($request->rs_time_start);
@@ -564,7 +564,7 @@ class ReservationsController extends Controller
     {
         $reservation = Reservations::findOrFail($id);
         $reservation->rs_approval_status = 'Approved';
-        $reservation->rs_status = 'Approved'; // Update this as well
+        $reservation->rs_status = 'Approved'; 
         $reservation->save();
 
         return response()->json(['success' => 'Reservation approved successfully']);

@@ -772,9 +772,7 @@ $(document).ready(function() {
         // Clear any error messages
         $('#reservations-form .error').text('');
 
-        // Reset any custom elements or plugins
-        // For example, if you're using a date picker:
-        // $('#date_field').datepicker('setDate', null);
+    
     }
 
     // Function to show success message
@@ -858,7 +856,7 @@ $(document).ready(function() {
         placeholder: "Select Time"
     });
 
-    // Add this function to handle time selection
+   
     function setCurrentTime(inputId) {
         const now = new Date();
         const hours = String(now.getHours()).padStart(2, '0');
