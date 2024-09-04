@@ -431,7 +431,7 @@ $(document).ready(function() {
         // Handle is_outsider checkbox
         var isOutsider = form.find('#is_outsider_edit').is(':checked') ? '1' : '0';
         form.find('input[name="is_outsider"]').val(isOutsider);
-
+        
         console.log('Update URL:', url);
         console.log('Form data:', form.serialize());
 

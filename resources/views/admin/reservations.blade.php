@@ -539,6 +539,8 @@
         </div>
     </div>
 
+
+    <!-- Edit Modal -->
     <div class="modal fade" id="edit_reservation_modal" tabindex="-1" aria-labelledby="editReservationModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -548,8 +550,7 @@
                 </div>
                 <form id="edit_reservation_form" method="POST">
                     @csrf
-                    @method('POST')
-                    <input type="hidden" name="reservation_id" id="edit_reservation_id">
+                    <input type="hidden" name="reservation_id" id="reservation_id" value="">
                     <div class="modal-body">
                         <div class="card rounded-0">
                             <div class="card-body">
@@ -653,7 +654,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update Reservation</button>
+                        <button type="submit" class="btn btn-primary" id="update_reservation_btn">Update Reservation</button>
                     </div>
                 </form>
             </div>

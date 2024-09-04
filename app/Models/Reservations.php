@@ -15,7 +15,7 @@ class Reservations extends Model
     use SoftDeletes;
     protected $table = 'reservations';
     protected $primaryKey = 'reservation_id';
-    protected $fillable=[
+    protected $fillable = [
         'rs_passengers', 'rs_travel_type', 'rs_purpose', 'rs_from',
         'rs_date_start', 'rs_time_start', 'rs_date_end', 'rs_time_end',
         'reason', 'destination_activity', 'rs_approval_status', 'rs_status',
@@ -26,6 +26,8 @@ class Reservations extends Model
         'is_outsider' => 'boolean',
         'requestor_id' => 'integer',
         'off_id' => 'integer',
+        'rs_time_start' => 'datetime',
+        'rs_time_end' => 'datetime',
     ];
     public function requestors(): BelongsTo
     {

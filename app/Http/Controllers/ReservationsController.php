@@ -154,59 +154,57 @@ class ReservationsController extends Controller
 
     public function update(Request $request, $id)
     {
-        \Log::info('Update method called for reservation ID: ' . $id);
-        \Log::info('Request data:', $request->all());
-
         try {
-            DB::beginTransaction();
-
             $reservation = Reservations::findOrFail($id);
+            
+            // Update the reservation
+            $reservation->update($request->except(['driver_id', 'vehicle_id']));
 
-            $validatedData = $request->validate([
-                'destination_activity' => 'required|string',
-                'rs_from' => 'required|string',
-                'rs_date_start' => 'required|date',
-                'rs_time_start' => 'required',
-                'rs_date_end' => 'required|date',
-                'rs_time_end' => 'required',
-                'rs_passengers' => 'required|integer',
-                'rs_travel_type' => 'required|string',
-                'rs_purpose' => 'required|string',
-                'off_id' => 'required_without:outside_office',
-                'outside_office' => 'required_if:is_outsider,1',
-                'requestor_id' => 'required_without:outside_requestor',
-                'outside_requestor' => 'required_if:is_outsider,1',
-                'driver_id' => 'required|array',
-                'vehicle_id' => 'required|array',
-                'is_outsider' => 'boolean',
-                'rs_reason' => 'nullable|string',
-            ]);
-
-            $validatedData['rs_time_start'] = $this->convertTo24HourFormat($request->rs_time_start);
-            $validatedData['rs_time_end'] = $this->convertTo24HourFormat($request->rs_time_end);
-
-            $reservation->update($validatedData);
-
-            // Handle drivers and vehicles
-            $reservation->reservation_vehicles()->delete();
-            foreach ($request->driver_id as $index => $driverId) {
-                $reservation->reservation_vehicles()->create([
-                    'driver_id' => $driverId,
-                    'vehicle_id' => $request->vehicle_id[$index],
-                ]);
+            // Update related drivers and vehicles
+            if ($request->has('driver_id') && $request->has('vehicle_id')) {
+                $reservation->reservation_vehicles()->delete(); // Remove existing relationships
+                foreach ($request->driver_id as $index => $driverId) {
+                    $reservation->reservation_vehicles()->create([
+                        'driver_id' => $driverId,
+                        'vehicle_id' => $request->vehicle_id[$index]
+                    ]);
+                }
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Reservation updated successfully',
-                'reservation' => $reservation->fresh()->load('requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers')
+                'reservation' => $reservation->fresh()->load(['requestors', 'office', 'reservation_vehicles.vehicles', 'reservation_vehicles.drivers'])
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error updating reservation: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while updating the reservation: ' . $e->getMessage()
+                'message' => 'Error updating reservation: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function checkConflictingReservations($data, $excludeReservationId = null)
+    {
+        $startDateTime = $data['rs_date_start'] . ' ' . $data['rs_time_start'];
+        $endDateTime = $data['rs_date_end'] . ' ' . $data['rs_time_end'];
+
+        return Reservations::where(function ($query) use ($startDateTime, $endDateTime, $excludeReservationId) {
+            $query->where(function ($q) use ($startDateTime, $endDateTime) {
+                $q->where('rs_date_start', '<=', $endDateTime)
+                  ->where('rs_date_end', '>=', $startDateTime);
+            })
+            ->when($excludeReservationId, function ($q) use ($excludeReservationId) {
+                return $q->where('reservation_id', '!=', $excludeReservationId);
+            });
+        })
+        ->whereIn('rs_status', ['Pending', 'Approved', 'On-Going'])
+        ->whereHas('reservation_vehicles', function ($query) use ($data) {
+            $query->whereIn('driver_id', $data['driver_id'])
+                  ->orWhereIn('vehicle_id', $data['vehicle_id']);
+        })
+        ->exists();
     }
 
     public function store(Request $request)
@@ -728,7 +726,15 @@ class ReservationsController extends Controller
 
 private function convertTo24HourFormat($time)
 {
-    return date("H:i", strtotime($time));
+    // Remove any extra "PM" or "AM" at the end
+    $time = preg_replace('/(AM|PM)\s+(AM|PM)$/i', '$1', $time);
+
+    try {
+        return Carbon::createFromFormat('h:i A', $time)->format('H:i:s');
+    } catch (\Exception $e) {
+        \Log::error('Error converting time: ' . $e->getMessage());
+        return null;
+    }
 }
 
 }
